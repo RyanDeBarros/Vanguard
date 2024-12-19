@@ -12,8 +12,9 @@ namespace vg
 
 	enum class ErrorCode
 	{
-		WINDOW_CREATION,
+		GLFW_INIT,
 		GLEW_INIT,
+		WINDOW_CREATION,
 	};
 
 	struct Error : public std::runtime_error

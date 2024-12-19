@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include "Vendor.h"
+#include "Input.h"
 
 namespace vg
 {
@@ -51,12 +52,6 @@ namespace vg
 		operator const GLFWwindow* () const;
 		operator GLFWwindow* ();
 
-	private:
-		void destroy();
-
-		static std::unordered_map<GLFWwindow*, Window*> Windows;
-
-	public:
 		void focus() const;
 		void focus_context() const;
 		bool should_close() const;
@@ -79,5 +74,26 @@ namespace vg
 		void cursor_y(double cursor_y) const;
 		glm::dvec2 cursor_pos() const;
 		void set_cursor_pos(glm::dvec2 pos) const;
+
+		struct
+		{
+			input::CharEventHandler character;
+			input::CharModsEventHandler char_mods;
+			input::CursorEnterEventHandler cursor_enter;
+			input::CursorPosEventHandler cursor_pos;
+			input::PathDropEventHandler path_drop;
+			input::FramebufferResizeEventHandler framebuffer_resize;
+			input::KeyEventHandler key;
+			input::MouseButtonEventHandler mouse_button;
+			input::ScrollEventHandler scroll;
+			input::WindowCloseEventHandler window_close;
+			input::WindowContentScaleEventHandler window_content_scale;
+			input::WindowFocusEventHandler window_focus;
+			input::WindowIconifyEventHandler window_iconify;
+			input::WindowMaximizeEventHandler window_maximize;
+			input::WindowPosEventHandler window_pos;
+			input::WindowRefreshEventHandler window_refresh;
+			input::WindowResizeEventHandler window_resize;
+		} root_input_handlers = {};
 	};
 }

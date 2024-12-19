@@ -1,32 +1,27 @@
 #include "Vanguard.h"
 
-// TODO use Logger
+#include "Errors.h"
+#include "Input.h"
+
+// LATER use Logger
 #include <iostream>
+
+void vg::init()
+{
+	vg::_::init_input();
+	if (glfwInit() != GLFW_TRUE)
+		throw Error(ErrorCode::GLFW_INIT);
+}
+
+void vg::terminate()
+{
+	glfwTerminate();
+}
 
 bool vg::_::no_gl_errors(const char* file, int line)
 {
 	bool no_err = true;
-	//while (GLenum error = glGetError())
-	//{
-		//std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
-		//no_err = false;
-	//}
-	if (GLenum error = glGetError())
-	{
-		std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
-		no_err = false;
-	}
-	if (GLenum error = glGetError())
-	{
-		std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
-		no_err = false;
-	}
-	if (GLenum error = glGetError())
-	{
-		std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
-		no_err = false;
-	}
-	if (GLenum error = glGetError())
+	while (GLenum error = glGetError())
 	{
 		std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
 		no_err = false;

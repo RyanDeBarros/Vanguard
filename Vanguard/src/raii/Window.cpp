@@ -2,8 +2,9 @@
 
 #include "Vanguard.h"
 #include "Errors.h"
+#include "Input.h"
 
-// TODO use Logger instead
+// LATER use Logger instead
 #include <iostream>
 
 void vg::WindowHint::hint() const
@@ -34,8 +35,6 @@ void vg::WindowHint::hint() const
 	glfwWindowHint(GLFW_OPENGL_PROFILE, opengl_profile);
 }
 
-std::unordered_map<GLFWwindow*, vg::Window*> vg::Window::Windows;
-
 vg::Window::Window(int width, int height, const char* title, const WindowHint& hint)
 {
 	hint.hint();
@@ -52,9 +51,8 @@ vg::Window::Window(int width, int height, const char* title, const WindowHint& h
 		throw Error(ErrorCode::GLEW_INIT);
 	}
 
-	Windows[_w] = this;
-
-	// TODO set callbacks
+	glfwSetWindowUserPointer(_w, this);
+	_::assign_window_callbacks(*this);
 }
 
 vg::Window::Window(Window&& other) noexcept
@@ -67,7 +65,7 @@ vg::Window& vg::Window::operator=(Window&& other) noexcept
 {
 	if (this != &other)
 	{
-		destroy();
+		glfwDestroyWindow(_w);
 		_w = other._w;
 		other._w = nullptr;
 	}
@@ -76,7 +74,7 @@ vg::Window& vg::Window::operator=(Window&& other) noexcept
 
 vg::Window::~Window()
 {
-	destroy();
+	glfwDestroyWindow(_w);
 }
 
 vg::Window::operator const GLFWwindow* () const
@@ -87,18 +85,6 @@ vg::Window::operator const GLFWwindow* () const
 vg::Window::operator GLFWwindow* ()
 {
 	return _w;
-}
-
-void vg::Window::destroy()
-{
-	if (_w)
-	{
-		auto iter = Windows.find(_w);
-		if (iter != Windows.end())
-			Windows.erase(iter);
-		glfwDestroyWindow(_w);
-		_w = nullptr;
-	}
 }
 
 void vg::Window::focus() const

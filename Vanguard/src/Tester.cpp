@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include "Vanguard.h"
 
@@ -7,13 +8,13 @@
 int main()
 {
 	std::cout << "Welcome to Vanguard!" << std::endl;
-
-	if (glfwInit() != GLFW_TRUE)
-		return 1;
+	vg::init();
 	
 	vg::Window window(1440, 1080, "Hello World");
 
-	vg::set_clear_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+	vg::set_clear_color({ 0.2f, 0.3f, 0.8f, 1.0f });
+
+	window.root_input_handlers.character.callback = [](vg::input::CharEvent c) { std::cout << std::to_string((int)c.key) << std::endl; c.consumed = true; };
 
 	for (;;)
 	{
@@ -27,6 +28,7 @@ int main()
 
 		window.end_frame();
 	}
-	glfwTerminate();
+
+	vg::terminate();
 	return 0;
 }

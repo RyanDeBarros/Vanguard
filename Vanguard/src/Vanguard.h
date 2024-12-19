@@ -20,6 +20,9 @@
 
 namespace vg
 {
+	extern void init();
+	extern void terminate();
+
 	namespace _
 	{
 		extern bool no_gl_errors(const char* file, int line);
