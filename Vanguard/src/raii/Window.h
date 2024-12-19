@@ -7,6 +7,44 @@
 
 namespace vg
 {
+	enum class MouseMode
+	{
+		VISIBLE = GLFW_CURSOR_NORMAL,
+		HIDDEN = GLFW_CURSOR_HIDDEN,
+		VIRTUAL = GLFW_CURSOR_DISABLED,
+		CAPTURED = GLFW_CURSOR_CAPTURED
+	};
+
+	enum class StandardCursor
+	{
+		ARROW = GLFW_ARROW_CURSOR,
+		IBEAM = GLFW_IBEAM_CURSOR,
+		CROSSHAIR = GLFW_CROSSHAIR_CURSOR,
+		HAND = GLFW_POINTING_HAND_CURSOR,
+		RESIZE_EW = GLFW_RESIZE_EW_CURSOR,
+		RESIZE_NS = GLFW_RESIZE_NS_CURSOR,
+		RESIZE_NW_SE = GLFW_RESIZE_NWSE_CURSOR,
+		RESIZE_NE_SW = GLFW_RESIZE_NESW_CURSOR,
+		RESIZE_OMNI = GLFW_RESIZE_ALL_CURSOR,
+		CANCEL = GLFW_NOT_ALLOWED_CURSOR
+	};
+
+	class Cursor
+	{
+		GLFWcursor* _c = nullptr;
+
+	public:
+		Cursor(StandardCursor standard_cursor);
+		Cursor(unsigned char* rgba_pixels, int width, int height, int xhot = 0, int yhot = 0);
+		Cursor(const Cursor&) = delete;
+		Cursor(Cursor&&) noexcept;
+		Cursor& operator=(Cursor&&) noexcept;
+		~Cursor();
+
+		operator const GLFWcursor* () const;
+		operator GLFWcursor* ();
+	};
+
 	struct WindowHint
 	{
 		bool resizable = true;
@@ -75,6 +113,17 @@ namespace vg
 		glm::dvec2 cursor_pos() const;
 		void set_cursor_pos(glm::dvec2 pos) const;
 
+		bool is_key_pressed(input::Key key) const;
+		bool is_shift_pressed() const;
+		bool is_ctrl_pressed() const;
+		bool is_alt_pressed() const;
+		bool is_super_pressed() const;
+		bool is_mouse_button_pressed(input::MouseButton mb) const;
+
+		MouseMode mouse_mode() const;
+		void set_mouse_mode(MouseMode mode) const;
+		void set_cursor(Cursor& cursor) const;
+
 		struct
 		{
 			input::CharEventHandler character;
@@ -95,5 +144,7 @@ namespace vg
 			input::WindowRefreshEventHandler window_refresh;
 			input::WindowResizeEventHandler window_resize;
 		} root_input_handlers = {};
+
+		std::function<void(int w, int h)> render_during_resize;
 	};
 }

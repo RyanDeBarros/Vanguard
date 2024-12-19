@@ -7,6 +7,52 @@
 // LATER use Logger instead
 #include <iostream>
 
+vg::Cursor::Cursor(StandardCursor standard_cursor)
+{
+	_c = glfwCreateStandardCursor((int)standard_cursor);
+}
+
+vg::Cursor::Cursor(unsigned char* rgba_pixels, int width, int height, int xhot, int yhot)
+{
+	GLFWimage image{};
+	image.pixels = rgba_pixels;
+	image.width = width;
+	image.height = height;
+	_c = glfwCreateCursor(&image, xhot, yhot);
+}
+
+vg::Cursor::Cursor(Cursor&& other) noexcept
+	: _c(other._c)
+{
+	other._c = nullptr;
+}
+
+vg::Cursor& vg::Cursor::operator=(Cursor&& other) noexcept
+{
+	if (this != &other)
+	{
+		glfwDestroyCursor(_c);
+		_c = other._c;
+		other._c = nullptr;
+	}
+	return *this;
+}
+
+vg::Cursor::~Cursor()
+{
+	glfwDestroyCursor(_c);
+}
+
+vg::Cursor::operator const GLFWcursor* () const
+{
+	return _c;
+}
+
+vg::Cursor::operator GLFWcursor* ()
+{
+	return _c;
+}
+
 void vg::WindowHint::hint() const
 {
 	glfwWindowHint(GLFW_RESIZABLE, resizable);
@@ -53,6 +99,14 @@ vg::Window::Window(int width, int height, const char* title, const WindowHint& h
 
 	glfwSetWindowUserPointer(_w, this);
 	_::assign_window_callbacks(*this);
+
+	root_input_handlers.framebuffer_resize.callback = [this](const input::FramebufferResizeEvent& e) {
+		glViewport(0, 0, e.w, e.h);
+		clear_buffer();
+		if (render_during_resize)
+			render_during_resize(e.w, e.h);
+		swap_buffers();
+		};
 }
 
 vg::Window::Window(Window&& other) noexcept
@@ -194,4 +248,49 @@ glm::dvec2 vg::Window::cursor_pos() const
 void vg::Window::set_cursor_pos(glm::dvec2 pos) const
 {
 	glfwSetCursorPos(_w, pos.x, pos.y);
+}
+
+bool vg::Window::is_key_pressed(input::Key key) const
+{
+	return glfwGetKey(_w, int(key)) == int(input::Action::PRESS);
+}
+
+bool vg::Window::is_shift_pressed() const
+{
+	return is_key_pressed(input::Key::SHIFT_LEFT) || is_key_pressed(input::Key::SHIFT_RIGHT);
+}
+
+bool vg::Window::is_ctrl_pressed() const
+{
+	return is_key_pressed(input::Key::CONTROL_LEFT) || is_key_pressed(input::Key::CONTROL_RIGHT);
+}
+
+bool vg::Window::is_alt_pressed() const
+{
+	return is_key_pressed(input::Key::ALT_LEFT) || is_key_pressed(input::Key::ALT_RIGHT);
+}
+
+bool vg::Window::is_super_pressed() const
+{
+	return is_key_pressed(input::Key::SUPER_LEFT) || is_key_pressed(input::Key::SUPER_RIGHT);
+}
+
+bool vg::Window::is_mouse_button_pressed(input::MouseButton mb) const
+{
+	return glfwGetMouseButton(_w, int(mb)) == int(input::Action::PRESS);
+}
+
+vg::MouseMode vg::Window::mouse_mode() const
+{
+	return (vg::MouseMode)glfwGetInputMode(_w, GLFW_CURSOR);
+}
+
+void vg::Window::set_mouse_mode(MouseMode mode) const
+{
+	glfwSetInputMode(_w, GLFW_CURSOR, (int)mode);
+}
+
+void vg::Window::set_cursor(Cursor& cursor) const
+{
+	glfwSetCursor(_w, cursor);
 }

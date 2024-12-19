@@ -12,9 +12,7 @@ int main()
 	
 	vg::Window window(1440, 1080, "Hello World");
 
-	vg::set_clear_color({ 0.2f, 0.3f, 0.8f, 1.0f });
-
-	window.root_input_handlers.character.callback = [](vg::input::CharEvent c) { std::cout << std::to_string((int)c.key) << std::endl; c.consumed = true; };
+	vg::set_clear_color({ 0.5f, 0.7f, 0.9f, 1.0f });
 
 	for (;;)
 	{
