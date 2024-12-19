@@ -1,0 +1,211 @@
+#include "Window.h"
+
+#include "Vanguard.h"
+#include "Errors.h"
+
+// TODO use Logger instead
+#include <iostream>
+
+void vg::WindowHint::hint() const
+{
+	glfwWindowHint(GLFW_RESIZABLE, resizable);
+	glfwWindowHint(GLFW_VISIBLE, visible);
+	glfwWindowHint(GLFW_DECORATED, decorated);
+	glfwWindowHint(GLFW_FOCUSED, focused);
+	glfwWindowHint(GLFW_AUTO_ICONIFY, auto_iconify);
+	glfwWindowHint(GLFW_FLOATING, floating);
+	glfwWindowHint(GLFW_MAXIMIZED, maximized);
+	glfwWindowHint(GLFW_CENTER_CURSOR, center_cursor);
+	glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, transparent_framebuffer);
+	glfwWindowHint(GLFW_FOCUS_ON_SHOW, focus_on_show);
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, scale_to_monitor);
+	glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, scale_framebuffer);
+	glfwWindowHint(GLFW_MOUSE_PASSTHROUGH, mouse_passthrough);
+	glfwWindowHint(GLFW_POSITION_X, position_x);
+	glfwWindowHint(GLFW_POSITION_Y, position_y);
+	glfwWindowHint(GLFW_REFRESH_RATE, refresh_rate);
+	glfwWindowHint(GLFW_STEREO, stereo);
+	glfwWindowHint(GLFW_SRGB_CAPABLE, srgb_capable);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, double_buffer);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, context_version_major);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, context_version_minor);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, opengl_forward_compat);
+	glfwWindowHint(GLFW_CONTEXT_DEBUG, context_debug);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, opengl_profile);
+}
+
+std::unordered_map<GLFWwindow*, vg::Window*> vg::Window::Windows;
+
+vg::Window::Window(int width, int height, const char* title, const WindowHint& hint)
+{
+	hint.hint();
+
+	_w = glfwCreateWindow(width, height, title, nullptr, nullptr);
+	if (!_w)
+		throw Error(ErrorCode::WINDOW_CREATION);
+	focus_context();
+	GLenum err = glewInit();
+	if (err != GLEW_OK)
+	{
+		std::cerr << glewGetErrorString(err) << std::endl;
+		glfwDestroyWindow(_w);
+		throw Error(ErrorCode::GLEW_INIT);
+	}
+
+	Windows[_w] = this;
+
+	// TODO set callbacks
+}
+
+vg::Window::Window(Window&& other) noexcept
+	: _w(other._w)
+{
+	other._w = nullptr;
+}
+
+vg::Window& vg::Window::operator=(Window&& other) noexcept
+{
+	if (this != &other)
+	{
+		destroy();
+		_w = other._w;
+		other._w = nullptr;
+	}
+	return *this;
+}
+
+vg::Window::~Window()
+{
+	destroy();
+}
+
+vg::Window::operator const GLFWwindow* () const
+{
+	return _w;
+}
+
+vg::Window::operator GLFWwindow* ()
+{
+	return _w;
+}
+
+void vg::Window::destroy()
+{
+	if (_w)
+	{
+		auto iter = Windows.find(_w);
+		if (iter != Windows.end())
+			Windows.erase(iter);
+		glfwDestroyWindow(_w);
+		_w = nullptr;
+	}
+}
+
+void vg::Window::focus() const
+{
+	glfwFocusWindow(_w);
+}
+
+void vg::Window::focus_context() const
+{
+	glfwMakeContextCurrent(_w);
+}
+
+bool vg::Window::should_close() const
+{
+	return glfwWindowShouldClose(_w);
+}
+
+void vg::Window::request_close(bool close) const
+{
+	glfwSetWindowShouldClose(_w, close);
+}
+
+void vg::Window::swap_buffers() const
+{
+	glfwSwapBuffers(_w);
+}
+
+void vg::Window::new_frame() const
+{
+	VANGUARD_ASSERT_GL_OKAY;
+	clear_buffer();
+}
+
+void vg::Window::end_frame() const
+{
+	swap_buffers();
+	VANGUARD_ASSERT_GL_OKAY;
+}
+
+int vg::Window::width() const
+{
+	int w;
+	glfwGetWindowSize(_w, &w, nullptr);
+	return w;
+}
+
+void vg::Window::set_width(int width) const
+{
+	glfwSetWindowSize(_w, width, height());
+}
+
+int vg::Window::height() const
+{
+	int h;
+	glfwGetWindowSize(_w, nullptr, &h);
+	return h;
+}
+
+void vg::Window::set_height(int height) const
+{
+	glfwSetWindowSize(_w, width(), height);
+}
+
+glm::ivec2 vg::Window::size() const
+{
+	glm::ivec2 size;
+	glfwGetWindowSize(_w, &size.x, &size.y);
+	return size;
+}
+
+void vg::Window::set_size(glm::ivec2 size) const
+{
+	glfwSetWindowSize(_w, size.x, size.y);
+}
+
+double vg::Window::cursor_x() const
+{
+	double x;
+	glfwGetCursorPos(_w, &x, nullptr);
+	return x;
+}
+
+void vg::Window::cursor_x(double cursor_x) const
+{
+	glfwSetCursorPos(_w, cursor_x, cursor_y());
+}
+
+double vg::Window::cursor_y() const
+{
+	double y;
+	glfwGetCursorPos(_w, nullptr, &y);
+	return y;
+}
+
+void vg::Window::cursor_y(double cursor_y) const
+{
+	glfwSetCursorPos(_w, cursor_x(), cursor_y);
+}
+
+glm::dvec2 vg::Window::cursor_pos() const
+{
+	glm::dvec2 pos;
+	glfwGetCursorPos(_w, &pos.x, &pos.y);
+	return pos;
+}
+
+void vg::Window::set_cursor_pos(glm::dvec2 pos) const
+{
+	glfwSetCursorPos(_w, pos.x, pos.y);
+}

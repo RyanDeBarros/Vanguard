@@ -1,22 +1,32 @@
 #include <iostream>
 
-#include <GLFW/glfw3.h>
+#include "Vanguard.h"
+
+#include "raii/Window.h"
 
 int main()
 {
 	std::cout << "Welcome to Vanguard!" << std::endl;
 
-	if (!glfwInit())
+	if (glfwInit() != GLFW_TRUE)
 		return 1;
-	GLFWwindow* window = glfwCreateWindow(1440, 1080, "Hello World", nullptr, nullptr);
-	if (!window)
-		return 1;
+	
+	vg::Window window(1440, 1080, "Hello World");
+
+	vg::set_clear_color({ 1.0f, 0.0f, 0.0f, 1.0f });
 
 	for (;;)
 	{
 		glfwPollEvents();
-		if (glfwWindowShouldClose(window))
+		if (window.should_close())
 			break;
+
+		window.new_frame();
+
+		// frame
+
+		window.end_frame();
 	}
+	glfwTerminate();
 	return 0;
 }
