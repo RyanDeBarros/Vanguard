@@ -41,8 +41,8 @@ namespace vg
 		Cursor& operator=(Cursor&&) noexcept;
 		~Cursor();
 
-		operator const GLFWcursor* () const;
-		operator GLFWcursor* ();
+		operator const GLFWcursor* () const { return _c; }
+		operator GLFWcursor* () { return _c; }
 	};
 
 	struct WindowHint
@@ -87,8 +87,9 @@ namespace vg
 		Window(Window&&) noexcept;
 		Window& operator=(Window&&) noexcept;
 		~Window();
-		operator const GLFWwindow* () const;
-		operator GLFWwindow* ();
+
+		operator const GLFWwindow* () const { return _w; }
+		operator GLFWwindow* () { return _w; }
 
 		void focus() const;
 		void focus_context() const;

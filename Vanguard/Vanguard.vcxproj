@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Errors.cpp" />
     <ClCompile Include="src\FilePath.cpp" />
     <ClCompile Include="src\GLConstants.cpp" />
     <ClCompile Include="src\Input.cpp" />

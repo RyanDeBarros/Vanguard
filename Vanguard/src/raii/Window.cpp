@@ -43,16 +43,6 @@ vg::Cursor::~Cursor()
 	glfwDestroyCursor(_c);
 }
 
-vg::Cursor::operator const GLFWcursor* () const
-{
-	return _c;
-}
-
-vg::Cursor::operator GLFWcursor* ()
-{
-	return _c;
-}
-
 void vg::WindowHint::hint() const
 {
 	glfwWindowHint(GLFW_RESIZABLE, resizable);
@@ -129,16 +119,6 @@ vg::Window& vg::Window::operator=(Window&& other) noexcept
 vg::Window::~Window()
 {
 	glfwDestroyWindow(_w);
-}
-
-vg::Window::operator const GLFWwindow* () const
-{
-	return _w;
-}
-
-vg::Window::operator GLFWwindow* ()
-{
-	return _w;
 }
 
 void vg::Window::focus() const

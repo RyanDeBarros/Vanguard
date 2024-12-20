@@ -46,18 +46,32 @@ namespace vg
 
 	class Texture2D
 	{
-		GLuint* _t = nullptr;
-		GLsizei count;
+		GLuint _t = 0;
 
 	public:
-		Texture2D(GLsizei count = 1);
+		Texture2D();
 		Texture2D(const Texture2D&) = delete;
 		Texture2D(Texture2D&&) noexcept;
 		Texture2D& operator=(Texture2D&&) noexcept;
 		~Texture2D();
 
+		operator GLuint () const { return _t; }
+	};
+
+	class Texture2DBlock
+	{
+		GLuint* _t = nullptr;
+		GLsizei count;
+
+	public:
+		Texture2DBlock(GLsizei count);
+		Texture2DBlock(const Texture2DBlock&) = delete;
+		Texture2DBlock(Texture2DBlock&&) noexcept;
+		Texture2DBlock& operator=(Texture2DBlock&&) noexcept;
+		~Texture2DBlock();
+
 		operator GLuint () const { return (*this)[0]; }
-		GLuint operator[](GLsizei texture) const;
+		GLuint operator[](GLsizei i) const;
 	};
 
 	extern void bind_texture2D(GLuint texture, GLsizei slot);

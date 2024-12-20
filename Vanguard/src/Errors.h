@@ -17,6 +17,7 @@ namespace vg
 		WINDOW_CREATION,
 		SUBSHADER_COMPILATION,
 		SHADER_LINKAGE,
+		BLOCK_INDEX_OUT_OF_RANGE,
 	};
 
 	struct Error : public std::runtime_error
@@ -27,4 +28,6 @@ namespace vg
 		Error(ErrorCode code, const char* message) : std::runtime_error("Vanguard Error (" + std::to_string((int)code) + "): " + message), code(code) {}
 		Error(ErrorCode code, const std::string& message) : std::runtime_error("Vanguard Error (" + std::to_string((int)code) + "): " + message), code(code) {}
 	};
+
+	extern Error block_index_out_of_range(size_t size, size_t index);
 }
