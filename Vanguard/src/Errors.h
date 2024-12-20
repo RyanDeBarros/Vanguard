@@ -15,12 +15,16 @@ namespace vg
 		GLFW_INIT,
 		GLEW_INIT,
 		WINDOW_CREATION,
+		SUBSHADER_COMPILATION,
+		SHADER_LINKAGE,
 	};
 
 	struct Error : public std::runtime_error
 	{
-		Error(ErrorCode code) : std::runtime_error("Vanguard Error (" + std::to_string((int)code) + ")") {}
-		Error(const char* message = "") : std::runtime_error(message) {}
-		Error(const std::string& message) : std::runtime_error(message) {}
+		ErrorCode code;
+
+		Error(ErrorCode code) : std::runtime_error("Vanguard Error (" + std::to_string((int)code) + ")"), code(code) {}
+		Error(ErrorCode code, const char* message) : std::runtime_error("Vanguard Error (" + std::to_string((int)code) + "): " + message), code(code) {}
+		Error(ErrorCode code, const std::string& message) : std::runtime_error("Vanguard Error (" + std::to_string((int)code) + "): " + message), code(code) {}
 	};
 }

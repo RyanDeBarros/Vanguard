@@ -2,20 +2,31 @@
 
 #include "Errors.h"
 #include "Input.h"
+#include "GLConstants.h"
+#include "raii/Shader.h"
+#include "raii/Texture.h"
 
 // LATER use Logger
 #include <iostream>
 
 void vg::init()
 {
-	vg::_::init_input();
+	_::init_input();
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
+	_::query_gl_constants();
 }
 
 void vg::terminate()
 {
 	glfwTerminate();
+}
+
+void vg::new_frame()
+{
+	glfwPollEvents();
+	update_bound_shader();
+	update_bound_texture2Ds();
 }
 
 bool vg::_::no_gl_errors(const char* file, int line)

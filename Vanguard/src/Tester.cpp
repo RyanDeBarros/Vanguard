@@ -16,10 +16,9 @@ int main()
 
 	for (;;)
 	{
-		glfwPollEvents();
+		vg::new_frame();
 		if (window.should_close())
 			break;
-
 		window.new_frame();
 
 		// frame

@@ -159,7 +159,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\FilePath.cpp" />
+    <ClCompile Include="src\GLConstants.cpp" />
     <ClCompile Include="src\Input.cpp" />
+    <ClCompile Include="src\IO.cpp" />
+    <ClCompile Include="src\raii\GLBuffer.cpp" />
+    <ClCompile Include="src\raii\Shader.cpp" />
+    <ClCompile Include="src\raii\Texture.cpp" />
     <ClCompile Include="src\raii\Window.cpp" />
     <ClCompile Include="src\Tester.cpp" />
     <ClCompile Include="src\Vanguard.cpp" />
@@ -168,7 +174,13 @@
   <ItemGroup>
     <ClInclude Include="src\Errors.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\FilePath.h" />
+    <ClInclude Include="src\GLConstants.h" />
     <ClInclude Include="src\Input.h" />
+    <ClInclude Include="src\IO.h" />
+    <ClInclude Include="src\raii\GLBuffer.h" />
+    <ClInclude Include="src\raii\Shader.h" />
+    <ClInclude Include="src\raii\Texture.h" />
     <ClInclude Include="src\raii\Window.h" />
     <ClInclude Include="src\Vanguard.h" />
     <ClInclude Include="vendor\Vendor.h" />

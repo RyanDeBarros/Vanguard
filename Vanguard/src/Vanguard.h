@@ -22,6 +22,7 @@ namespace vg
 {
 	extern void init();
 	extern void terminate();
+	extern void new_frame();
 
 	namespace _
 	{
