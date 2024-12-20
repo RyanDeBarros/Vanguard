@@ -74,9 +74,9 @@ vg::Texture2DBlock::~Texture2DBlock()
 
 GLuint vg::Texture2DBlock::operator[](GLsizei i) const
 {
-	if (i < count && i >= 0)
-		return _t[i];
-	throw block_index_out_of_range(count, i);
+	if (i >= count || i < 0)
+		throw block_index_out_of_range(count, i);
+	return _t[i];
 }
 
 static GLuint bound_texture2Ds[32] = {};

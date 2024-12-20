@@ -20,7 +20,7 @@ namespace vg
 
 	class GLBufferBlock
 	{
-		GLuint* _b;
+		GLuint* _b = nullptr;
 		GLsizei count;
 
 	public:
@@ -32,6 +32,62 @@ namespace vg
 
 		GLuint operator[](GLsizei i) const;
 	};
+
+	enum class IndexDataType
+	{
+		UBYTE = GL_UNSIGNED_BYTE,
+		USHORT = GL_UNSIGNED_SHORT,
+		UINT = GL_UNSIGNED_INT
+	};
+
+	extern GLintptr index_data_type_size(IndexDataType idt);
+
+	class VertexArray
+	{
+		GLuint _vao;
+		IndexDataType idt;
+		GLBufferBlock block;
+
+	public:
+		VertexArray();
+		VertexArray(const VertexArray&) = delete;
+		VertexArray(VertexArray&&) noexcept;
+		VertexArray& operator=(VertexArray&&) noexcept;
+		~VertexArray();
+
+		operator GLuint () const { return _vao; }
+		GLuint vb() const;
+		GLuint ib() const;
+		IndexDataType index_data_type() const { return idt; }
+		IndexDataType& index_data_type() { return idt; }
+		void bind() const;
+	};
+
+	class VertexArrayBlock
+	{
+		GLuint* _vaos = nullptr;
+		IndexDataType* idts = nullptr;
+		GLsizei count;
+		GLBufferBlock block;
+
+	public:
+		VertexArrayBlock(GLsizei count);
+		VertexArrayBlock(const VertexArrayBlock&) = delete;
+		VertexArrayBlock(VertexArrayBlock&&) noexcept;
+		VertexArrayBlock& operator=(VertexArrayBlock&&) noexcept;
+		~VertexArrayBlock();
+
+		GLuint operator[](GLsizei i) const;
+		GLuint vb(GLsizei i) const;
+		GLuint ib(GLsizei i) const;
+		IndexDataType index_data_type(GLsizei i) const;
+		IndexDataType& index_data_type(GLsizei i);
+		void bind(GLsizei i) const;
+	};
+
+	extern void unbind_vertex_array();
+
+	// LATER SharedVertexArray that uses shared_ptr<VertexBuffer> and shared_ptr<IndexBuffer>
 
 	enum class BufferMutableUsage
 	{
@@ -83,10 +139,56 @@ namespace vg
 
 	extern void copy_gl_buffer(GLuint vb_src, GLuint vb_dst, GLintptr offset_src, GLintptr offset_dst, GLsizeiptr size);
 
-	class VertexArray
+	enum class DrawMode
 	{
-		// TODO
+		POINTS = GL_POINTS,
+		LINE_STRIP = GL_LINE_STRIP,
+		LINE_LOOP = GL_LINE_LOOP,
+		LINES = GL_LINES,
+		LINE_STRIP_ADJENCY = GL_LINE_STRIP_ADJACENCY,
+		LINES_ADJENCY = GL_LINES_ADJACENCY,
+		TRIANGLE_STRIP = GL_TRIANGLE_STRIP,
+		TRIANGLE_FAN = GL_TRIANGLE_FAN,
+		TRIANGLES = GL_TRIANGLES,
+		TRIANGLE_STRIP_ADJACENCY = GL_TRIANGLE_STRIP_ADJACENCY,
+		TRIANGLES_ADJACENCY = GL_TRIANGLES_ADJACENCY,
+		PATCHES = GL_PATCHES
 	};
 
-	// LATER SharedVertexArray that uses shared_ptr<VertexBuffer> and shared_ptr<IndexBuffer>
+	namespace draw
+	{
+		extern void arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count);
+		extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset);
+		extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset);
+		extern void element_range(const VertexArray& vao, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset);
+		extern void element_range(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset);
+
+		namespace instanced
+		{
+			extern void arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count, GLsizei primcount);
+			extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount);
+			extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount);
+
+			extern void arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count, GLsizei primcount, GLuint primoffset);
+			extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLuint primoffset);
+			extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLuint primoffset);
+
+			namespace base_vertex
+			{
+				extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex);
+				extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex);
+
+				extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex, GLuint primoffset);
+				extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex, GLuint primoffset);
+			}
+		}
+
+		namespace base_vertex
+		{
+			extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLint base_vertex);
+			extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLint base_vertex);
+			extern void element_range(const VertexArray& vao, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset, GLint base_vertex);
+			extern void element_range(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset, GLint base_vertex);
+		}
+	}
 }
