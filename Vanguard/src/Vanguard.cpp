@@ -11,11 +11,11 @@
 
 void vg::init()
 {
-	_::init_input();
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
+	_::init_input();
 	_::query_gl_constants();
-	_::init_textures();
+	_::init_bound_textures();
 }
 
 void vg::terminate()
@@ -28,6 +28,16 @@ void vg::new_frame()
 	glfwPollEvents();
 	update_bound_shader();
 	update_bound_texture2Ds();
+}
+
+bool vg::min_opengl_version_is_at_least(GLuint major, GLuint minor)
+{
+	return false;
+}
+
+bool vg::min_opengl_version_is_at_most(GLuint major, GLuint minor)
+{
+	return false;
 }
 
 // TODO in addition to printing error code, print name of error as well.

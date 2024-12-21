@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "Vendor.h"
-#include "FilePath.h"
+#include "utils/FilePath.h"
 
 namespace vg
 {
@@ -73,14 +73,17 @@ namespace vg
 	};
 
 	extern unsigned char shader_data_type_entry_count(ShaderDataType type);
+	extern GLsizei shader_data_type_base_size(ShaderDataType type);
+	extern bool shader_data_type_is_long(ShaderDataType type);
 
-	struct VertexAttribute
+	struct ShaderAttribute
 	{
 		ShaderDataType type;
 		GLint array_count;
-		unsigned short offset;
+		GLsizei offset;
 		unsigned char component_count() const;
 	};
+	typedef std::vector<ShaderAttribute> ShaderLayout;
 
 	struct Uniform
 	{
@@ -93,9 +96,9 @@ namespace vg
 	class Shader
 	{
 		GLuint _s = 0;
-		unsigned short stride;
-		std::vector<VertexAttribute> attribs;
-		std::unordered_map<std::string, Uniform> uniforms;
+		GLsizei _stride;
+		ShaderLayout _layout;
+		std::unordered_map<std::string, Uniform> _uniforms;
 
 		void link(const std::initializer_list<Subshader>& subshaders);
 		void load_vertex_data();
@@ -112,6 +115,9 @@ namespace vg
 
 		operator GLuint () const { return _s; }
 		GLint uniform_location(const std::string& name) const;
+		const std::unordered_map<std::string, Uniform>& uniforms() const { return _uniforms; }
+		const ShaderLayout& layout() const { return _layout; }
+		GLsizei stride() const { return _stride; }
 	};
 
 	extern void bind_shader(const Shader& shader);

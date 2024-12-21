@@ -73,6 +73,8 @@ void vg::WindowHint::hint() const
 
 vg::Window::Window(int width, int height, const char* title, const WindowHint& hint)
 {
+	if (!min_opengl_version_is_at_most(hint.context_version_major, hint.context_version_minor))
+		throw Error(ErrorCode::OPENGL_VERSION);
 	hint.hint();
 
 	_w = glfwCreateWindow(width, height, title, nullptr, nullptr);

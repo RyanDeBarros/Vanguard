@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vendor.h"
-#include "Utils.h"
+#include "utils/VoidArray.h"
 
 // TODO clone() functions everywhere
 
@@ -98,6 +98,8 @@ namespace vg
 			VertexArrayBlock(VertexArrayBlock&&) noexcept;
 			VertexArrayBlock& operator=(VertexArrayBlock&&) noexcept;
 			~VertexArrayBlock();
+
+			GLuint get_count() const { return count; }
 
 			ids::VertexArray operator[](GLuint i) const;
 			ids::GLBuffer vb(GLuint i) const;

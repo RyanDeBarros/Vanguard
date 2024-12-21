@@ -16,6 +16,15 @@
 #define VANGUARD_ASSERT_GL_OKAY ;
 #endif
 
+#ifndef VANGUARD_MIN_OPENGL_VERSION_MAJOR
+#define VANGUARD_MIN_OPENGL_VERSION_MAJOR 4
+#endif
+#ifndef VANGUARD_MIN_OPENGL_VERSION_MINOR
+#define VANGUARD_MIN_OPENGL_VERSION_MINOR 4
+#endif
+#define VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(major, minor) VANGUARD_MIN_OPENGL_VERSION_MAJOR > major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR >= minor)
+#define VANGUARD_MIN_OPENGL_VERSION_IS_AT_MOST(major, minor) VANGUARD_MIN_OPENGL_VERSION_MAJOR < major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR <= minor)
+
 #include "Vendor.h"
 
 namespace vg
@@ -23,6 +32,9 @@ namespace vg
 	extern void init();
 	extern void terminate();
 	extern void new_frame();
+
+	extern bool min_opengl_version_is_at_least(GLuint major, GLuint minor);
+	extern bool min_opengl_version_is_at_most(GLuint major, GLuint minor);
 
 	namespace _
 	{

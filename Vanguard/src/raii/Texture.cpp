@@ -81,7 +81,7 @@ vg::ids::Texture vg::raii::TextureBlock::operator[](GLuint i) const
 
 static vg::ids::Texture bound_texture2Ds[32];
 
-void vg::_::init_textures()
+void vg::_::init_bound_textures()
 {
 	for (int i = 0; i < 32; ++i)
 		bound_texture2Ds[i] = ids::Texture();

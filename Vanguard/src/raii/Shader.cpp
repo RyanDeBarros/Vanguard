@@ -1,6 +1,6 @@
 #include "Shader.h"
 
-#include "IO.h"
+#include "utils/IO.h"
 #include "Errors.h"
 
 static GLenum subshader_type(vg::SubshaderType type)
@@ -141,7 +141,77 @@ unsigned char vg::shader_data_type_entry_count(ShaderDataType type)
 	}
 }
 
-unsigned char vg::VertexAttribute::component_count() const
+GLsizei vg::shader_data_type_base_size(ShaderDataType type)
+{
+	switch (type)
+	{
+	case ShaderDataType::I:
+	case ShaderDataType::I2:
+	case ShaderDataType::I3:
+	case ShaderDataType::I4:
+		return sizeof(GLint);
+	case ShaderDataType::UI:
+	case ShaderDataType::UI2:
+	case ShaderDataType::UI3:
+	case ShaderDataType::UI4:
+		return sizeof(GLuint);
+	case ShaderDataType::F:
+	case ShaderDataType::F2:
+	case ShaderDataType::F3:
+	case ShaderDataType::F4:
+	case ShaderDataType::FM2:
+	case ShaderDataType::FM2x3:
+	case ShaderDataType::FM3x2:
+	case ShaderDataType::FM2x4:
+	case ShaderDataType::FM4x2:
+	case ShaderDataType::FM3:
+	case ShaderDataType::FM3x4:
+	case ShaderDataType::FM4x3:
+	case ShaderDataType::FM4:
+		return sizeof(GLfloat);
+	case ShaderDataType::D:
+	case ShaderDataType::D2:
+	case ShaderDataType::D3:
+	case ShaderDataType::D4:
+	case ShaderDataType::DM2:
+	case ShaderDataType::DM2x3:
+	case ShaderDataType::DM3x2:
+	case ShaderDataType::DM2x4:
+	case ShaderDataType::DM4x2:
+	case ShaderDataType::DM3:
+	case ShaderDataType::DM3x4:
+	case ShaderDataType::DM4x3:
+	case ShaderDataType::DM4:
+		return sizeof(GLdouble);
+	default:
+		return 0;
+	}
+}
+
+bool vg::shader_data_type_is_long(ShaderDataType type)
+{
+	switch (type)
+	{
+	case ShaderDataType::D:
+	case ShaderDataType::D2:
+	case ShaderDataType::D3:
+	case ShaderDataType::D4:
+	case ShaderDataType::DM2:
+	case ShaderDataType::DM2x3:
+	case ShaderDataType::DM3x2:
+	case ShaderDataType::DM2x4:
+	case ShaderDataType::DM4x2:
+	case ShaderDataType::DM3:
+	case ShaderDataType::DM3x4:
+	case ShaderDataType::DM4x3:
+	case ShaderDataType::DM4:
+		return true;
+	default:
+		return false;
+	}
+}
+
+unsigned char vg::ShaderAttribute::component_count() const
 {
 	return array_count * shader_data_type_entry_count(type);
 }
@@ -187,7 +257,7 @@ void vg::Shader::load_vertex_data()
 {
 	GLint num_attributes;
 	glGetProgramiv(_s, GL_ACTIVE_ATTRIBUTES, &num_attributes);
-	attribs.resize(num_attributes);
+	_layout.resize(num_attributes);
 	for (GLint i = 0; i < num_attributes; ++i)
 	{
 		char name[256];
@@ -195,15 +265,16 @@ void vg::Shader::load_vertex_data()
 		GLenum type;
 		glGetActiveAttrib(_s, i, sizeof(name), nullptr, &size, &type, name);
 		GLint location = glGetAttribLocation(_s, name);
-		VertexAttribute attrib{};
+		ShaderAttribute attrib{};
 		attrib.type = (ShaderDataType)type;
 		attrib.array_count = size;
-		attribs[location] = attrib;
+		_layout[location] = attrib;
 	}
-	for (VertexAttribute& attrib : attribs)
+	_stride = 0;
+	for (ShaderAttribute& attrib : _layout)
 	{
-		attrib.offset = stride;
-		stride += attrib.component_count();
+		attrib.offset = _stride;
+		_stride += attrib.component_count() * shader_data_type_base_size(attrib.type);
 	}
 }
 
@@ -221,7 +292,7 @@ void vg::Shader::load_uniform_data()
 		uniform.type = (ShaderDataType)type;
 		uniform.array_count = size;
 		uniform.location = glGetUniformLocation(_s, name);
-		uniforms.emplace(name, uniform);
+		_uniforms.emplace(name, uniform);
 	}
 }
 
@@ -253,7 +324,7 @@ vg::Shader::Shader(const std::string& vertex, const std::string& fragment, const
 }
 
 vg::Shader::Shader(Shader&& other) noexcept
-	: _s(other._s)
+	: _s(other._s), _stride(other._stride), _layout(std::move(other._layout)), _uniforms(std::move(other._uniforms))
 {
 	other._s = 0;
 }
@@ -265,6 +336,9 @@ vg::Shader& vg::Shader::operator=(Shader&& other) noexcept
 		glDeleteProgram(_s);
 		_s = other._s;
 		other._s = 0;
+		_stride = other._stride;
+		_layout = std::move(other._layout);
+		_uniforms = std::move(other._uniforms);
 	}
 	return *this;
 }
@@ -276,8 +350,8 @@ vg::Shader::~Shader()
 
 GLint vg::Shader::uniform_location(const std::string& name) const
 {
-	auto iter = uniforms.find(name);
-	if (iter == uniforms.end())
+	auto iter = _uniforms.find(name);
+	if (iter == _uniforms.end())
 		return -1;
 	return iter->second.location;
 }

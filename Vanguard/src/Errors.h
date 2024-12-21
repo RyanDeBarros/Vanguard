@@ -12,12 +12,15 @@ namespace vg
 
 	enum class ErrorCode
 	{
+		VANGUARD_INIT,
 		GLFW_INIT,
 		GLEW_INIT,
+		OPENGL_VERSION,
 		WINDOW_CREATION,
 		SUBSHADER_COMPILATION,
 		SHADER_LINKAGE,
 		BLOCK_INDEX_OUT_OF_RANGE,
+		OFFSET_OUT_OF_RANGE,
 	};
 
 	struct Error : public std::runtime_error
@@ -30,4 +33,5 @@ namespace vg
 	};
 
 	extern Error block_index_out_of_range(size_t size, size_t index);
+	extern Error offset_out_of_range(size_t size, size_t offset, size_t segment_size);
 }

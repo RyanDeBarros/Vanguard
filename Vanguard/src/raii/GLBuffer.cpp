@@ -1,5 +1,6 @@
 #include "GLBuffer.h"
 
+#include "Vanguard.h"
 #include "Errors.h"
 
 vg::raii::GLBuffer::GLBuffer()
@@ -74,6 +75,13 @@ vg::raii::VertexArray::VertexArray()
 	: block(2)
 {
 	glGenVertexArrays(1, (GLuint*)&_vao);
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+	glVertexArrayElementBuffer(_vao, ib());
+#else
+	glBindVertexArray(_vao);
+	buffers::bind(ib(), BufferTarget::INDEX);
+#endif
+	glBindVertexArray(0);
 }
 
 vg::raii::VertexArray::VertexArray(VertexArray&& other) noexcept
@@ -113,7 +121,6 @@ void vg::raii::VertexArray::bind() const
 {
 	glBindVertexArray(_vao);
 	buffers::bind(vb(), BufferTarget::VERTEX);
-	buffers::bind(ib(), BufferTarget::INDEX);
 }
 
 vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
@@ -121,6 +128,16 @@ vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
 {
 	_vaos = new V[count];
 	glGenVertexArrays(count, (GLuint*)_vaos);
+	for (GLuint i = 0; i < count; ++i)
+	{
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		glVertexArrayElementBuffer(_vaos[i], ib(i));
+#else
+		glBindVertexArray(_vaos[i]);
+		buffers::bind(ib(i), BufferTarget::INDEX);
+#endif
+	}
+	glBindVertexArray(0);
 }
 
 vg::raii::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
@@ -173,7 +190,6 @@ void vg::raii::VertexArrayBlock::bind(GLuint i) const
 		throw block_index_out_of_range(count, i);
 	glBindVertexArray(_vaos[i]);
 	buffers::bind(vb(i), BufferTarget::VERTEX);
-	buffers::bind(ib(i), BufferTarget::INDEX);
 }
 
 GLintptr vg::index_data_type_size(IndexDataType idt)
@@ -190,7 +206,6 @@ GLintptr vg::index_data_type_size(IndexDataType idt)
 
 void vg::unbind_vertex_array()
 {
-	buffers::unbind(BufferTarget::INDEX);
 	buffers::unbind(BufferTarget::VERTEX);
 	glBindVertexArray(0);
 }

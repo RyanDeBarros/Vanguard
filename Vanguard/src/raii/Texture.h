@@ -93,7 +93,7 @@ namespace vg
 
 	namespace _
 	{
-		extern void init_textures();
+		extern void init_bound_textures();
 	}
 
 	extern void bind_texture2D(ids::Texture texture, GLuint slot);
