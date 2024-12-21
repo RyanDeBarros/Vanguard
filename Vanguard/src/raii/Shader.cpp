@@ -307,8 +307,13 @@ vg::Shader::Shader(const FilePath& vertex, const FilePath& fragment, const FileP
 {
 	Subshader v(vertex, SubshaderType::VERTEX);
 	Subshader f(fragment, SubshaderType::FRAGMENT);
-	Subshader g(geometry, SubshaderType::GEOMETRY);
-	link({ std::move(v), std::move(f), std::move(g) });
+	if (geometry != "")
+	{
+		Subshader g(geometry, SubshaderType::GEOMETRY);
+		link({ std::move(v), std::move(f), std::move(g) });
+	}
+	else
+		link({ std::move(v), std::move(f) });
 	load_vertex_data();
 	load_uniform_data();
 }
@@ -317,8 +322,13 @@ vg::Shader::Shader(const std::string& vertex, const std::string& fragment, const
 {
 	Subshader v(vertex, SubshaderType::VERTEX);
 	Subshader f(fragment, SubshaderType::FRAGMENT);
-	Subshader g(geometry, SubshaderType::GEOMETRY);
-	link({ std::move(v), std::move(f), std::move(g) });
+	if (geometry != "")
+	{
+		Subshader g(geometry, SubshaderType::GEOMETRY);
+		link({ std::move(v), std::move(f), std::move(g) });
+	}
+	else
+		link({ std::move(v), std::move(f) });
 	load_vertex_data();
 	load_uniform_data();
 }

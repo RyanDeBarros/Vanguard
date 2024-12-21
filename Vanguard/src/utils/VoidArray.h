@@ -27,7 +27,7 @@ namespace vg
 		{
 			if (offset_bytes + sizeof(Type) > _size)
 				throw offset_out_of_range(_size, offset_bytes, sizeof(Type));
-			return *reinterpret_cast<Type*>(_v + offset_bytes);
+			return *reinterpret_cast<Type*>((char*)_v + offset_bytes);
 		}
 
 		template<typename Type>
@@ -35,7 +35,7 @@ namespace vg
 		{
 			if (offset_bytes + sizeof(Type) > _size)
 				throw offset_out_of_range(_size, offset_bytes, sizeof(Type));
-			return *reinterpret_cast<Type*>(_v + offset_bytes);
+			return *reinterpret_cast<Type*>((char*)_v + offset_bytes);
 		}
 
 		template<typename Type>
@@ -43,7 +43,7 @@ namespace vg
 		{
 			if (offset_bytes + sizeof(Type) > _size)
 				throw offset_out_of_range(_size, offset_bytes, sizeof(Type));
-			return *reinterpret_cast<Type*>(_v + offset_bytes);
+			return *reinterpret_cast<Type*>((char*)_v + offset_bytes);
 		}
 	};
 }

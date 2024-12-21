@@ -41,16 +41,41 @@ namespace vg
 		std::vector<std::pair<GLuint, GLuint>> instance_divisor = {};
 	};
 
-	class CPUImmutableVertexBufferData
+	class VertexBufferLayout
 	{
-		VoidArray cpubuf;
-		std::vector<VertexAttribute> attributes;
-		GLuint stride = 0;
+		std::vector<VertexAttribute> _attributes;
+		GLuint _stride = 0;
 
 	public:
-		CPUImmutableVertexBufferData(const Shader& shader, GLuint vertex_count);
-		CPUImmutableVertexBufferData(const Shader& shader, GLuint vertex_count, const VertexAttributeSpecificationList& specifications);
+		VertexBufferLayout(const Shader& shader);
+		VertexBufferLayout(const Shader& shader, const VertexAttributeSpecificationList& specifications);
+
+		GLuint stride() const { return _stride; }
+		const std::vector<VertexAttribute>& attributes() const { return _attributes; }
+		void define_pointers() const;
 	};
+
+	class VAOBinding
+	{
+		VertexBufferLayout _layout;
+		raii::VertexArray va;
+
+	public:
+		VAOBinding(const Shader& shader);
+		VAOBinding(const Shader& shader, const VertexAttributeSpecificationList& specifications);
+
+		const VertexBufferLayout& layout() const { return _layout; }
+		const raii::VertexArray& vertex_array() const { return va; }
+		void attach_vertex_buffer(ids::GLBuffer vb) const;
+		void attach_vertex_buffers(const std::initializer_list<ids::GLBuffer>& vbs);
+	};
+
+	// TODO VAOBlockBinding. Also, define a VertexBuffer class that has a VAOBinding and a fixed size number of vertex buffers, and use a block for that.
+
+	namespace buffers
+	{
+		extern void init_immutable_cpu_vertex_buffer(VoidArray& cpubuf, const VertexBufferLayout& layout, GLuint vertex_count);
+	}
 
 	// TODO CPUMutableVertexBufferDatas
 

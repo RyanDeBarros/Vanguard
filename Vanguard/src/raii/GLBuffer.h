@@ -70,7 +70,6 @@ namespace vg
 		{
 			using V = ids::VertexArray;
 			V _vao;
-			GLBufferBlock block;
 
 		public:
 			VertexArray();
@@ -80,9 +79,8 @@ namespace vg
 			~VertexArray();
 
 			operator ids::VertexArray () const { return _vao; }
-			ids::GLBuffer vb() const;
-			ids::GLBuffer ib() const;
 			void bind() const;
+			void bind_to_index_buffer(ids::GLBuffer ib) const;
 		};
 
 		class VertexArrayBlock
@@ -90,7 +88,6 @@ namespace vg
 			using V = ids::VertexArray;
 			V* _vaos = nullptr;
 			GLuint count;
-			GLBufferBlock block;
 
 		public:
 			VertexArrayBlock(GLuint count);
@@ -102,9 +99,9 @@ namespace vg
 			GLuint get_count() const { return count; }
 
 			ids::VertexArray operator[](GLuint i) const;
-			ids::GLBuffer vb(GLuint i) const;
-			ids::GLBuffer ib(GLuint i) const;
 			void bind(GLuint i) const;
+			void bind_to_index_buffer(GLuint i, ids::GLBuffer ib) const;
+			void bind_to_index_buffers(GLuint from, GLuint count, ids::GLBuffer* ibs) const;
 		};
 	}
 

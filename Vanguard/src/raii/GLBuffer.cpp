@@ -72,20 +72,12 @@ vg::ids::GLBuffer vg::raii::GLBufferBlock::operator[](GLuint i) const
 }
 
 vg::raii::VertexArray::VertexArray()
-	: block(2)
 {
 	glGenVertexArrays(1, (GLuint*)&_vao);
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-	glVertexArrayElementBuffer(_vao, ib());
-#else
-	glBindVertexArray(_vao);
-	buffers::bind(ib(), BufferTarget::INDEX);
-#endif
-	glBindVertexArray(0);
 }
 
 vg::raii::VertexArray::VertexArray(VertexArray&& other) noexcept
-	: _vao(other._vao), block(std::move(other.block))
+	: _vao(other._vao)
 {
 	other._vao = V(0);
 }
@@ -97,7 +89,6 @@ vg::raii::VertexArray& vg::raii::VertexArray::operator=(VertexArray&& other) noe
 		glDeleteVertexArrays(1, (GLuint*)&_vao);
 		_vao = other._vao;
 		other._vao = V(0);
-		block = std::move(other.block);
 	}
 	return *this;
 }
@@ -107,41 +98,31 @@ vg::raii::VertexArray::~VertexArray()
 	glDeleteVertexArrays(1, (GLuint*)&_vao);
 }
 
-vg::ids::GLBuffer vg::raii::VertexArray::vb() const
-{
-	return block[0];
-}
-
-vg::ids::GLBuffer vg::raii::VertexArray::ib() const
-{
-	return block[1];
-}
-
 void vg::raii::VertexArray::bind() const
 {
-	glBindVertexArray(_vao);
-	buffers::bind(vb(), BufferTarget::VERTEX);
+	glBindVertexArray(_vao);;
 }
 
-vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
-	: count(count), block(count * 2)
+void vg::raii::VertexArray::bind_to_index_buffer(ids::GLBuffer ib) const
 {
-	_vaos = new V[count];
-	glGenVertexArrays(count, (GLuint*)_vaos);
-	for (GLuint i = 0; i < count; ++i)
-	{
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-		glVertexArrayElementBuffer(_vaos[i], ib(i));
+	glVertexArrayElementBuffer(_vao, ib);
 #else
-		glBindVertexArray(_vaos[i]);
-		buffers::bind(ib(i), BufferTarget::INDEX);
+	glBindVertexArray(_vao);
+	buffers::bind(ib, BufferTarget::INDEX);
 #endif
-	}
 	glBindVertexArray(0);
 }
 
+vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
+	: count(count)
+{
+	_vaos = new V[count];
+	glGenVertexArrays(count, (GLuint*)_vaos);
+}
+
 vg::raii::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
-	: count(other.count), block(std::move(other.block)), _vaos(other._vaos)
+	: count(other.count)
 {
 	other.count = 0;
 	other._vaos = nullptr;
@@ -174,22 +155,37 @@ vg::ids::VertexArray vg::raii::VertexArrayBlock::operator[](GLuint i) const
 	return _vaos[i];
 }
 
-vg::ids::GLBuffer vg::raii::VertexArrayBlock::vb(GLuint i) const
-{
-	return block[i];
-}
-
-vg::ids::GLBuffer vg::raii::VertexArrayBlock::ib(GLuint i) const
-{
-	return block[i + count];
-}
-
 void vg::raii::VertexArrayBlock::bind(GLuint i) const
 {
 	if (i >= count)
 		throw block_index_out_of_range(count, i);
 	glBindVertexArray(_vaos[i]);
-	buffers::bind(vb(i), BufferTarget::VERTEX);
+}
+
+void vg::raii::VertexArrayBlock::bind_to_index_buffer(GLuint i, ids::GLBuffer ib) const
+{
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+	glVertexArrayElementBuffer(_vaos[i], ib);
+#else
+	glBindVertexArray(_vaos[i]);
+	buffers::bind(ib, BufferTarget::INDEX);
+#endif
+	glBindVertexArray(0);
+}
+
+void vg::raii::VertexArrayBlock::bind_to_index_buffers(GLuint from, GLuint count, ids::GLBuffer* ibs) const
+{
+	GLuint end = std::min(this->count, from + count);
+	for (GLuint i = from; i < end; ++i)
+	{
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		glVertexArrayElementBuffer(_vaos[i], ibs[i]);
+#else
+		glBindVertexArray(_vaos[i]);
+		buffers::bind(ibs[i], BufferTarget::INDEX);
+#endif
+	}
+	glBindVertexArray(0);
 }
 
 GLintptr vg::index_data_type_size(IndexDataType idt)

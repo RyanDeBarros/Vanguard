@@ -63,9 +63,7 @@ void vg::VertexAttribute::define_pointer(GLuint i, GLsizei stride) const
 	else
 		glVertexAttribPointer(i, count, (GLenum)type, normalized, stride, (void*)offset());
 	glEnableVertexAttribArray(i);
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(3, 3)
 	glVertexAttribDivisor(i, instance_divisor);
-#endif
 }
 
 GLsizei vg::VertexAttribute::offset() const
@@ -107,25 +105,20 @@ GLsizei vg::VertexAttribute::offset() const
 	return type_offset * count;
 }
 
-vg::CPUImmutableVertexBufferData::CPUImmutableVertexBufferData(const Shader& shader, GLuint vertex_count)
+vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader)
 {
-	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
-	attributes.reserve(shader.layout().size());
+	_attributes.reserve(shader.layout().size());
 	for (GLuint i = 0; i < shader.layout().size(); ++i)
 	{
 		VertexAttribute attrib(shader.layout()[i]);
-		attributes.push_back(attrib);
-		stride += attrib.offset();
+		_attributes.push_back(attrib);
+		_stride += attrib.offset();
 	}
-	for (GLuint i = 0; i < attributes.size(); ++i)
-		attributes[i].define_pointer(i, stride);
-	cpubuf.resize(stride * vertex_count);
 }
 
-vg::CPUImmutableVertexBufferData::CPUImmutableVertexBufferData(const Shader& shader, GLuint vertex_count, const VertexAttributeSpecificationList& specifications)
+vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader, const VertexAttributeSpecificationList& specifications)
 {
-	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
-	attributes.reserve(shader.layout().size());
+	_attributes.reserve(shader.layout().size());
 	auto spec_iter = specifications.ordered_override_data_types.begin();
 	for (GLuint i = 0; i < shader.layout().size(); ++i)
 	{
@@ -135,16 +128,54 @@ vg::CPUImmutableVertexBufferData::CPUImmutableVertexBufferData(const Shader& sha
 			attrib.type = spec_iter->second;
 			++spec_iter;
 		}
-		attributes.push_back(attrib);
-		stride += attrib.offset();
+		_attributes.push_back(attrib);
+		_stride += attrib.offset();
 	}
 	for (auto [i, normalized] : specifications.normalized)
-		attributes[i].normalized = normalized;
+		_attributes[i].normalized = normalized;
 	for (auto [i, instance_divisor] : specifications.instance_divisor)
-		attributes[i].instance_divisor = instance_divisor;
+		_attributes[i].instance_divisor = instance_divisor;
 	for (auto [i, pass_by_integer] : specifications.pass_by_integer)
-		attributes[i].pass_by_integer = pass_by_integer;
-	for (GLuint i = 0; i < attributes.size(); ++i)
-		attributes[i].define_pointer(i, stride);
-	cpubuf.resize(stride * vertex_count);
+		_attributes[i].pass_by_integer = pass_by_integer;
+}
+
+void vg::VertexBufferLayout::define_pointers() const
+{
+	for (GLuint i = 0; i < _attributes.size(); ++i)
+		_attributes[i].define_pointer(i, _stride);
+}
+
+vg::VAOBinding::VAOBinding(const Shader& shader)
+	: _layout(shader)
+{
+}
+
+vg::VAOBinding::VAOBinding(const Shader& shader, const VertexAttributeSpecificationList& specifications)
+	: _layout(shader, specifications)
+{
+}
+
+void vg::VAOBinding::attach_vertex_buffer(ids::GLBuffer vb) const
+{
+	va.bind();
+	buffers::bind(vb, BufferTarget::VERTEX);
+	_layout.define_pointers();
+	unbind_vertex_array();
+}
+
+void vg::VAOBinding::attach_vertex_buffers(const std::initializer_list<ids::GLBuffer>& vbs)
+{
+	va.bind();
+	for (ids::GLBuffer vb : vbs)
+	{
+		buffers::bind(vb, BufferTarget::VERTEX);
+		_layout.define_pointers();
+	}
+	unbind_vertex_array();
+}
+
+void vg::buffers::init_immutable_cpu_vertex_buffer(VoidArray& cpubuf, const VertexBufferLayout& layout, GLuint vertex_count)
+{
+	cpubuf.resize(layout.stride() * vertex_count);
+	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
 }

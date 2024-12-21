@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "Vanguard.h"
 #include "Vendor.h"
 #include "Input.h"
 
@@ -68,8 +69,8 @@ namespace vg
 		bool srgb_capable = false;
 		bool double_buffer = true;
 
-		int context_version_major = VANGUARD_OPENGL_VERSION_MAJOR; // 1
-		int context_version_minor = VANGUARD_OPENGL_VERSION_MINOR; // 0
+		int context_version_major = VANGUARD_MIN_OPENGL_VERSION_MAJOR; // 1
+		int context_version_minor = VANGUARD_MIN_OPENGL_VERSION_MINOR; // 0
 		bool opengl_forward_compat = false;
 		bool context_debug = false;
 		int opengl_profile = GLFW_OPENGL_CORE_PROFILE; // GLFW_OPENGL_ANY_PROFILE

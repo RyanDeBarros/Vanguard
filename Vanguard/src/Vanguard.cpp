@@ -32,12 +32,12 @@ void vg::new_frame()
 
 bool vg::min_opengl_version_is_at_least(GLuint major, GLuint minor)
 {
-	return false;
+	return VANGUARD_MIN_OPENGL_VERSION_MAJOR > major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR >= minor);
 }
 
 bool vg::min_opengl_version_is_at_most(GLuint major, GLuint minor)
 {
-	return false;
+	return VANGUARD_MIN_OPENGL_VERSION_MAJOR < major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR <= minor);
 }
 
 // TODO in addition to printing error code, print name of error as well.

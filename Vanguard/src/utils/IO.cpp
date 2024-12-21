@@ -14,7 +14,7 @@ bool vg::io::read_file(const FilePath& filepath, std::string& content)
 		return true;
 	}
 	std::cerr << "Could not open \"" << filepath.c_str() << "\" for reading" << std::endl;
-	return false;
+	return false; // TODO throw exception
 }
 
 bool vg::io::read_file_uc(const FilePath& filepath, unsigned char*& content, size_t& content_length)
@@ -30,13 +30,13 @@ bool vg::io::read_file_uc(const FilePath& filepath, unsigned char*& content, siz
 		fclose(file);
 		return true;
 	}
-	return false;
+	return false; // TODO throw exception
 }
 
 bool vg::io::read_template_file(const FilePath& filepath, std::string& content, const std::unordered_map<std::string, std::string>& tmplate)
 {
 	if (!read_file(filepath, content))
-		return false;
+		return false; // TODO throw exception
 	for (const auto& [placeholder, value] : tmplate)
 	{
 		size_t pos = 0;
@@ -59,6 +59,6 @@ bool vg::io::parse_toml(const FilePath& filepath, toml::v3::parse_result& parse_
 	catch (const toml::parse_error& err)
 	{
 		std::cerr << "Cannot parse toml file: \"" << filepath.c_str() << "\": " << err.description() << std::endl;
-		return false;
+		return false; // TODO throw exception
 	}
 }

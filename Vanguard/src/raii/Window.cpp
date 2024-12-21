@@ -73,7 +73,7 @@ void vg::WindowHint::hint() const
 
 vg::Window::Window(int width, int height, const char* title, const WindowHint& hint)
 {
-	if (!min_opengl_version_is_at_most(hint.context_version_major, hint.context_version_minor))
+	if (!min_opengl_version_is_at_most(hint.context_version_major, hint.context_version_minor) || min_opengl_version_is_at_most(3, 3))
 		throw Error(ErrorCode::OPENGL_VERSION);
 	hint.hint();
 
