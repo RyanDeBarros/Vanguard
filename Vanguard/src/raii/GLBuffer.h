@@ -89,7 +89,6 @@ namespace vg
 		{
 			using V = ids::VertexArray;
 			V* _vaos = nullptr;
-			IndexDataType* idts = nullptr;
 			GLuint count;
 			GLBufferBlock block;
 

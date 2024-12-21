@@ -1,6 +1,7 @@
 #pragma once
 
 #include <initializer_list>
+#include <unordered_map>
 
 #include "Vendor.h"
 #include "FilePath.h"

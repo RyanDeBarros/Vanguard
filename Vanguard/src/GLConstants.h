@@ -6,7 +6,7 @@ namespace vg
 {
 	namespace constants
 	{
-		extern GLint max_texture_image_units;
+		extern GLuint max_texture_image_units;
 	}
 
 	namespace _

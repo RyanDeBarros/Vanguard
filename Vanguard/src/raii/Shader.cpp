@@ -136,6 +136,8 @@ unsigned char vg::shader_data_type_entry_count(ShaderDataType type)
 	case ShaderDataType::FM4:
 	case ShaderDataType::DM4:
 		return 16;
+	default:
+		return 0;
 	}
 }
 
@@ -275,6 +277,9 @@ vg::Shader::~Shader()
 GLint vg::Shader::uniform_location(const std::string& name) const
 {
 	auto iter = uniforms.find(name);
+	if (iter == uniforms.end())
+		return -1;
+	return iter->second.location;
 }
 
 static GLuint bound_shader = 0;

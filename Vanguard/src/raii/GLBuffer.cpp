@@ -2,11 +2,9 @@
 
 #include "Errors.h"
 
-#define R_UINT(x) reinterpret_cast<GLuint*>(x)
-
 vg::raii::GLBuffer::GLBuffer()
 {
-	glGenBuffers(1, R_UINT(&_b));
+	glGenBuffers(1, (GLuint*)&_b);
 }
 
 vg::raii::GLBuffer::GLBuffer(GLBuffer&& other) noexcept
@@ -19,7 +17,7 @@ vg::raii::GLBuffer& vg::raii::GLBuffer::operator=(GLBuffer&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteBuffers(1, R_UINT(&_b));
+		glDeleteBuffers(1, (GLuint*)&_b);
 		_b = other._b;
 		other._b = B(0);
 	}
@@ -28,14 +26,14 @@ vg::raii::GLBuffer& vg::raii::GLBuffer::operator=(GLBuffer&& other) noexcept
 
 vg::raii::GLBuffer::~GLBuffer()
 {
-	glDeleteBuffers(1, R_UINT(&_b));
+	glDeleteBuffers(1, (GLuint*)&_b);
 }
 
 vg::raii::GLBufferBlock::GLBufferBlock(GLuint count)
 	: count(count)
 {
 	_bs = new B[count];
-	glGenBuffers(count, R_UINT(_bs));
+	glGenBuffers(count, (GLuint*)_bs);
 }
 
 vg::raii::GLBufferBlock::GLBufferBlock(GLBufferBlock&& other) noexcept
@@ -49,7 +47,7 @@ vg::raii::GLBufferBlock& vg::raii::GLBufferBlock::operator=(GLBufferBlock&& othe
 {
 	if (this != &other)
 	{
-		glDeleteBuffers(count, R_UINT(_bs));
+		glDeleteBuffers(count, (GLuint*)_bs);
 		delete[] _bs;
 		_bs = other._bs;
 		other._bs = nullptr;
@@ -61,7 +59,7 @@ vg::raii::GLBufferBlock& vg::raii::GLBufferBlock::operator=(GLBufferBlock&& othe
 
 vg::raii::GLBufferBlock::~GLBufferBlock()
 {
-	glDeleteBuffers(count, R_UINT(_bs));
+	glDeleteBuffers(count, (GLuint*)_bs);
 	delete[] _bs;
 }
 
@@ -75,7 +73,7 @@ vg::ids::GLBuffer vg::raii::GLBufferBlock::operator[](GLuint i) const
 vg::raii::VertexArray::VertexArray()
 	: block(2)
 {
-	glGenVertexArrays(1, R_UINT(&_vao));
+	glGenVertexArrays(1, (GLuint*)&_vao);
 }
 
 vg::raii::VertexArray::VertexArray(VertexArray&& other) noexcept
@@ -88,7 +86,7 @@ vg::raii::VertexArray& vg::raii::VertexArray::operator=(VertexArray&& other) noe
 {
 	if (this != &other)
 	{
-		glDeleteVertexArrays(1, R_UINT(&_vao));
+		glDeleteVertexArrays(1, (GLuint*)&_vao);
 		_vao = other._vao;
 		other._vao = V(0);
 		block = std::move(other.block);
@@ -98,7 +96,7 @@ vg::raii::VertexArray& vg::raii::VertexArray::operator=(VertexArray&& other) noe
 
 vg::raii::VertexArray::~VertexArray()
 {
-	glDeleteVertexArrays(1, R_UINT(&_vao));
+	glDeleteVertexArrays(1, (GLuint*)&_vao);
 }
 
 vg::ids::GLBuffer vg::raii::VertexArray::vb() const
@@ -122,29 +120,24 @@ vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
 	: count(count), block(count * 2)
 {
 	_vaos = new V[count];
-	glGenVertexArrays(count, R_UINT(_vaos));
-	idts = new IndexDataType[count](IndexDataType::UBYTE);
+	glGenVertexArrays(count, (GLuint*)_vaos);
 }
 
 vg::raii::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
-	: count(other.count), block(std::move(other.block)), _vaos(other._vaos), idts(other.idts)
+	: count(other.count), block(std::move(other.block)), _vaos(other._vaos)
 {
 	other.count = 0;
 	other._vaos = nullptr;
-	other.idts = nullptr;
 }
 
 vg::raii::VertexArrayBlock& vg::raii::VertexArrayBlock::operator=(VertexArrayBlock&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteVertexArrays(count, R_UINT(_vaos));
+		glDeleteVertexArrays(count, (GLuint*)_vaos);
 		delete[] _vaos;
 		_vaos = other._vaos;
 		other._vaos = nullptr;
-		delete[] idts;
-		idts = other.idts;
-		other.idts = nullptr;
 		count = other.count;
 		other.count = 0;
 	}
@@ -153,9 +146,8 @@ vg::raii::VertexArrayBlock& vg::raii::VertexArrayBlock::operator=(VertexArrayBlo
 
 vg::raii::VertexArrayBlock::~VertexArrayBlock()
 {
-	glDeleteVertexArrays(count, R_UINT(_vaos));
+	glDeleteVertexArrays(count, (GLuint*)_vaos);
 	delete[] _vaos;
-	delete[] idts;
 }
 
 vg::ids::VertexArray vg::raii::VertexArrayBlock::operator[](GLuint i) const

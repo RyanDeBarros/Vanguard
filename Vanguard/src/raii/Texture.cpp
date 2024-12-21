@@ -3,8 +3,6 @@
 #include "Errors.h"
 #include "GLConstants.h"
 
-#define R_UINT(x) reinterpret_cast<GLuint*>(x)
-
 void vg::Texture2DParams::bind() const
 {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)min_filter);
@@ -15,7 +13,7 @@ void vg::Texture2DParams::bind() const
 
 vg::raii::Texture::Texture()
 {
-	glGenTextures(1, R_UINT(&_t));
+	glGenTextures(1, (GLuint*)&_t);
 }
 
 vg::raii::Texture::Texture(Texture&& other) noexcept
@@ -28,7 +26,7 @@ vg::raii::Texture& vg::raii::Texture::operator=(Texture&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteTextures(1, R_UINT(&_t));
+		glDeleteTextures(1, (GLuint*)&_t);
 		_t = other._t;
 		other._t = T(0);
 	}
@@ -37,7 +35,7 @@ vg::raii::Texture& vg::raii::Texture::operator=(Texture&& other) noexcept
 
 vg::raii::Texture::~Texture()
 {
-	glDeleteTextures(1, R_UINT(&_t));
+	glDeleteTextures(1, (GLuint*)&_t);
 }
 
 vg::raii::TextureBlock::TextureBlock(GLuint count)
@@ -58,7 +56,7 @@ vg::raii::TextureBlock& vg::raii::TextureBlock::operator=(TextureBlock&& other) 
 {
 	if (this != &other)
 	{
-		glDeleteTextures(count, R_UINT(_ts));
+		glDeleteTextures(count, (GLuint*)_ts);
 		delete[] _ts;
 		_ts = other._ts;
 		other._ts = nullptr;
@@ -70,7 +68,7 @@ vg::raii::TextureBlock& vg::raii::TextureBlock::operator=(TextureBlock&& other) 
 
 vg::raii::TextureBlock::~TextureBlock()
 {
-	glDeleteTextures(count, R_UINT(_ts));
+	glDeleteTextures(count, (GLuint*)_ts);
 	delete[] _ts;
 }
 
