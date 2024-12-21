@@ -44,37 +44,59 @@ namespace vg
 
 	inline const Texture2DParams Texture2DParams::LINEAR = { MinFilter::LINEAR, MagFilter::LINEAR };
 
-	class Texture2D
+	namespace ids
 	{
-		GLuint _t = 0;
+		class Texture
+		{
+			GLuint id;
 
-	public:
-		Texture2D();
-		Texture2D(const Texture2D&) = delete;
-		Texture2D(Texture2D&&) noexcept;
-		Texture2D& operator=(Texture2D&&) noexcept;
-		~Texture2D();
+		public:
+			explicit Texture(GLuint id = 0) : id(id) {}
+			operator GLuint () const { return id; }
+		};
+	}
 
-		operator GLuint () const { return _t; }
-	};
-
-	class Texture2DBlock
+	namespace raii
 	{
-		GLuint* _t = nullptr;
-		GLsizei count;
+		class Texture
+		{
+			using T = ids::Texture;
+			T _t = T(0);
 
-	public:
-		Texture2DBlock(GLsizei count);
-		Texture2DBlock(const Texture2DBlock&) = delete;
-		Texture2DBlock(Texture2DBlock&&) noexcept;
-		Texture2DBlock& operator=(Texture2DBlock&&) noexcept;
-		~Texture2DBlock();
+		public:
+			Texture();
+			Texture(const Texture&) = delete;
+			Texture(Texture&&) noexcept;
+			Texture& operator=(Texture&&) noexcept;
+			~Texture();
 
-		operator GLuint () const { return (*this)[0]; }
-		GLuint operator[](GLsizei i) const;
-	};
+			operator ids::Texture () const { return _t; }
+		};
 
-	extern void bind_texture2D(GLuint texture, GLsizei slot);
-	extern void unbind_texture2D(GLsizei slot);
+		class TextureBlock
+		{
+			using T = ids::Texture;
+			T* _ts = nullptr;
+			GLuint count;
+
+		public:
+			TextureBlock(GLuint count);
+			TextureBlock(const TextureBlock&) = delete;
+			TextureBlock(TextureBlock&&) noexcept;
+			TextureBlock& operator=(TextureBlock&&) noexcept;
+			~TextureBlock();
+
+			ids::Texture operator[](GLuint i) const;
+			GLuint get_count() const { return count; }
+		};
+	}
+
+	namespace _
+	{
+		extern void init_textures();
+	}
+
+	extern void bind_texture2D(ids::Texture texture, GLuint slot);
+	extern void unbind_texture2D(GLuint slot);
 	extern void update_bound_texture2Ds();
 }

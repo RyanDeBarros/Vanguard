@@ -15,6 +15,7 @@ void vg::init()
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
 	_::query_gl_constants();
+	_::init_textures();
 }
 
 void vg::terminate()
@@ -28,6 +29,8 @@ void vg::new_frame()
 	update_bound_shader();
 	update_bound_texture2Ds();
 }
+
+// TODO in addition to printing error code, print name of error as well.
 
 bool vg::_::no_gl_errors(const char* file, int line)
 {

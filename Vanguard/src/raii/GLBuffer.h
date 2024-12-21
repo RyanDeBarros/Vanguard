@@ -1,36 +1,194 @@
 #pragma once
 
 #include "Vendor.h"
+#include "Utils.h"
+
+// TODO clone() functions everywhere
 
 namespace vg
 {
-	class GLBuffer
+	namespace ids
 	{
-		GLuint _b;
+		class GLBuffer
+		{
+			GLuint id;
 
-	public:
-		GLBuffer();
-		GLBuffer(const GLBuffer&) = delete;
-		GLBuffer(GLBuffer&&) noexcept;
-		GLBuffer& operator=(GLBuffer&&) noexcept;
-		~GLBuffer();
+		public:
+			explicit GLBuffer(GLuint id = 0) : id(id) {}
+			operator GLuint () const { return id; }
+		};
+	}
 
-		operator GLuint () const { return _b; }
+	namespace raii
+	{
+		class GLBuffer
+		{
+			using B = ids::GLBuffer;
+			B _b;
+
+		public:
+			GLBuffer();
+			GLBuffer(const GLBuffer&) = delete;
+			GLBuffer(GLBuffer&&) noexcept;
+			GLBuffer& operator=(GLBuffer&&) noexcept;
+			~GLBuffer();
+
+			operator ids::GLBuffer () const { return _b; }
+		};
+
+		class GLBufferBlock
+		{
+			using B = ids::GLBuffer;
+			B* _bs = nullptr;
+			GLuint count;
+
+		public:
+			GLBufferBlock(GLuint count);
+			GLBufferBlock(const GLBufferBlock&) = delete;
+			GLBufferBlock(GLBufferBlock&&) noexcept;
+			GLBufferBlock& operator=(GLBufferBlock&&) noexcept;
+			~GLBufferBlock();
+
+			ids::GLBuffer operator[](GLuint i) const;
+		};
+	}
+	namespace ids
+	{
+		class VertexArray
+		{
+			GLuint id;
+
+		public:
+			explicit VertexArray(GLuint id = 0) : id(id) {}
+			operator GLuint () const { return id; }
+		};
+	}
+
+	namespace raii
+	{
+		class VertexArray
+		{
+			using V = ids::VertexArray;
+			V _vao;
+			GLBufferBlock block;
+
+		public:
+			VertexArray();
+			VertexArray(const VertexArray&) = delete;
+			VertexArray(VertexArray&&) noexcept;
+			VertexArray& operator=(VertexArray&&) noexcept;
+			~VertexArray();
+
+			operator ids::VertexArray () const { return _vao; }
+			ids::GLBuffer vb() const;
+			ids::GLBuffer ib() const;
+			void bind() const;
+		};
+
+		class VertexArrayBlock
+		{
+			using V = ids::VertexArray;
+			V* _vaos = nullptr;
+			IndexDataType* idts = nullptr;
+			GLuint count;
+			GLBufferBlock block;
+
+		public:
+			VertexArrayBlock(GLuint count);
+			VertexArrayBlock(const VertexArrayBlock&) = delete;
+			VertexArrayBlock(VertexArrayBlock&&) noexcept;
+			VertexArrayBlock& operator=(VertexArrayBlock&&) noexcept;
+			~VertexArrayBlock();
+
+			ids::VertexArray operator[](GLuint i) const;
+			ids::GLBuffer vb(GLuint i) const;
+			ids::GLBuffer ib(GLuint i) const;
+			void bind(GLuint i) const;
+		};
+	}
+
+	extern void unbind_vertex_array();
+
+	enum class DrawMode
+	{
+		POINTS = GL_POINTS,
+		LINE_STRIP = GL_LINE_STRIP,
+		LINE_LOOP = GL_LINE_LOOP,
+		LINES = GL_LINES,
+		LINE_STRIP_ADJENCY = GL_LINE_STRIP_ADJACENCY,
+		LINES_ADJENCY = GL_LINES_ADJACENCY,
+		TRIANGLE_STRIP = GL_TRIANGLE_STRIP,
+		TRIANGLE_FAN = GL_TRIANGLE_FAN,
+		TRIANGLES = GL_TRIANGLES,
+		TRIANGLE_STRIP_ADJACENCY = GL_TRIANGLE_STRIP_ADJACENCY,
+		TRIANGLES_ADJACENCY = GL_TRIANGLES_ADJACENCY,
+		PATCHES = GL_PATCHES
 	};
 
-	class GLBufferBlock
+	struct IndirectArraysCmd
 	{
-		GLuint* _b = nullptr;
-		GLsizei count;
+		GLuint vertex_count;
+		GLuint instance_count;
+		GLuint first_vertex;
+		GLuint first_instance;
+	};
+
+	class GPUIndirectArrays
+	{
+		raii::GLBuffer b;
 
 	public:
-		GLBufferBlock(GLsizei count);
-		GLBufferBlock(const GLBufferBlock&) = delete;
-		GLBufferBlock(GLBufferBlock&&) noexcept;
-		GLBufferBlock& operator=(GLBufferBlock&&) noexcept;
-		~GLBufferBlock();
+		GPUIndirectArrays();
 
-		GLuint operator[](GLsizei i) const;
+		void bind() const;
+		void draw(DrawMode mode) const;
+
+		void send_vertex_count(GLuint vertex_count) const;
+		void send_instance_count(GLuint instance_count) const;
+		void send_first_vertex(GLuint first_vertex) const;
+		void send_first_instance(GLuint first_instance) const;
+		void send_cmd(IndirectArraysCmd cmd) const;
+	};
+
+	class GPUIndirectArraysBlock
+	{
+		raii::GLBuffer b;
+		GLuint count;
+
+	public:
+		GPUIndirectArraysBlock(GLuint count);
+
+		void bind() const;
+		void draw(GLuint i, DrawMode mode) const;
+		void multi_draw(DrawMode mode, GLuint first, GLuint count) const;
+
+		GLuint get_count() const { return count; }
+
+		void send_vertex_count(GLuint i, GLuint vertex_count) const;
+		void send_instance_count(GLuint i, GLuint instance_count) const;
+		void send_first_vertex(GLuint i, GLuint first_vertex) const;
+		void send_first_instance(GLuint i, GLuint first_instance) const;
+		void send_cmd(GLuint i, IndirectArraysCmd cmd) const;
+		void send_cmds(GLuint first, GLuint count, IndirectArraysCmd* cmds) const;
+	};
+
+	class CPUIndirectArrays
+	{
+		GPUIndirectArrays g;
+
+	public:
+		IndirectArraysCmd cmd;
+
+		CPUIndirectArrays() = default;
+
+		void bind() const { g.bind(); }
+		void draw(DrawMode mode) const { g.draw(mode); }
+
+		void send_vertex_count() const { g.send_vertex_count(cmd.vertex_count); }
+		void send_instance_count() const { g.send_instance_count(cmd.instance_count); }
+		void send_first_vertex() const { g.send_first_vertex(cmd.first_vertex); }
+		void send_first_instance() const { g.send_first_instance(cmd.first_instance); }
+		void send_cmd() const { g.send_cmd(cmd); }
 	};
 
 	enum class IndexDataType
@@ -42,52 +200,92 @@ namespace vg
 
 	extern GLintptr index_data_type_size(IndexDataType idt);
 
-	class VertexArray
+	struct IndirectElementsCmd
 	{
-		GLuint _vao;
-		IndexDataType idt;
-		GLBufferBlock block;
+		GLuint index_count;
+		GLuint instance_count;
+		GLuint first_index;
+		GLuint base_vertex;
+		GLuint first_instance;
+	};
+
+	class GPUIndirectElements
+	{
+		raii::GLBuffer b;
 
 	public:
-		VertexArray();
-		VertexArray(const VertexArray&) = delete;
-		VertexArray(VertexArray&&) noexcept;
-		VertexArray& operator=(VertexArray&&) noexcept;
-		~VertexArray();
+		GPUIndirectElements();
 
-		operator GLuint () const { return _vao; }
-		GLuint vb() const;
-		GLuint ib() const;
-		IndexDataType index_data_type() const { return idt; }
-		IndexDataType& index_data_type() { return idt; }
 		void bind() const;
+		void draw(DrawMode mode, IndexDataType idt) const;
+
+		void send_index_count(GLuint index_count) const;
+		void send_instance_count(GLuint instance_count) const;
+		void send_first_index(GLuint first_index) const;
+		void send_base_vertex(GLuint base_vertex) const;
+		void send_first_instance(GLuint first_instance) const;
+		void send_cmd(IndirectElementsCmd cmd) const;
 	};
 
-	class VertexArrayBlock
+	class GPUIndirectElementsBlock
 	{
-		GLuint* _vaos = nullptr;
-		IndexDataType* idts = nullptr;
-		GLsizei count;
-		GLBufferBlock block;
+		raii::GLBuffer b;
+		GLuint count;
 
 	public:
-		VertexArrayBlock(GLsizei count);
-		VertexArrayBlock(const VertexArrayBlock&) = delete;
-		VertexArrayBlock(VertexArrayBlock&&) noexcept;
-		VertexArrayBlock& operator=(VertexArrayBlock&&) noexcept;
-		~VertexArrayBlock();
+		GPUIndirectElementsBlock(GLuint count);
 
-		GLuint operator[](GLsizei i) const;
-		GLuint vb(GLsizei i) const;
-		GLuint ib(GLsizei i) const;
-		IndexDataType index_data_type(GLsizei i) const;
-		IndexDataType& index_data_type(GLsizei i);
-		void bind(GLsizei i) const;
+		void bind() const;
+		void draw(GLuint i, DrawMode mode, IndexDataType idt) const;
+		void multi_draw(DrawMode mode, GLuint first, GLuint count, IndexDataType idt) const;
+
+		void send_index_count(GLuint i, GLuint index_count) const;
+		void send_instance_count(GLuint i, GLuint instance_count) const;
+		void send_first_index(GLuint i, GLuint first_index) const;
+		void send_base_vertex(GLuint i, GLuint base_vertex) const;
+		void send_first_instance(GLuint i, GLuint first_instance) const;
+		void send_cmd(GLuint i, IndirectElementsCmd cmd) const;
+		void send_cmds(GLuint first, GLuint count, IndirectElementsCmd* cmds) const;
 	};
 
-	extern void unbind_vertex_array();
+	class CPUIndirectElements
+	{
+		GPUIndirectElements g;
 
-	// LATER SharedVertexArray that uses shared_ptr<VertexBuffer> and shared_ptr<IndexBuffer>
+	public:
+		IndirectElementsCmd cmd;
+		IndexDataType idt;
+
+		CPUIndirectElements() = default;
+
+		void bind() const { g.bind(); }
+		void draw(DrawMode mode) const { g.draw(mode, idt); }
+
+		void send_index_count() const { g.send_index_count(cmd.index_count); }
+		void send_instance_count() const { g.send_instance_count(cmd.instance_count); }
+		void send_first_index() const { g.send_first_index(cmd.first_index); }
+		void send_base_vertex() const { g.send_base_vertex(cmd.base_vertex); }
+		void send_first_instance() const { g.send_first_instance(cmd.first_instance); }
+		void send_cmd() const { g.send_cmd(cmd); }
+	};
+
+	enum class BufferTarget
+	{
+		VERTEX = GL_ARRAY_BUFFER,
+		// GL_ATOMIC_COUNTER_BUFFER
+		COPY_READ = GL_COPY_READ_BUFFER,
+		COPY_WRITE = GL_COPY_WRITE_BUFFER,
+		// GL_DISPATCH_INDIRECT_BUFFER
+		DRAW_INDIRECT = GL_DRAW_INDIRECT_BUFFER,
+		INDEX = GL_ELEMENT_ARRAY_BUFFER,
+		PIXEL_READ = GL_PIXEL_PACK_BUFFER,
+		// GL_PIXEL_UNPACK_BUFFER
+		QUERY = GL_QUERY_BUFFER,
+		// GL_SHADER_STORAGE_BUFFER
+		// GL_TEXTURE_BUFFER
+		// GL_TRANSFORM_FEEDBACK_BUFFER
+		UNIFORM = GL_UNIFORM_BUFFER,
+	};
 
 	enum class BufferMutableUsage
 	{
@@ -115,80 +313,52 @@ namespace vg
 		};
 	}
 
-	namespace vertex_buffer
+	namespace buffers
 	{
-		extern void bind(GLuint vb);
-		extern void unbind();
-		extern void init_immutable(GLuint vb, GLsizeiptr size, const void* data = nullptr, int usage = BufferImmutableUsage::DYNAMIC_STORAGE);
-		extern void init_mutable(GLuint vb, GLsizeiptr size, const void* data, BufferMutableUsage usage = BufferMutableUsage::DYNAMIC_DRAW);
-		extern void subsend(GLuint vb, GLintptr offset, GLsizeiptr size, const void* data);
-		extern void map(GLuint vb, void* data, size_t size);
-		extern void submap(GLuint vb, GLintptr offset, GLsizeiptr length, void* data);
+		extern void bind(ids::GLBuffer b, BufferTarget target);
+		extern void unbind(BufferTarget target);
+		extern void init_immutable(BufferTarget target, GLsizeiptr size, const void* data = nullptr, int usage = BufferImmutableUsage::DYNAMIC_STORAGE);
+		extern void init_mutable(BufferTarget target, GLsizeiptr size, const void* data, BufferMutableUsage usage = BufferMutableUsage::DYNAMIC_DRAW);
+		extern void subsend(BufferTarget target, GLintptr offset_bytes, GLsizeiptr size, const void* data);
+		extern void map(BufferTarget target, void* data, size_t size);
+		extern void submap(BufferTarget target, GLintptr offset_bytes, GLsizeiptr length_bytes, void* data);
+		extern void copy_gl_buffer(ids::GLBuffer b_src, ids::GLBuffer b_dst, GLintptr offset_src_bytes, GLintptr offset_dst_bytes, GLsizeiptr size);
+		extern void copy_bound_gl_buffers(GLintptr offset_src_bytes, GLintptr offset_dst_bytes, GLsizeiptr size);
+		extern VoidArray read(BufferTarget target, GLintptr offset_bytes, GLsizeiptr size);
 	}
-
-	namespace index_buffer
-	{
-		extern void bind(GLuint ib);
-		extern void unbind();
-		extern void init_immutable(GLuint ib, GLsizeiptr size, const void* data = nullptr, int usage = BufferImmutableUsage::DYNAMIC_STORAGE);
-		extern void init_mutable(GLuint ib, GLsizeiptr size, const void* data, BufferMutableUsage usage = BufferMutableUsage::DYNAMIC_DRAW);
-		extern void subsend(GLuint ib, GLintptr offset, GLsizeiptr size, const void* data);
-		extern void map(GLuint ib, void* data, size_t size);
-		extern void submap(GLuint ib, GLintptr offset, GLsizeiptr length, void* data);
-	}
-
-	extern void copy_gl_buffer(GLuint vb_src, GLuint vb_dst, GLintptr offset_src, GLintptr offset_dst, GLsizeiptr size);
-
-	enum class DrawMode
-	{
-		POINTS = GL_POINTS,
-		LINE_STRIP = GL_LINE_STRIP,
-		LINE_LOOP = GL_LINE_LOOP,
-		LINES = GL_LINES,
-		LINE_STRIP_ADJENCY = GL_LINE_STRIP_ADJACENCY,
-		LINES_ADJENCY = GL_LINES_ADJACENCY,
-		TRIANGLE_STRIP = GL_TRIANGLE_STRIP,
-		TRIANGLE_FAN = GL_TRIANGLE_FAN,
-		TRIANGLES = GL_TRIANGLES,
-		TRIANGLE_STRIP_ADJACENCY = GL_TRIANGLE_STRIP_ADJACENCY,
-		TRIANGLES_ADJACENCY = GL_TRIANGLES_ADJACENCY,
-		PATCHES = GL_PATCHES
-	};
 
 	namespace draw
 	{
-		extern void arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count);
-		extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset);
-		extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset);
-		extern void element_range(const VertexArray& vao, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset);
-		extern void element_range(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset);
+		extern void arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count);
+		extern void elements(DrawMode mode, GLsizei index_count, GLuint first_index, IndexDataType idt);
+		extern void element_range(DrawMode mode, GLuint minimum_index, GLuint maximum_index, GLsizei index_count, GLuint first_index, IndexDataType idt);
 
 		namespace instanced
 		{
-			extern void arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count, GLsizei primcount);
-			extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount);
-			extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount);
+			extern void arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count, GLsizei instance_count);
+			extern void elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, IndexDataType idt);
 
-			extern void arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count, GLsizei primcount, GLuint primoffset);
-			extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLuint primoffset);
-			extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLuint primoffset);
-
-			namespace base_vertex
-			{
-				extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex);
-				extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex);
-
-				extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex, GLuint primoffset);
-				extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex, GLuint primoffset);
-			}
+			extern void arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count, GLsizei instance_count, GLuint first_instance);
+			extern void elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLuint first_instance, IndexDataType idt);
 		}
 
 		namespace base_vertex
 		{
-			extern void elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLint base_vertex);
-			extern void elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLint base_vertex);
-			extern void element_range(const VertexArray& vao, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset, GLint base_vertex);
-			extern void element_range(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset, GLint base_vertex);
+			extern void elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLint base_vertex, IndexDataType idt);
+			extern void element_range(DrawMode mode, GLuint minimum_index, GLuint maximum_index, GLsizei index_count, GLuint first_index, GLint base_vertex, IndexDataType idt);
+		}
+
+		namespace instanced_base_vertex
+		{
+			extern void elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLint base_vertex, IndexDataType idt);
+			extern void elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLint base_vertex, GLuint first_instance, IndexDataType idt);
+		}
+
+		namespace multi
+		{
+			extern void arrays(DrawMode mode, const GLint* first_vertices, const GLsizei* vertex_counts, GLsizei drawcount);
+			extern void elements(DrawMode mode, const GLsizei* index_counts, const GLsizeiptr* first_index_bytes, IndexDataType idt, GLsizei drawcount);
+			extern void elements_base_vertex(DrawMode mode, GLsizei* index_counts, const GLintptr* first_index_bytes, IndexDataType idt, GLint* base_vertices, GLsizei drawcount);
 		}
 	}
 }

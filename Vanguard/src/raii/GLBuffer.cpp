@@ -2,130 +2,131 @@
 
 #include "Errors.h"
 
-vg::GLBuffer::GLBuffer()
+#define R_UINT(x) reinterpret_cast<GLuint*>(x)
+
+vg::raii::GLBuffer::GLBuffer()
 {
-	glGenBuffers(1, &_b);
+	glGenBuffers(1, R_UINT(&_b));
 }
 
-vg::GLBuffer::GLBuffer(GLBuffer&& other) noexcept
+vg::raii::GLBuffer::GLBuffer(GLBuffer&& other) noexcept
 	: _b(other._b)
 {
-	other._b = 0;
+	other._b = B(0);
 }
 
-vg::GLBuffer& vg::GLBuffer::operator=(GLBuffer&& other) noexcept
+vg::raii::GLBuffer& vg::raii::GLBuffer::operator=(GLBuffer&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteBuffers(1, &_b);
+		glDeleteBuffers(1, R_UINT(&_b));
 		_b = other._b;
-		other._b = 0;
+		other._b = B(0);
 	}
 	return *this;
 }
 
-vg::GLBuffer::~GLBuffer()
+vg::raii::GLBuffer::~GLBuffer()
 {
-	glDeleteBuffers(1, &_b);
+	glDeleteBuffers(1, R_UINT(&_b));
 }
 
-vg::GLBufferBlock::GLBufferBlock(GLsizei count)
+vg::raii::GLBufferBlock::GLBufferBlock(GLuint count)
 	: count(count)
 {
-	_b = new GLuint[count];
-	glGenBuffers(count, _b);
+	_bs = new B[count];
+	glGenBuffers(count, R_UINT(_bs));
 }
 
-vg::GLBufferBlock::GLBufferBlock(GLBufferBlock&& other) noexcept
-	: _b(other._b), count(other.count)
+vg::raii::GLBufferBlock::GLBufferBlock(GLBufferBlock&& other) noexcept
+	: _bs(other._bs), count(other.count)
 {
-	other._b = nullptr;
+	other._bs = nullptr;
 	other.count = 0;
 }
 
-vg::GLBufferBlock& vg::GLBufferBlock::operator=(GLBufferBlock&& other) noexcept
+vg::raii::GLBufferBlock& vg::raii::GLBufferBlock::operator=(GLBufferBlock&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteBuffers(count, _b);
-		delete[] _b;
-		_b = other._b;
-		other._b = nullptr;
+		glDeleteBuffers(count, R_UINT(_bs));
+		delete[] _bs;
+		_bs = other._bs;
+		other._bs = nullptr;
 		count = other.count;
 		other.count = 0;
 	}
 	return *this;
 }
 
-vg::GLBufferBlock::~GLBufferBlock()
+vg::raii::GLBufferBlock::~GLBufferBlock()
 {
-	glDeleteBuffers(count, _b);
-	delete[] _b;
+	glDeleteBuffers(count, R_UINT(_bs));
+	delete[] _bs;
 }
 
-GLuint vg::GLBufferBlock::operator[](GLsizei i) const
+vg::ids::GLBuffer vg::raii::GLBufferBlock::operator[](GLuint i) const
 {
-	if (i >= count || i < 0)
+	if (i >= count)
 		throw block_index_out_of_range(count, i);
-	return _b[i];
+	return _bs[i];
 }
 
-vg::VertexArray::VertexArray()
-	: block(2), idt(IndexDataType::UBYTE)
+vg::raii::VertexArray::VertexArray()
+	: block(2)
 {
-	glGenVertexArrays(1, &_vao);
+	glGenVertexArrays(1, R_UINT(&_vao));
 }
 
-vg::VertexArray::VertexArray(VertexArray&& other) noexcept
-	: _vao(other._vao), block(std::move(other.block)), idt(other.idt)
+vg::raii::VertexArray::VertexArray(VertexArray&& other) noexcept
+	: _vao(other._vao), block(std::move(other.block))
 {
-	other._vao = 0;
+	other._vao = V(0);
 }
 
-vg::VertexArray& vg::VertexArray::operator=(VertexArray&& other) noexcept
+vg::raii::VertexArray& vg::raii::VertexArray::operator=(VertexArray&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteVertexArrays(1, &_vao);
+		glDeleteVertexArrays(1, R_UINT(&_vao));
 		_vao = other._vao;
-		other._vao = 0;
+		other._vao = V(0);
 		block = std::move(other.block);
-		idt = other.idt;
 	}
 	return *this;
 }
 
-vg::VertexArray::~VertexArray()
+vg::raii::VertexArray::~VertexArray()
 {
-	glDeleteVertexArrays(1, &_vao);
+	glDeleteVertexArrays(1, R_UINT(&_vao));
 }
 
-GLuint vg::VertexArray::vb() const
+vg::ids::GLBuffer vg::raii::VertexArray::vb() const
 {
 	return block[0];
 }
 
-GLuint vg::VertexArray::ib() const
+vg::ids::GLBuffer vg::raii::VertexArray::ib() const
 {
 	return block[1];
 }
 
-void vg::VertexArray::bind() const
+void vg::raii::VertexArray::bind() const
 {
 	glBindVertexArray(_vao);
-	vertex_buffer::bind(vb());
-	index_buffer::bind(ib());
+	buffers::bind(vb(), BufferTarget::VERTEX);
+	buffers::bind(ib(), BufferTarget::INDEX);
 }
 
-vg::VertexArrayBlock::VertexArrayBlock(GLsizei count)
+vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
 	: count(count), block(count * 2)
 {
-	_vaos = new GLuint[count];
-	glGenVertexArrays(count, _vaos);
+	_vaos = new V[count];
+	glGenVertexArrays(count, R_UINT(_vaos));
 	idts = new IndexDataType[count](IndexDataType::UBYTE);
 }
 
-vg::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
+vg::raii::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
 	: count(other.count), block(std::move(other.block)), _vaos(other._vaos), idts(other.idts)
 {
 	other.count = 0;
@@ -133,11 +134,11 @@ vg::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
 	other.idts = nullptr;
 }
 
-vg::VertexArrayBlock& vg::VertexArrayBlock::operator=(VertexArrayBlock&& other) noexcept
+vg::raii::VertexArrayBlock& vg::raii::VertexArrayBlock::operator=(VertexArrayBlock&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteVertexArrays(count, _vaos);
+		glDeleteVertexArrays(count, R_UINT(_vaos));
 		delete[] _vaos;
 		_vaos = other._vaos;
 		other._vaos = nullptr;
@@ -150,51 +151,37 @@ vg::VertexArrayBlock& vg::VertexArrayBlock::operator=(VertexArrayBlock&& other) 
 	return *this;
 }
 
-vg::VertexArrayBlock::~VertexArrayBlock()
+vg::raii::VertexArrayBlock::~VertexArrayBlock()
 {
-	glDeleteVertexArrays(count, _vaos);
+	glDeleteVertexArrays(count, R_UINT(_vaos));
 	delete[] _vaos;
 	delete[] idts;
 }
 
-GLuint vg::VertexArrayBlock::operator[](GLsizei i) const
+vg::ids::VertexArray vg::raii::VertexArrayBlock::operator[](GLuint i) const
 {
-	if (i >= count || i < 0)
+	if (i >= count)
 		throw block_index_out_of_range(count, i);
 	return _vaos[i];
 }
 
-GLuint vg::VertexArrayBlock::vb(GLsizei i) const
+vg::ids::GLBuffer vg::raii::VertexArrayBlock::vb(GLuint i) const
 {
-	return block[2 * i];
+	return block[i];
 }
 
-GLuint vg::VertexArrayBlock::ib(GLsizei i) const
+vg::ids::GLBuffer vg::raii::VertexArrayBlock::ib(GLuint i) const
 {
-	return block[2 * i + 1];
+	return block[i + count];
 }
 
-vg::IndexDataType vg::VertexArrayBlock::index_data_type(GLsizei i) const
+void vg::raii::VertexArrayBlock::bind(GLuint i) const
 {
-	if (i >= count || i < 0)
-		throw block_index_out_of_range(count, i);
-	return idts[i];
-}
-
-vg::IndexDataType& vg::VertexArrayBlock::index_data_type(GLsizei i)
-{
-	if (i >= count || i < 0)
-		throw block_index_out_of_range(count, i);
-	return idts[i];
-}
-
-void vg::VertexArrayBlock::bind(GLsizei i) const
-{
-	if (i >= count || i < 0)
+	if (i >= count)
 		throw block_index_out_of_range(count, i);
 	glBindVertexArray(_vaos[i]);
-	vertex_buffer::bind(vb(i));
-	index_buffer::bind(ib(i));
+	buffers::bind(vb(i), BufferTarget::VERTEX);
+	buffers::bind(ib(i), BufferTarget::INDEX);
 }
 
 GLintptr vg::index_data_type_size(IndexDataType idt)
@@ -211,232 +198,369 @@ GLintptr vg::index_data_type_size(IndexDataType idt)
 
 void vg::unbind_vertex_array()
 {
-	index_buffer::unbind();
-	vertex_buffer::unbind();
+	buffers::unbind(BufferTarget::INDEX);
+	buffers::unbind(BufferTarget::VERTEX);
 	glBindVertexArray(0);
 }
 
-void vg::vertex_buffer::bind(GLuint vb)
+vg::GPUIndirectArrays::GPUIndirectArrays()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, vb);
+	bind();
+	buffers::init_immutable(BufferTarget::DRAW_INDIRECT, sizeof(IndirectArraysCmd));
 }
 
-void vg::vertex_buffer::unbind()
+void vg::GPUIndirectArrays::bind() const
 {
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
 }
 
-void vg::vertex_buffer::init_immutable(GLuint vb, GLsizeiptr size, const void* data, int usage)
+void vg::GPUIndirectArrays::draw(DrawMode mode) const
 {
-	bind(vb);
-	glBufferStorage(GL_ARRAY_BUFFER, size, data, usage);
+	glDrawArraysIndirect((GLenum)mode, (void*)0);
 }
 
-void vg::vertex_buffer::init_mutable(GLuint vb, GLsizeiptr size, const void* data, BufferMutableUsage usage)
+void vg::GPUIndirectArrays::send_vertex_count(GLuint vertex_count) const
 {
-	bind(vb);
-	glBufferData(GL_ARRAY_BUFFER, size, data, (GLenum)usage);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 0, sizeof(GLuint), &vertex_count);
 }
 
-void vg::vertex_buffer::subsend(GLuint vb, GLintptr offset, GLsizeiptr size, const void* data)
+void vg::GPUIndirectArrays::send_instance_count(GLuint instance_count) const
 {
-	bind(vb);
-	glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, sizeof(GLuint), sizeof(GLuint), &instance_count);
 }
 
-void vg::vertex_buffer::map(GLuint vb, void* data, size_t size)
+void vg::GPUIndirectArrays::send_first_vertex(GLuint first_vertex) const
 {
-	bind(vb);
-	void* client = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 2 * sizeof(GLuint), sizeof(GLuint), &first_vertex);
+}
+
+void vg::GPUIndirectArrays::send_first_instance(GLuint first_instance) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 3 * sizeof(GLuint), sizeof(GLuint), &first_instance);
+}
+
+void vg::GPUIndirectArrays::send_cmd(IndirectArraysCmd cmd) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 0, sizeof(IndirectArraysCmd), &cmd);
+}
+
+vg::GPUIndirectArraysBlock::GPUIndirectArraysBlock(GLuint count)
+	: count(count)
+{
+	bind();
+	buffers::init_immutable(BufferTarget::DRAW_INDIRECT, count * sizeof(IndirectArraysCmd));
+}
+
+void vg::GPUIndirectArraysBlock::bind() const
+{
+	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
+}
+
+void vg::GPUIndirectArraysBlock::draw(GLuint i, DrawMode mode) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	glDrawArraysIndirect((GLenum)mode, (void*)(i * sizeof(IndirectArraysCmd)));
+}
+
+void vg::GPUIndirectArraysBlock::multi_draw(DrawMode mode, GLuint first, GLuint count) const
+{
+	GLuint last = first + count - 1;
+	if (last >= this->count)
+		throw block_index_out_of_range(this->count, last);
+	glMultiDrawArraysIndirect((GLenum)mode, (void*)(first * sizeof(IndirectArraysCmd)), count, sizeof(IndirectArraysCmd));
+}
+
+void vg::GPUIndirectArraysBlock::send_vertex_count(GLuint i, GLuint vertex_count) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, i * sizeof(IndirectArraysCmd), sizeof(GLuint), &vertex_count);
+}
+
+void vg::GPUIndirectArraysBlock::send_instance_count(GLuint i, GLuint instance_count) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, sizeof(GLuint) + i * sizeof(IndirectArraysCmd), sizeof(GLuint), &instance_count);
+}
+
+void vg::GPUIndirectArraysBlock::send_first_vertex(GLuint i, GLuint first_vertex) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 2 * sizeof(GLuint) + i * sizeof(IndirectArraysCmd), sizeof(GLuint), &first_vertex);
+}
+
+void vg::GPUIndirectArraysBlock::send_first_instance(GLuint i, GLuint first_instance) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 3 * sizeof(GLuint) + i * sizeof(IndirectArraysCmd), sizeof(GLuint), &first_instance);
+}
+
+void vg::GPUIndirectArraysBlock::send_cmd(GLuint i, IndirectArraysCmd cmd) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, i * sizeof(IndirectArraysCmd), sizeof(IndirectArraysCmd), &cmd);
+}
+
+void vg::GPUIndirectArraysBlock::send_cmds(GLuint first, GLuint count, IndirectArraysCmd* cmds) const
+{
+	GLuint last = first + count - 1;
+	if (last >= this->count)
+		throw block_index_out_of_range(this->count, last);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, first * sizeof(IndirectArraysCmd), count * sizeof(IndirectArraysCmd), cmds);
+}
+
+vg::GPUIndirectElements::GPUIndirectElements()
+{
+	bind();
+	buffers::init_immutable(BufferTarget::DRAW_INDIRECT, sizeof(IndirectElementsCmd));
+}
+
+void vg::GPUIndirectElements::bind() const
+{
+	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
+}
+
+void vg::GPUIndirectElements::draw(DrawMode mode, IndexDataType idt) const
+{
+	glDrawElementsIndirect((GLenum)mode, (GLenum)idt, 0);
+}
+
+void vg::GPUIndirectElements::send_index_count(GLuint index_count) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 0, sizeof(GLuint), &index_count);
+}
+
+void vg::GPUIndirectElements::send_instance_count(GLuint instance_count) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, sizeof(GLuint), sizeof(GLuint), &instance_count);
+}
+
+void vg::GPUIndirectElements::send_first_index(GLuint first_index) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 2 * sizeof(GLuint), sizeof(GLuint), &first_index);
+}
+
+void vg::GPUIndirectElements::send_base_vertex(GLuint base_vertex) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 3 * sizeof(GLuint), sizeof(GLuint), &base_vertex);
+}
+
+void vg::GPUIndirectElements::send_first_instance(GLuint first_instance) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 4 * sizeof(GLuint), sizeof(GLuint), &first_instance);
+}
+
+void vg::GPUIndirectElements::send_cmd(IndirectElementsCmd cmd) const
+{
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 0, sizeof(IndirectElementsCmd), &cmd);
+}
+
+vg::GPUIndirectElementsBlock::GPUIndirectElementsBlock(GLuint count)
+	: count(count)
+{
+	bind();
+	buffers::init_immutable(BufferTarget::DRAW_INDIRECT, count * sizeof(IndirectElementsCmd));
+}
+
+void vg::GPUIndirectElementsBlock::bind() const
+{
+	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
+}
+
+void vg::GPUIndirectElementsBlock::draw(GLuint i, DrawMode mode, IndexDataType idt) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	glDrawElementsIndirect((GLenum)mode, (GLenum)idt, (void*)(i * sizeof(IndirectElementsCmd)));
+}
+
+void vg::GPUIndirectElementsBlock::multi_draw(DrawMode mode, GLuint first, GLuint count, IndexDataType idt) const
+{
+	GLuint last = first + count - 1;
+	if (last >= this->count)
+		throw block_index_out_of_range(this->count, last);
+	glMultiDrawElementsIndirect((GLenum)mode, (GLenum)idt, (void*)(first * sizeof(IndirectElementsCmd)), count, sizeof(IndirectElementsCmd));
+}
+
+void vg::GPUIndirectElementsBlock::send_index_count(GLuint i, GLuint index_count) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, i * sizeof(IndirectElementsCmd), sizeof(GLuint), &index_count);
+}
+
+void vg::GPUIndirectElementsBlock::send_instance_count(GLuint i, GLuint instance_count) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, sizeof(GLuint) + i * sizeof(IndirectElementsCmd), sizeof(GLuint), &instance_count);
+}
+
+void vg::GPUIndirectElementsBlock::send_first_index(GLuint i, GLuint first_index) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 2 * sizeof(GLuint) + i * sizeof(IndirectElementsCmd), sizeof(GLuint), &first_index);
+}
+
+void vg::GPUIndirectElementsBlock::send_base_vertex(GLuint i, GLuint base_vertex) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 3 * sizeof(GLuint) + i * sizeof(IndirectElementsCmd), sizeof(GLuint), &base_vertex);
+}
+
+void vg::GPUIndirectElementsBlock::send_first_instance(GLuint i, GLuint first_instance) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, 4 * sizeof(GLuint) + i * sizeof(IndirectElementsCmd), sizeof(GLuint), &first_instance);
+}
+
+void vg::GPUIndirectElementsBlock::send_cmd(GLuint i, IndirectElementsCmd cmd) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, i * sizeof(IndirectElementsCmd), sizeof(IndirectElementsCmd), &cmd);
+}
+
+void vg::GPUIndirectElementsBlock::send_cmds(GLuint first, GLuint count, IndirectElementsCmd* cmds) const
+{
+	GLuint last = first + count - 1;
+	if (last >= this->count)
+		throw block_index_out_of_range(this->count, last);
+	buffers::subsend(BufferTarget::DRAW_INDIRECT, first * sizeof(IndirectElementsCmd), count * sizeof(IndirectElementsCmd), cmds);
+}
+
+void vg::buffers::bind(ids::GLBuffer b, BufferTarget target)
+{
+	glBindBuffer((GLenum)target, b);
+}
+
+void vg::buffers::unbind(BufferTarget target)
+{
+	glBindBuffer((GLenum)target, 0);
+}
+
+void vg::buffers::init_immutable(BufferTarget target, GLsizeiptr size, const void* data, int usage)
+{
+	glBufferStorage((GLenum)target, size, data, usage);
+}
+
+void vg::buffers::init_mutable(BufferTarget target, GLsizeiptr size, const void* data, BufferMutableUsage usage)
+{
+	glBufferData((GLenum)target, size, data, (GLenum)usage);
+}
+
+void vg::buffers::subsend(BufferTarget target, GLintptr offset_bytes, GLsizeiptr size, const void* data)
+{
+	glBufferSubData((GLenum)target, offset_bytes, size, data);
+}
+
+void vg::buffers::map(BufferTarget target, void* data, size_t size)
+{
+	void* client = glMapBuffer((GLenum)target, GL_WRITE_ONLY);
 	memcpy(client, data, size);
-	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glUnmapBuffer((GLenum)target);
 }
 
-void vg::vertex_buffer::submap(GLuint vb, GLintptr offset, GLsizeiptr length, void* data)
+void vg::buffers::submap(BufferTarget target, GLintptr offset_bytes, GLsizeiptr length_bytes, void* data)
 {
-	bind(vb);
-	void* client = glMapBufferRange(GL_ARRAY_BUFFER, offset, length, GL_MAP_WRITE_BIT);
-	memcpy(client, data, length);
-	glUnmapBuffer(GL_ARRAY_BUFFER);
+	void* client = glMapBufferRange((GLenum)target, offset_bytes, length_bytes, GL_MAP_WRITE_BIT);
+	memcpy(client, data, length_bytes);
+	glUnmapBuffer((GLenum)target);
 }
 
-void vg::index_buffer::bind(GLuint ib)
+void vg::buffers::copy_gl_buffer(ids::GLBuffer b_src, ids::GLBuffer b_dst, GLintptr offset_src_bytes, GLintptr offset_dst_bytes, GLsizeiptr size)
 {
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
+	bind(b_src, BufferTarget::COPY_READ);
+	bind(b_dst, BufferTarget::COPY_WRITE);
+	glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, offset_src_bytes, offset_dst_bytes, size);
 }
 
-void vg::index_buffer::unbind()
+void vg::buffers::copy_bound_gl_buffers(GLintptr offset_src_bytes, GLintptr offset_dst_bytes, GLsizeiptr size)
 {
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, offset_src_bytes, offset_dst_bytes, size);
 }
 
-void vg::index_buffer::init_immutable(GLuint ib, GLsizeiptr size, const void* data, int usage)
+vg::VoidArray vg::buffers::read(BufferTarget target, GLintptr offset_bytes, GLsizeiptr size)
 {
-	bind(ib);
-	glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, size, data, usage);
+	VoidArray data(size);
+	glGetBufferSubData((GLenum)target, offset_bytes, size, data);
+	return data;
 }
 
-void vg::index_buffer::init_mutable(GLuint ib, GLsizeiptr size, const void* data, BufferMutableUsage usage)
+void vg::draw::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count)
 {
-	bind(ib);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, (GLenum)usage);
+	glDrawArrays((GLenum)mode, first_vertex, vertex_count);
 }
 
-void vg::index_buffer::subsend(GLuint ib, GLintptr offset, GLsizeiptr size, const void* data)
+void vg::draw::elements(DrawMode mode, GLsizei index_count, GLuint first_index, IndexDataType idt)
 {
-	bind(ib);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, data);
+	glDrawElements((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)));
 }
 
-void vg::index_buffer::map(GLuint ib, void* data, size_t size)
+void vg::draw::element_range(DrawMode mode, GLuint minimum_index, GLuint maximum_index, GLsizei index_count, GLuint first_index, IndexDataType idt)
 {
-	bind(ib);
-	void* client = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-	memcpy(client, data, size);
-	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	glDrawRangeElements((GLenum)mode, minimum_index, maximum_index, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)));
 }
 
-void vg::index_buffer::submap(GLuint ib, GLintptr offset, GLsizeiptr length, void* data)
+void vg::draw::instanced::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count, GLsizei instance_count)
 {
-	bind(ib);
-	void* client = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, offset, length, GL_MAP_WRITE_BIT);
-	memcpy(client, data, length);
-	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	glDrawArraysInstanced((GLenum)mode, first_vertex, vertex_count, instance_count);
 }
 
-void vg::copy_gl_buffer(GLuint vb_src, GLuint vb_dst, GLintptr offset_src, GLintptr offset_dst, GLsizeiptr size)
+void vg::draw::instanced::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, IndexDataType idt)
 {
-	glBindBuffer(GL_COPY_READ_BUFFER, vb_src);
-	glBindBuffer(GL_COPY_WRITE_BUFFER, vb_dst);
-	glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, offset_src, offset_dst, size);
+	glDrawElementsInstanced((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count);
 }
 
-void vg::draw::arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count)
+void vg::draw::instanced::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count, GLsizei instance_count, GLuint first_instance)
 {
-	vertex_buffer::bind(vb);
-	glDrawArrays((GLenum)mode, first, count);
+	glDrawArraysInstancedBaseInstance((GLenum)mode, first_vertex, vertex_count, instance_count, first_instance);
 }
 
-void vg::draw::elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset)
+void vg::draw::instanced::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLuint first_instance, IndexDataType idt)
 {
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawElements((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)));
+	glDrawElementsInstancedBaseInstance((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count, first_instance);
 }
 
-void vg::draw::elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset)
+void vg::draw::base_vertex::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLint base_vertex, IndexDataType idt)
 {
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawElements((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)));
+	glDrawElementsBaseVertex((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), base_vertex);
 }
 
-void vg::draw::element_range(const VertexArray& vao, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset)
+void vg::draw::base_vertex::element_range(DrawMode mode, GLuint minimum_index, GLuint maximum_index, GLsizei index_count, GLuint first_index, GLint base_vertex, IndexDataType idt)
 {
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawRangeElements((GLenum)mode, start, end, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)));
+	glDrawRangeElementsBaseVertex((GLenum)mode, minimum_index, maximum_index, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), base_vertex);
 }
 
-void vg::draw::element_range(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset)
+void vg::draw::instanced_base_vertex::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLint base_vertex, IndexDataType idt)
 {
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawRangeElements((GLenum)mode, start, end, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)));
+	glDrawElementsInstancedBaseVertex((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count, base_vertex);
 }
 
-void vg::draw::instanced::arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count, GLsizei primcount)
+void vg::draw::instanced_base_vertex::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLint base_vertex, GLuint first_instance, IndexDataType idt)
 {
-	vertex_buffer::bind(vb);
-	glDrawArraysInstanced((GLenum)mode, first, count, primcount);
+	glDrawElementsInstancedBaseVertexBaseInstance((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count, base_vertex, first_instance);
 }
 
-void vg::draw::instanced::arrays(GLuint vb, DrawMode mode, GLint first, GLsizei count, GLsizei primcount, GLuint primoffset)
+void vg::draw::multi::arrays(DrawMode mode, const GLint* first_vertices, const GLsizei* vertex_counts, GLsizei drawcount)
 {
-	vertex_buffer::bind(vb);
-	glDrawArraysInstancedBaseInstance((GLenum)mode, first, count, primcount, primoffset);
+	glMultiDrawArrays((GLenum)mode, first_vertices, vertex_counts, drawcount);
 }
 
-void vg::draw::instanced::elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount)
+void vg::draw::multi::elements(DrawMode mode, const GLsizei* index_counts, const GLsizeiptr* first_index_bytes, IndexDataType idt, GLsizei drawcount)
 {
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawElementsInstanced((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount);
+	glMultiDrawElements((GLenum)mode, index_counts, (GLenum)idt, (void**)first_index_bytes, drawcount);
 }
 
-void vg::draw::instanced::elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount)
+void vg::draw::multi::elements_base_vertex(DrawMode mode, GLsizei* index_counts, const GLintptr* first_index_bytes, IndexDataType idt, GLint* base_vertices, GLsizei drawcount)
 {
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawElementsInstanced((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount);
-}
-
-void vg::draw::instanced::elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLuint primoffset)
-{
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawElementsInstancedBaseInstance((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount, primoffset);
-}
-
-void vg::draw::instanced::elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLuint primoffset)
-{
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawElementsInstancedBaseInstance((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount, primoffset);
-}
-
-void vg::draw::instanced::base_vertex::elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex)
-{
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawElementsInstancedBaseVertex((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount, base_vertex);
-}
-
-void vg::draw::instanced::base_vertex::elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex)
-{
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawElementsInstancedBaseVertex((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount, base_vertex);
-}
-
-void vg::draw::instanced::base_vertex::elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex, GLuint primoffset)
-{
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawElementsInstancedBaseVertexBaseInstance((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount, base_vertex, primoffset);
-}
-
-void vg::draw::instanced::base_vertex::elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLsizei primcount, GLint base_vertex, GLuint primoffset)
-{
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawElementsInstancedBaseVertexBaseInstance((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), primcount, base_vertex, primoffset);
-}
-
-void vg::draw::base_vertex::elements(const VertexArray& vao, DrawMode mode, GLsizei count, GLuint offset, GLint base_vertex)
-{
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawElementsBaseVertex((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), base_vertex);
-}
-
-void vg::draw::base_vertex::elements(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLsizei count, GLuint offset, GLint base_vertex)
-{
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawElementsBaseVertex((GLenum)mode, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), base_vertex);
-}
-
-void vg::draw::base_vertex::element_range(const VertexArray& vao, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset, GLint base_vertex)
-{
-	vao.bind();
-	IndexDataType idt = vao.index_data_type();
-	glDrawRangeElementsBaseVertex((GLenum)mode, start, end, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), base_vertex);
-}
-
-void vg::draw::base_vertex::element_range(const VertexArrayBlock& vao, GLsizei i, DrawMode mode, GLuint start, GLuint end, GLsizei count, GLuint offset, GLint base_vertex)
-{
-	vao.bind(i);
-	IndexDataType idt = vao.index_data_type(i);
-	glDrawRangeElementsBaseVertex((GLenum)mode, start, end, count, (GLenum)idt, (void*)(offset * index_data_type_size(idt)), base_vertex);
+	glMultiDrawElementsBaseVertex((GLenum)mode, index_counts, (GLenum)idt, (void**)first_index_bytes, drawcount, base_vertices);
 }

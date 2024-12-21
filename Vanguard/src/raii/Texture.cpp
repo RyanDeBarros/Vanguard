@@ -3,6 +3,8 @@
 #include "Errors.h"
 #include "GLConstants.h"
 
+#define R_UINT(x) reinterpret_cast<GLuint*>(x)
+
 void vg::Texture2DParams::bind() const
 {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (GLint)min_filter);
@@ -11,77 +13,83 @@ void vg::Texture2DParams::bind() const
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (GLint)wrap_t);
 }
 
-vg::Texture2D::Texture2D()
+vg::raii::Texture::Texture()
 {
-	glGenTextures(1, &_t);
+	glGenTextures(1, R_UINT(&_t));
 }
 
-vg::Texture2D::Texture2D(Texture2D&& other) noexcept
+vg::raii::Texture::Texture(Texture&& other) noexcept
 	: _t(other._t)
 {
-	other._t = 0;
+	other._t = T(0);
 }
 
-vg::Texture2D& vg::Texture2D::operator=(Texture2D&& other) noexcept
+vg::raii::Texture& vg::raii::Texture::operator=(Texture&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteTextures(1, &_t);
+		glDeleteTextures(1, R_UINT(&_t));
 		_t = other._t;
-		other._t = 0;
+		other._t = T(0);
 	}
 	return *this;
 }
 
-vg::Texture2D::~Texture2D()
+vg::raii::Texture::~Texture()
 {
-	glDeleteTextures(1, &_t);
+	glDeleteTextures(1, R_UINT(&_t));
 }
 
-vg::Texture2DBlock::Texture2DBlock(GLsizei count)
+vg::raii::TextureBlock::TextureBlock(GLuint count)
 	: count(count)
 {
-	_t = new GLuint[count];
-	glGenTextures(count, _t);
+	_ts = new ids::Texture[count];
+	glGenTextures(count, reinterpret_cast<GLuint*>(_ts));
 }
 
-vg::Texture2DBlock::Texture2DBlock(Texture2DBlock&& other) noexcept
-	: _t(other._t), count(other.count)
+vg::raii::TextureBlock::TextureBlock(TextureBlock&& other) noexcept
+	: _ts(other._ts), count(other.count)
 {
-	other._t = nullptr;
+	other._ts = nullptr;
 	other.count = 0;
 }
 
-vg::Texture2DBlock& vg::Texture2DBlock::operator=(Texture2DBlock&& other) noexcept
+vg::raii::TextureBlock& vg::raii::TextureBlock::operator=(TextureBlock&& other) noexcept
 {
 	if (this != &other)
 	{
-		glDeleteTextures(count, _t);
-		delete[] _t;
-		_t = other._t;
-		other._t = nullptr;
+		glDeleteTextures(count, R_UINT(_ts));
+		delete[] _ts;
+		_ts = other._ts;
+		other._ts = nullptr;
 		count = other.count;
 		other.count = 0;
 	}
 	return *this;
 }
 
-vg::Texture2DBlock::~Texture2DBlock()
+vg::raii::TextureBlock::~TextureBlock()
 {
-	glDeleteTextures(count, _t);
-	delete[] _t;
+	glDeleteTextures(count, R_UINT(_ts));
+	delete[] _ts;
 }
 
-GLuint vg::Texture2DBlock::operator[](GLsizei i) const
+vg::ids::Texture vg::raii::TextureBlock::operator[](GLuint i) const
 {
-	if (i >= count || i < 0)
+	if (i >= count)
 		throw block_index_out_of_range(count, i);
-	return _t[i];
+	return _ts[i];
 }
 
-static GLuint bound_texture2Ds[32] = {};
+static vg::ids::Texture bound_texture2Ds[32];
 
-void vg::bind_texture2D(GLuint texture, GLsizei slot)
+void vg::_::init_textures()
+{
+	for (int i = 0; i < 32; ++i)
+		bound_texture2Ds[i] = ids::Texture();
+}
+
+void vg::bind_texture2D(vg::ids::Texture texture, GLuint slot)
 {
 	if (slot >= 0 && slot < constants::max_texture_image_units)
 	{
@@ -94,13 +102,13 @@ void vg::bind_texture2D(GLuint texture, GLsizei slot)
 	}
 }
 
-void vg::unbind_texture2D(GLsizei slot)
+void vg::unbind_texture2D(GLuint slot)
 {
 	if (slot >= 0 && slot < constants::max_texture_image_units)
 	{
 		if (bound_texture2Ds[slot])
 		{
-			bound_texture2Ds[slot] = 0;
+			bound_texture2Ds[slot] = ids::Texture();
 			glActiveTexture(GL_TEXTURE0 + slot);
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
