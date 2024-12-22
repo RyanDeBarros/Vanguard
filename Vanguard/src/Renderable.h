@@ -19,19 +19,28 @@ namespace vg
 		FIXED = GL_FIXED
 	};
 
-	struct VertexAttribute
+	class VertexAttribute
 	{
 		VertexAttributeDataType type = VertexAttributeDataType::FLOAT;
-		GLsizei count = 0;
 		bool normalized = false;
 		bool pass_by_integer = false;
+		GLubyte rows;
 		GLuint instance_divisor = 0;
 		GLuint offset = 0;
+		GLushort location = 0;
+		GLushort location_coverage = 0;
 
-		VertexAttribute(ShaderAttribute attrib);
+	public:
+		VertexAttribute(ShaderAttribute attrib, GLuint location, GLuint offset);
 		
 		void attrib_pointer(GLuint i, GLsizei stride) const;
 		GLsizei bytes() const;
+		GLuint get_location_coverage() const { return location_coverage; }
+		void set_type(VertexAttributeDataType type) { this->type = type; }
+		void set_normalized(bool normalized) { this->normalized = normalized; }
+		void set_pass_by_integer(bool pass_by_integer) { this->pass_by_integer = pass_by_integer; }
+		void set_instance_divisor(GLuint instance_divisor) { this->instance_divisor = instance_divisor; }
+		GLuint get_offset() const { return offset; }
 	};
 
 	struct VertexAttributeSpecificationList

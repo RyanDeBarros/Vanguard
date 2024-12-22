@@ -81,7 +81,6 @@ namespace vg
 		ShaderDataType type;
 		GLint array_count;
 		GLsizei offset;
-		unsigned char component_count() const;
 	};
 	typedef std::vector<ShaderAttribute> ShaderLayout;
 
@@ -90,7 +89,6 @@ namespace vg
 		ShaderDataType type;
 		GLint array_count;
 		GLint location;
-		unsigned char component_count() const;
 	};
 
 	class Shader

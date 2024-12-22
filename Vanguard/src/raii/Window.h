@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <functional>
 
 #include "Vanguard.h"
 #include "Vendor.h"
@@ -100,6 +101,8 @@ namespace vg
 
 		void new_frame() const;
 		void end_frame() const;
+		std::function<void()> render_frame = []() {};
+		void frame_cycle() const;
 
 		int width() const;
 		void set_width(int width) const;
@@ -146,7 +149,5 @@ namespace vg
 			input::WindowRefreshEventHandler window_refresh;
 			input::WindowResizeEventHandler window_resize;
 		} root_input_handlers = {};
-
-		std::function<void(int w, int h)> render_during_resize;
 	};
 }

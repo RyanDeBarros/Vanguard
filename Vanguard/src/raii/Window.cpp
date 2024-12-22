@@ -94,10 +94,7 @@ vg::Window::Window(int width, int height, const char* title, const WindowHint& h
 
 	root_input_handlers.framebuffer_resize.callback = [this](const input::FramebufferResizeEvent& e) {
 		glViewport(0, 0, e.w, e.h);
-		clear_buffer();
-		if (render_during_resize)
-			render_during_resize(e.w, e.h);
-		swap_buffers();
+		frame_cycle();
 		};
 }
 
@@ -158,6 +155,13 @@ void vg::Window::end_frame() const
 {
 	swap_buffers();
 	VANGUARD_ASSERT_GL_OKAY;
+}
+
+void vg::Window::frame_cycle() const
+{
+	new_frame();
+	render_frame();
+	end_frame();
 }
 
 int vg::Window::width() const

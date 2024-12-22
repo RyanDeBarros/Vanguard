@@ -55,9 +55,7 @@ void vg::Subshader::compile(const std::string& subshader, const char* filepath)
 vg::Subshader::Subshader(const FilePath& filepath, SubshaderType type)
 	: _type(type)
 {
-	std::string subshader;
-	if (vg::io::read_file(filepath, subshader))
-		compile(subshader, filepath.c_str());
+	compile(vg::io::read_file(filepath), filepath.c_str());
 }
 
 vg::Subshader::Subshader(const std::string& subshader, SubshaderType type)
@@ -211,16 +209,6 @@ bool vg::shader_data_type_is_long(ShaderDataType type)
 	}
 }
 
-unsigned char vg::ShaderAttribute::component_count() const
-{
-	return array_count * shader_data_type_entry_count(type);
-}
-
-unsigned char vg::Uniform::component_count() const
-{
-	return array_count * shader_data_type_entry_count(type);
-}
-
 void vg::Shader::link(const std::initializer_list<Subshader>& subshaders)
 {
 	_s = glCreateProgram();
@@ -274,7 +262,7 @@ void vg::Shader::load_vertex_data()
 	for (ShaderAttribute& attrib : _layout)
 	{
 		attrib.offset = _stride;
-		_stride += attrib.component_count() * shader_data_type_base_size(attrib.type);
+		_stride += attrib.array_count * shader_data_type_entry_count(attrib.type) * shader_data_type_base_size(attrib.type);
 	}
 }
 

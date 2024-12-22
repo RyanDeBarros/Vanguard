@@ -2,7 +2,8 @@
 
 #include "Vanguard.h"
 
-vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib)
+vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GLuint offset)
+	: location(location), offset(offset)
 {
 	switch (attrib.type)
 	{
@@ -49,7 +50,80 @@ vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib)
 		type = VertexAttributeDataType::DOUBLE;
 		break;
 	}
-	count = attrib.component_count();
+	GLuint columns = 1;
+	switch (attrib.type)
+	{
+	case ShaderDataType::FM2:
+	case ShaderDataType::FM3x2:
+	case ShaderDataType::FM4x2:
+	case ShaderDataType::DM2:
+	case ShaderDataType::DM3x2:
+	case ShaderDataType::DM4x2:
+		columns = 2;
+		break;
+	case ShaderDataType::FM2x3:
+	case ShaderDataType::FM3:
+	case ShaderDataType::FM4x3:
+	case ShaderDataType::DM2x3:
+	case ShaderDataType::DM3:
+	case ShaderDataType::DM4x3:
+		columns = 3;
+		break;
+	case ShaderDataType::FM2x4:
+	case ShaderDataType::FM3x4:
+	case ShaderDataType::FM4:
+	case ShaderDataType::DM2x4:
+	case ShaderDataType::DM3x4:
+	case ShaderDataType::DM4:
+		columns = 4;
+		break;
+	}
+	location_coverage = columns * attrib.array_count;
+	switch (attrib.type)
+	{
+	case ShaderDataType::I:
+	case ShaderDataType::UI:
+	case ShaderDataType::F:
+	case ShaderDataType::D:
+		rows = 1;
+		break;
+	case ShaderDataType::I2:
+	case ShaderDataType::UI2:
+	case ShaderDataType::F2:
+	case ShaderDataType::D2:
+	case ShaderDataType::FM2:
+	case ShaderDataType::FM2x3:
+	case ShaderDataType::FM2x4:
+	case ShaderDataType::DM2:
+	case ShaderDataType::DM2x3:
+	case ShaderDataType::DM2x4:
+		rows = 2;
+		break;
+	case ShaderDataType::I3:
+	case ShaderDataType::UI3:
+	case ShaderDataType::F3:
+	case ShaderDataType::D3:
+	case ShaderDataType::FM3x2:
+	case ShaderDataType::FM3:
+	case ShaderDataType::FM3x4:
+	case ShaderDataType::DM3x2:
+	case ShaderDataType::DM3:
+	case ShaderDataType::DM3x4:
+		rows = 3;
+		break;
+	case ShaderDataType::I4:
+	case ShaderDataType::UI4:
+	case ShaderDataType::F4:
+	case ShaderDataType::D4:
+	case ShaderDataType::FM4x2:
+	case ShaderDataType::FM4x3:
+	case ShaderDataType::FM4:
+	case ShaderDataType::DM4x2:
+	case ShaderDataType::DM4x3:
+	case ShaderDataType::DM4:
+		rows = 4;
+		break;
+	}
 }
 
 // LATER investigate using glVertexAttribFormat+glBindVertexBuffer+glVertexAttribBinding workflow over glVertexAttribPointer. Also investigate glBindVertexBuffer
@@ -59,11 +133,11 @@ void vg::VertexAttribute::attrib_pointer(GLuint i, GLsizei stride) const
 #pragma warning(push)
 #pragma warning(disable : 4312)
 	if (type == VertexAttributeDataType::DOUBLE)
-		glVertexAttribLPointer(i, count, (GLenum)type, stride, (void*)offset);
+		glVertexAttribLPointer(i, rows, (GLenum)type, stride, (void*)offset);
 	else if (type != VertexAttributeDataType::FLOAT && type != VertexAttributeDataType::HALF && pass_by_integer)
-		glVertexAttribIPointer(i, count, (GLenum)type, stride, (void*)offset);
+		glVertexAttribIPointer(i, rows, (GLenum)type, stride, (void*)offset);
 	else
-		glVertexAttribPointer(i, count, (GLenum)type, normalized, stride, (void*)offset); // TODO count must be 1, 2, 3, or 4??? How about matrices/arrays?
+		glVertexAttribPointer(i, rows, (GLenum)type, normalized, stride, (void*)offset);
 #pragma warning(pop)
 	glEnableVertexAttribArray(i);
 	glVertexAttribDivisor(i, instance_divisor);
@@ -105,16 +179,17 @@ GLsizei vg::VertexAttribute::bytes() const
 		type_offset = sizeof(GLfixed);
 		break;
 	}
-	return type_offset * count;
+	return type_offset * rows * location_coverage;
 }
 
 vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader)
 {
 	_attributes.reserve(shader.layout().size());
+	GLuint location = 0;
 	for (GLuint i = 0; i < shader.layout().size(); ++i)
 	{
-		VertexAttribute attrib(shader.layout()[i]);
-		attrib.offset = _stride;
+		VertexAttribute attrib(shader.layout()[i], location, _stride);
+		location += attrib.get_location_coverage();
 		_stride += attrib.bytes();
 		_attributes.push_back(attrib);
 	}
@@ -124,24 +199,25 @@ vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader, const VertexAtt
 {
 	_attributes.reserve(shader.layout().size());
 	auto spec_iter = specifications.ordered_override_data_types.begin();
+	GLuint location = 0;
 	for (GLuint i = 0; i < shader.layout().size(); ++i)
 	{
-		VertexAttribute attrib(shader.layout()[i]);
+		VertexAttribute attrib(shader.layout()[i], location, _stride);
 		if (spec_iter != specifications.ordered_override_data_types.end() && spec_iter->first == i)
 		{
-			attrib.type = spec_iter->second;
+			attrib.set_type(spec_iter->second);
 			++spec_iter;
 		}
-		attrib.offset = _stride;
+		location += attrib.get_location_coverage();
 		_stride += attrib.bytes();
 		_attributes.push_back(attrib);
 	}
 	for (auto [i, normalized] : specifications.normalized)
-		_attributes[i].normalized = normalized;
+		_attributes[i].set_normalized(normalized);
 	for (auto [i, instance_divisor] : specifications.instance_divisor)
-		_attributes[i].instance_divisor = instance_divisor;
+		_attributes[i].set_instance_divisor(instance_divisor);
 	for (auto [i, pass_by_integer] : specifications.pass_by_integer)
-		_attributes[i].pass_by_integer = pass_by_integer;
+		_attributes[i].set_pass_by_integer(pass_by_integer);
 }
 
 void vg::VertexBufferLayout::attrib_pointers() const
@@ -158,7 +234,7 @@ void vg::VertexBufferLayout::unattrib_pointers() const
 
 GLintptr vg::VertexBufferLayout::buffer_offset(GLuint vertex, GLuint attrib) const
 {
-	return vertex * _stride + _attributes[attrib].offset;
+	return vertex * _stride + _attributes[attrib].get_offset();
 }
 
 vg::VAOBinding::VAOBinding(const Shader& shader)
@@ -210,17 +286,17 @@ void vg::VAOBinding::detach_vertex_buffers(const std::initializer_list<ids::GLBu
 }
 
 vg::VAOBindingBlock::VAOBindingBlock(const std::vector<Shader*>& shaders)
-	: vas(shaders.size())
+	: vas((GLuint)shaders.size())
 {
-	_layouts.resize(vas.get_count());
+	_layouts.reserve(vas.get_count());
 	for (Shader* shader : shaders)
 		_layouts.push_back(VertexBufferLayout(*shader));
 }
 
 vg::VAOBindingBlock::VAOBindingBlock(const std::vector<std::pair<Shader*, VertexAttributeSpecificationList*>>& shaders)
-	: vas(shaders.size())
+	: vas((GLuint)shaders.size())
 {
-	_layouts.resize(vas.get_count());
+	_layouts.reserve(vas.get_count());
 	for (auto [shader, speclist] : shaders)
 	{
 		if (speclist)

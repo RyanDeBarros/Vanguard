@@ -115,7 +115,7 @@ void vg::unbind_texture2D(GLuint slot)
 
 void vg::update_bound_texture2Ds()
 {
-	for (size_t i = 0; i < constants::max_texture_image_units; ++i)
+	for (GLuint i = 0; i < constants::max_texture_image_units; ++i)
 	{
 		glActiveTexture(i);
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(bound_texture2Ds + i));

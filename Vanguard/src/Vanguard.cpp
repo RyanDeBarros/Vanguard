@@ -45,14 +45,49 @@ bool vg::min_opengl_version_is_at_most(GLuint major, GLuint minor)
 	return VANGUARD_MIN_OPENGL_VERSION_MAJOR < major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR <= minor);
 }
 
-// TODO in addition to printing error code, print name of error as well.
+static const char* gl_error_name(GLenum error)
+{
+	static const char* NO_ERROR = "no error";
+	static const char* INVALID_ENUM = "invalid enum";
+	static const char* INVALID_VALUE = "invalid value";
+	static const char* INVALID_OPERATION = "invalid operation";
+	static const char* INVALID_FRAMEBUFFER_OPERATION = "invalid framebuffer operation";
+	static const char* OUT_OF_MEMORY = "out of memory";
+	static const char* STACK_UNDERFLOW = "stack underflow";
+	static const char* STACK_OVERFLOW = "stack overflow";
+	switch (error)
+	{
+	case GL_NO_ERROR:
+		return NO_ERROR;
+	case GL_INVALID_ENUM:
+		return INVALID_ENUM;
+	case GL_INVALID_VALUE:
+		return INVALID_VALUE;
+	case GL_INVALID_OPERATION:
+		return INVALID_OPERATION;
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return INVALID_FRAMEBUFFER_OPERATION;
+	case GL_OUT_OF_MEMORY:
+		return OUT_OF_MEMORY;
+	case GL_STACK_UNDERFLOW:
+		return STACK_UNDERFLOW;
+	case GL_STACK_OVERFLOW:
+		return STACK_OVERFLOW;
+	default:
+		return "";
+	}
+}
 
 bool vg::_::no_gl_errors(const char* file, int line)
 {
 	bool no_err = true;
 	while (GLenum error = glGetError())
 	{
-		std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
+		const char* err = gl_error_name(error);
+		if (err != "")
+			std::cerr << "OpenGL[" << err << "] " << file << ":" << line << "\n";
+		else
+			std::cerr << "OpenGL[" << error << "] " << file << ":" << line << "\n";
 		no_err = false;
 	}
 	if (!no_err)
