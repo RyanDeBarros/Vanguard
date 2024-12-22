@@ -103,17 +103,6 @@ void vg::raii::VertexArray::bind() const
 	glBindVertexArray(_vao);;
 }
 
-void vg::raii::VertexArray::bind_to_index_buffer(ids::GLBuffer ib) const
-{
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-	glVertexArrayElementBuffer(_vao, ib);
-#else
-	glBindVertexArray(_vao);
-	buffers::bind(ib, BufferTarget::INDEX);
-#endif
-	glBindVertexArray(0);
-}
-
 vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
 	: count(count)
 {
@@ -162,32 +151,6 @@ void vg::raii::VertexArrayBlock::bind(GLuint i) const
 	glBindVertexArray(_vaos[i]);
 }
 
-void vg::raii::VertexArrayBlock::bind_to_index_buffer(GLuint i, ids::GLBuffer ib) const
-{
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-	glVertexArrayElementBuffer(_vaos[i], ib);
-#else
-	glBindVertexArray(_vaos[i]);
-	buffers::bind(ib, BufferTarget::INDEX);
-#endif
-	glBindVertexArray(0);
-}
-
-void vg::raii::VertexArrayBlock::bind_to_index_buffers(GLuint from, GLuint count, ids::GLBuffer* ibs) const
-{
-	GLuint end = std::min(this->count, from + count);
-	for (GLuint i = from; i < end; ++i)
-	{
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-		glVertexArrayElementBuffer(_vaos[i], ibs[i]);
-#else
-		glBindVertexArray(_vaos[i]);
-		buffers::bind(ibs[i], BufferTarget::INDEX);
-#endif
-	}
-	glBindVertexArray(0);
-}
-
 GLintptr vg::index_data_type_size(IndexDataType idt)
 {
 	if (idt == IndexDataType::UBYTE)
@@ -198,6 +161,31 @@ GLintptr vg::index_data_type_size(IndexDataType idt)
 		return sizeof(unsigned int);
 	else
 		return 0;
+}
+
+void vg::bind_index_buffer_to_vertex_array(ids::GLBuffer ib, ids::VertexArray va)
+{
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+	glVertexArrayElementBuffer(va, ib);
+#else
+	glBindVertexArray(va);
+	buffers::bind(ib, BufferTarget::INDEX);
+#endif
+	glBindVertexArray(0);
+}
+
+void vg::bind_index_buffers_to_vertex_arrays(const ids::GLBuffer* ibs, const ids::VertexArray* vas, GLuint count)
+{
+	for (GLuint i = 0; i < count; ++i)
+	{
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		glVertexArrayElementBuffer(vas[i], ibs[i]);
+#else
+		glBindVertexArray(vas[i]);
+		buffers::bind(ibs[i], BufferTarget::INDEX);
+#endif
+	}
+	glBindVertexArray(0);
 }
 
 void vg::unbind_vertex_array()

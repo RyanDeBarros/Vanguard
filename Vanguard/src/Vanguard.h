@@ -43,6 +43,7 @@ namespace vg
 
 	extern void enable_scissor_test(bool enable = true);
 	extern void enable_standard_blending(bool enable = true);
+	extern void enable_vsync(bool enable = true);
 	extern void set_clear_color(glm::vec4 rgba);
 	extern void clear_buffer();
 }

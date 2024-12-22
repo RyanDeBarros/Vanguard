@@ -50,6 +50,8 @@ namespace vg
 			~GLBufferBlock();
 
 			ids::GLBuffer operator[](GLuint i) const;
+
+			GLuint get_count() const { return count; }
 		};
 	}
 	namespace ids
@@ -80,7 +82,6 @@ namespace vg
 
 			operator ids::VertexArray () const { return _vao; }
 			void bind() const;
-			void bind_to_index_buffer(ids::GLBuffer ib) const;
 		};
 
 		class VertexArrayBlock
@@ -98,13 +99,14 @@ namespace vg
 
 			GLuint get_count() const { return count; }
 
+			operator const ids::VertexArray* () const { return _vaos; }
 			ids::VertexArray operator[](GLuint i) const;
 			void bind(GLuint i) const;
-			void bind_to_index_buffer(GLuint i, ids::GLBuffer ib) const;
-			void bind_to_index_buffers(GLuint from, GLuint count, ids::GLBuffer* ibs) const;
 		};
 	}
 
+	extern void bind_index_buffer_to_vertex_array(ids::GLBuffer ib, ids::VertexArray va);
+	extern void bind_index_buffers_to_vertex_arrays(const ids::GLBuffer* ibs, const ids::VertexArray* vas, GLuint count);
 	extern void unbind_vertex_array();
 
 	enum class DrawMode

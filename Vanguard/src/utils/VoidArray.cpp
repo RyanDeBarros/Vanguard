@@ -40,3 +40,17 @@ void vg::VoidArray::resize(size_t size)
     _v = r;
     _size = size;
 }
+
+const void* vg::VoidArray::operator[](size_t offset) const
+{
+    if (offset > _size)
+        throw offset_out_of_range(_size, offset, 1);
+    return (char*)_v + offset;
+}
+
+void* vg::VoidArray::operator[](size_t offset)
+{
+    if (offset > _size)
+        throw offset_out_of_range(_size, offset, 1);
+    return (char*)_v + offset;
+}

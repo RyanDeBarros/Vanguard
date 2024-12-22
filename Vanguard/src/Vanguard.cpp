@@ -16,6 +16,11 @@ void vg::init()
 	_::init_input();
 	_::query_gl_constants();
 	_::init_bound_textures();
+	
+	// TODO put in some kind of configuration struct
+	enable_standard_blending();
+	enable_scissor_test();
+	enable_vsync();
 }
 
 void vg::terminate()
@@ -72,6 +77,14 @@ void vg::enable_standard_blending(bool enable)
 	}
 	else
 		glDisable(GL_BLEND);
+}
+
+void vg::enable_vsync(bool enable)
+{
+	if (enable)
+		glfwSwapInterval(1);
+	else
+		glfwSwapInterval(0);
 }
 
 void vg::set_clear_color(glm::vec4 rgba)

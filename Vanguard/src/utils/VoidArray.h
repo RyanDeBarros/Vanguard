@@ -21,6 +21,8 @@ namespace vg
 
 		operator const void* () const { return _v; }
 		operator void* () { return _v; }
+		const void* operator[](size_t offset) const;
+		void* operator[](size_t offset);
 
 		template<typename Type>
 		const Type& ref(size_t offset_bytes) const
