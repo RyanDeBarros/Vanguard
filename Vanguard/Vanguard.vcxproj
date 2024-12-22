@@ -177,6 +177,7 @@
   <ItemGroup>
     <ClInclude Include="src\Errors.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\utils\DynamicArray.h" />
     <ClInclude Include="src\utils\FilePath.h" />
     <ClInclude Include="src\GLConstants.h" />
     <ClInclude Include="src\Input.h" />

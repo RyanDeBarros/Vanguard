@@ -89,7 +89,7 @@ namespace vg
 
 	class VAOBindingBlock
 	{
-		std::vector<VertexBufferLayout> _layouts; // TODO define fixed_vector for dynamic array that doesn't need push_back/erase functions
+		std::vector<VertexBufferLayout> _layouts;
 		raii::VertexArrayBlock vas;
 
 	public:

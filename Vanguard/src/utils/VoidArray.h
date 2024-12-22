@@ -4,6 +4,8 @@
 
 namespace vg
 {
+	// TODO clone()
+
 	class VoidArray
 	{
 		void* _v = nullptr;
