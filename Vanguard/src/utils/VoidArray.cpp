@@ -32,6 +32,13 @@ vg::VoidArray::~VoidArray()
     free(_v);
 }
 
+vg::VoidArray vg::VoidArray::clone() const
+{
+    VoidArray cln(_size);
+    memcpy(cln, *this, _size);
+    return cln;
+}
+
 void vg::VoidArray::resize(size_t size)
 {
     void* r = realloc(_v, size);

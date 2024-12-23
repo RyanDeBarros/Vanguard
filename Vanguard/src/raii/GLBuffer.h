@@ -318,13 +318,15 @@ namespace vg
 		extern void bind(ids::GLBuffer b, BufferTarget target);
 		extern void unbind(BufferTarget target);
 		extern void init_immutable(BufferTarget target, GLsizeiptr size, const void* data = nullptr, int usage = BufferImmutableUsage::DYNAMIC_STORAGE);
-		extern void init_mutable(BufferTarget target, GLsizeiptr size, const void* data, BufferMutableUsage usage = BufferMutableUsage::DYNAMIC_DRAW);
+		extern void init_mutable(BufferTarget target, GLsizeiptr size, const void* data = nullptr, BufferMutableUsage usage = BufferMutableUsage::DYNAMIC_DRAW);
 		extern void subsend(BufferTarget target, GLintptr offset_bytes, GLsizeiptr size, const void* data);
 		extern void map(BufferTarget target, void* data, size_t size);
 		extern void submap(BufferTarget target, GLintptr offset_bytes, GLsizeiptr length_bytes, void* data);
 		extern void copy_gl_buffer(ids::GLBuffer b_src, ids::GLBuffer b_dst, GLintptr offset_src_bytes, GLintptr offset_dst_bytes, GLsizeiptr size);
 		extern void copy_bound_gl_buffers(GLintptr offset_src_bytes, GLintptr offset_dst_bytes, GLsizeiptr size);
 		extern VoidArray read(BufferTarget target, GLintptr offset_bytes, GLsizeiptr size);
+		extern bool is_mutable(ids::GLBuffer buf);
+		extern GLuint size(ids::GLBuffer buf);
 	}
 
 	namespace draw

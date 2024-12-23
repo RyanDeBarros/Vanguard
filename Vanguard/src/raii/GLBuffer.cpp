@@ -440,7 +440,9 @@ void vg::buffers::unbind(BufferTarget target)
 
 void vg::buffers::init_immutable(BufferTarget target, GLsizeiptr size, const void* data, int usage)
 {
+	VANGUARD_ASSERT_GL_OKAY
 	glBufferStorage((GLenum)target, size, data, usage);
+	VANGUARD_ASSERT_GL_OKAY
 }
 
 void vg::buffers::init_mutable(BufferTarget target, GLsizeiptr size, const void* data, BufferMutableUsage usage)
@@ -484,6 +486,24 @@ vg::VoidArray vg::buffers::read(BufferTarget target, GLintptr offset_bytes, GLsi
 	VoidArray data(size);
 	glGetBufferSubData((GLenum)target, offset_bytes, size, data);
 	return data;
+}
+
+bool vg::buffers::is_mutable(ids::GLBuffer buf)
+{
+	GLint imm;
+	bind(buf, BufferTarget::QUERY);
+	glGetBufferParameteriv((GLenum)BufferTarget::QUERY, GL_BUFFER_IMMUTABLE_STORAGE, &imm);
+	unbind(BufferTarget::QUERY);
+	return imm == GL_FALSE;
+}
+
+GLuint vg::buffers::size(ids::GLBuffer buf)
+{
+	GLint size;
+	bind(buf, BufferTarget::QUERY);
+	glGetBufferParameteriv((GLenum)BufferTarget::QUERY, GL_BUFFER_SIZE, &size);
+	unbind(BufferTarget::QUERY);
+	return size;
 }
 
 void vg::draw::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count)

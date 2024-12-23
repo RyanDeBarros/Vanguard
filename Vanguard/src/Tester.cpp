@@ -17,52 +17,100 @@ int main()
 	vg::set_clear_color({ 0.5f, 0.7f, 0.9f, 1.0f });
 
 	vg::Shader shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
-	vg::VAOBinding vao_binding(shader);
+	auto vb_layout = std::make_shared<vg::VertexBufferLayout>(shader);
 
-	vg::VertexBuffer vertex_buffer(&vao_binding);
-	vertex_buffer.bind();
-	vg::VoidArray cpubuf = vg::buffers::init_immutable_cpu_vertex_buffer(vertex_buffer, 4);
+	vg::VertexBuffer vertex_buffer(vb_layout);
+	vg::VoidArray cpubuf = vertex_buffer.init_immutable_cpu_buffer(4);
 
-	vertex_buffer.ref<glm::vec2>(cpubuf, 0, 0) = { -0.5f, -0.5f };
-	vertex_buffer.ref<glm::vec2>(cpubuf, 1, 0) = {  0.5f, -0.5f };
-	vertex_buffer.ref<glm::vec2>(cpubuf, 2, 0) = {  0.0f,  0.5f };
-	vertex_buffer.ref<glm::vec2>(cpubuf, 3, 0) = {  0.8f,  0.8f };
-
-	vertex_buffer.ref<glm::vec4>(cpubuf, 0, 1) = { 0.0f, 0.0f, 0.0f, 1.0f };
-	vertex_buffer.ref<glm::vec4>(cpubuf, 1, 1) = { 0.0f, 0.0f, 0.0f, 1.0f };
-	vertex_buffer.ref<glm::vec4>(cpubuf, 2, 1) = { 0.0f, 0.0f, 0.0f, 1.0f };
-	vertex_buffer.ref<glm::vec4>(cpubuf, 3, 1) = { 0.0f, 0.0f, 0.0f, 1.0f };
-	
-	vertex_buffer.bind();
+	vertex_buffer.set_attributes(cpubuf, 0, 0, std::array<glm::vec2, 4>{
+		glm::vec2{ -0.5f, -0.5f },
+		glm::vec2{  0.5f, -0.5f },
+		glm::vec2{  0.0f,  0.5f },
+		glm::vec2{  0.8f,  0.8f }
+		});
+	vertex_buffer.set_attribute(cpubuf, 1, glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
+	vertex_buffer.bind_vb();
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, cpubuf.size(), cpubuf);
+	// TODO create CPUVertexBuffer that abstracts this kind of stuff. Then, there could be a series of Renderable classes that hold VertexBuffer/VertexBufferBlock/MultiVertexBuffer, VertexBufferLayout, and CPUVertexBuffer.
 	
 	vg::raii::GLBuffer index_buffer;
-	vertex_buffer.binding()->bind_index_buffer(index_buffer);
+	vg::bind_index_buffer_to_vertex_array(index_buffer, vertex_buffer.vao());
 	std::array<GLubyte, 6> indbuf = { 0, 1, 2, 2, 3, 0 };
 	vg::buffers::bind(index_buffer, vg::BufferTarget::INDEX);
 	vg::buffers::init_immutable(vg::BufferTarget::INDEX, sizeof(indbuf), &indbuf);
 
+	vg::VertexBufferBlock white_square(2, vb_layout, { { 0, { 0 } }, { 1, { 1 } } });
+	vg::VoidArray wsbuf0 = white_square.init_immutable_cpu_buffer(0, 4);
+	vg::VoidArray wsbuf1 = white_square.init_immutable_cpu_buffer(1, 4);
+
+	white_square.set_attributes(wsbuf0, 0, 0, 0, std::array<glm::vec2, 4>{
+		glm::vec2{ 0.7f, -0.7f },
+		glm::vec2{ 0.9f, -0.7f },
+		glm::vec2{ 0.9f, -0.9f },
+		glm::vec2{ 0.7f, -0.9f }
+	});
+	white_square.bind_vb(0);
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, wsbuf0.size(), wsbuf0);
+	white_square.set_attribute(wsbuf1, 1, 1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	white_square.bind_vb(1);
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, wsbuf1.size(), wsbuf1);
+	vg::bind_index_buffer_to_vertex_array(index_buffer, white_square.vao());
+
+	vg::MultiVertexBuffer tripair({ vb_layout, vb_layout });
+	vg::VoidArray tribuf0 = tripair.init_immutable_cpu_buffer(0, 3);
+	vg::VoidArray tribuf1 = tripair.init_immutable_cpu_buffer(1, 3);
+
+	tripair.set_attributes(0, tribuf0, 0, 0, std::array<glm::vec2, 3>{
+		glm::vec2{ -0.9f, 0.9f },
+		glm::vec2{ -0.8f, 0.9f },
+		glm::vec2{ -0.9f, 0.8f }
+	});
+	tripair.set_attributes(1, tribuf1, 0, 0, std::array<glm::vec2, 3>{
+		glm::vec2{ -0.7f, 0.9f },
+		glm::vec2{ -0.7f, 0.8f },
+		glm::vec2{ -0.8f, 0.8f }
+	});
+	tripair.set_attribute(0, tribuf0, 1, glm::vec4{ 0.8f, 0.5f, 0.3f, 0.7f });
+	tripair.set_attribute(1, tribuf1, 1, glm::vec4{ 0.7f, 0.5f, 0.4f, 0.6f });
+	tripair.bind_vb(0);
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, tribuf0.size(), tribuf0);
+	tripair.bind_vb(1);
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, tribuf1.size(), tribuf1);
+
 	window.render_frame = [&]() {
 		vg::bind_shader(shader);
-		vao_binding.bind();
-		vertex_buffer.bind();
-		vg::draw::elements(vg::DrawMode::TRIANGLES, 6, 0, vg::IndexDataType::UBYTE);
+		vertex_buffer.bind_vao();
+		vg::draw::elements(vg::DrawMode::TRIANGLES, 6, 0, vg::IndexDataType::UBYTE); // TODO make 6 a method on CPUIndexBuffer
 
-		auto offset0 = vao_binding.layout().buffer_offset(0, 1) + 0 * sizeof(float);
+		auto offset0 = vertex_buffer.layout()->buffer_offset(0, 1) + 0 * sizeof(float);
 		cpubuf.ref<float>(offset0) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 0 * glm::pi<float>() / 3)));
-		vertex_buffer.bind();
+		vertex_buffer.bind_vb();
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset0, sizeof(float), cpubuf[offset0]);
 
-		auto offset1 = vao_binding.layout().buffer_offset(1, 1) + 1 * sizeof(float);
+		auto offset1 = vertex_buffer.layout()->buffer_offset(1, 1) + 1 * sizeof(float);
 		cpubuf.ref<float>(offset1) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 1 * glm::pi<float>() / 3)));
-		vertex_buffer.bind();
+		vertex_buffer.bind_vb();
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset1, sizeof(float), cpubuf[offset1]);
 
-		auto offset2 = vao_binding.layout().buffer_offset(2, 1) + 2 * sizeof(float);
+		auto offset2 = vertex_buffer.layout()->buffer_offset(2, 1) + 2 * sizeof(float);
 		cpubuf.ref<float>(offset2) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 2 * glm::pi<float>() / 3)));
-		vertex_buffer.bind();
+		vertex_buffer.bind_vb();
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset2, sizeof(float), cpubuf[offset2]);
+
+		white_square.ref<glm::vec2>(wsbuf0, 0, 0, 0).x -= float(0.008f * glm::sin(glfwGetTime() * 20.0f));
+		white_square.bind_vb(0);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, white_square.buffer_offset(0, 0, 0), sizeof(glm::vec2), wsbuf0);
+
+		white_square.bind_vao();
+		vg::draw::elements(vg::DrawMode::TRIANGLES, 6, 0, vg::IndexDataType::UBYTE);
+
+		tripair.bind_vao(0);
+		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(0, tribuf0));
+		tripair.bind_vao(1);
+		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1, tribuf1));
 		};
+
+	// TODO Interleaved Vertex Buffers. Not a separate VertexBuffer class, but a different struct that doesn't even have a reference to any buffers/VAOs. All it stores is offsets and object sizes.
 
 	for (;;)
 	{

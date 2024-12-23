@@ -4,8 +4,6 @@
 
 namespace vg
 {
-	// TODO clone()
-
 	class VoidArray
 	{
 		void* _v = nullptr;
@@ -17,6 +15,8 @@ namespace vg
 		VoidArray(VoidArray&&) noexcept;
 		VoidArray& operator=(VoidArray&&) noexcept;
 		~VoidArray();
+
+		VoidArray clone() const;
 
 		size_t size() const { return _size; }
 		void resize(size_t size);
