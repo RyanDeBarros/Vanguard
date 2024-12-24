@@ -29,7 +29,14 @@
 
 namespace vg
 {
-	extern void init();
+	struct InitializationConfiguration
+	{
+		bool standard_blending = true;
+		bool scissor_test = true;
+		bool vsync_on = true;
+	};
+
+	extern void init(const vg::InitializationConfiguration& config = {});
 	extern void terminate();
 	extern void new_frame();
 

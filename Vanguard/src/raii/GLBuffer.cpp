@@ -205,11 +205,6 @@ void vg::GPUIndirectArrays::bind() const
 	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
 }
 
-void vg::GPUIndirectArrays::draw(DrawMode mode) const
-{
-	glDrawArraysIndirect((GLenum)mode, (void*)0);
-}
-
 void vg::GPUIndirectArrays::send_vertex_count(GLuint vertex_count) const
 {
 	buffers::subsend(BufferTarget::DRAW_INDIRECT, 0, sizeof(GLuint), &vertex_count);
@@ -245,21 +240,6 @@ vg::GPUIndirectArraysBlock::GPUIndirectArraysBlock(GLuint count)
 void vg::GPUIndirectArraysBlock::bind() const
 {
 	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
-}
-
-void vg::GPUIndirectArraysBlock::draw(GLuint i, DrawMode mode) const
-{
-	if (i >= count)
-		throw block_index_out_of_range(count, i);
-	glDrawArraysIndirect((GLenum)mode, (void*)(i * sizeof(IndirectArraysCmd)));
-}
-
-void vg::GPUIndirectArraysBlock::multi_draw(DrawMode mode, GLuint first, GLuint count) const
-{
-	GLuint last = first + count - 1;
-	if (last >= this->count)
-		throw block_index_out_of_range(this->count, last);
-	glMultiDrawArraysIndirect((GLenum)mode, (void*)(first * sizeof(IndirectArraysCmd)), count, sizeof(IndirectArraysCmd));
 }
 
 void vg::GPUIndirectArraysBlock::send_vertex_count(GLuint i, GLuint vertex_count) const
@@ -316,11 +296,6 @@ void vg::GPUIndirectElements::bind() const
 	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
 }
 
-void vg::GPUIndirectElements::draw(DrawMode mode, IndexDataType idt) const
-{
-	glDrawElementsIndirect((GLenum)mode, (GLenum)idt, 0);
-}
-
 void vg::GPUIndirectElements::send_index_count(GLuint index_count) const
 {
 	buffers::subsend(BufferTarget::DRAW_INDIRECT, 0, sizeof(GLuint), &index_count);
@@ -361,21 +336,6 @@ vg::GPUIndirectElementsBlock::GPUIndirectElementsBlock(GLuint count)
 void vg::GPUIndirectElementsBlock::bind() const
 {
 	buffers::bind(b, BufferTarget::DRAW_INDIRECT);
-}
-
-void vg::GPUIndirectElementsBlock::draw(GLuint i, DrawMode mode, IndexDataType idt) const
-{
-	if (i >= count)
-		throw block_index_out_of_range(count, i);
-	glDrawElementsIndirect((GLenum)mode, (GLenum)idt, (void*)(i * sizeof(IndirectElementsCmd)));
-}
-
-void vg::GPUIndirectElementsBlock::multi_draw(DrawMode mode, GLuint first, GLuint count, IndexDataType idt) const
-{
-	GLuint last = first + count - 1;
-	if (last >= this->count)
-		throw block_index_out_of_range(this->count, last);
-	glMultiDrawElementsIndirect((GLenum)mode, (GLenum)idt, (void*)(first * sizeof(IndirectElementsCmd)), count, sizeof(IndirectElementsCmd));
 }
 
 void vg::GPUIndirectElementsBlock::send_index_count(GLuint i, GLuint index_count) const
@@ -504,74 +464,4 @@ GLuint vg::buffers::size(ids::GLBuffer buf)
 	glGetBufferParameteriv((GLenum)BufferTarget::QUERY, GL_BUFFER_SIZE, &size);
 	unbind(BufferTarget::QUERY);
 	return size;
-}
-
-void vg::draw::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count)
-{
-	glDrawArrays((GLenum)mode, first_vertex, vertex_count);
-}
-
-void vg::draw::elements(DrawMode mode, GLsizei index_count, GLuint first_index, IndexDataType idt)
-{
-	glDrawElements((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)));
-}
-
-void vg::draw::element_range(DrawMode mode, GLuint minimum_index, GLuint maximum_index, GLsizei index_count, GLuint first_index, IndexDataType idt)
-{
-	glDrawRangeElements((GLenum)mode, minimum_index, maximum_index, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)));
-}
-
-void vg::draw::instanced::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count, GLsizei instance_count)
-{
-	glDrawArraysInstanced((GLenum)mode, first_vertex, vertex_count, instance_count);
-}
-
-void vg::draw::instanced::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, IndexDataType idt)
-{
-	glDrawElementsInstanced((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count);
-}
-
-void vg::draw::instanced::arrays(DrawMode mode, GLint first_vertex, GLsizei vertex_count, GLsizei instance_count, GLuint first_instance)
-{
-	glDrawArraysInstancedBaseInstance((GLenum)mode, first_vertex, vertex_count, instance_count, first_instance);
-}
-
-void vg::draw::instanced::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLuint first_instance, IndexDataType idt)
-{
-	glDrawElementsInstancedBaseInstance((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count, first_instance);
-}
-
-void vg::draw::base_vertex::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLint base_vertex, IndexDataType idt)
-{
-	glDrawElementsBaseVertex((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), base_vertex);
-}
-
-void vg::draw::base_vertex::element_range(DrawMode mode, GLuint minimum_index, GLuint maximum_index, GLsizei index_count, GLuint first_index, GLint base_vertex, IndexDataType idt)
-{
-	glDrawRangeElementsBaseVertex((GLenum)mode, minimum_index, maximum_index, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), base_vertex);
-}
-
-void vg::draw::instanced_base_vertex::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLint base_vertex, IndexDataType idt)
-{
-	glDrawElementsInstancedBaseVertex((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count, base_vertex);
-}
-
-void vg::draw::instanced_base_vertex::elements(DrawMode mode, GLsizei index_count, GLuint first_index, GLsizei instance_count, GLint base_vertex, GLuint first_instance, IndexDataType idt)
-{
-	glDrawElementsInstancedBaseVertexBaseInstance((GLenum)mode, index_count, (GLenum)idt, (void*)(first_index * index_data_type_size(idt)), instance_count, base_vertex, first_instance);
-}
-
-void vg::draw::multi::arrays(DrawMode mode, const GLint* first_vertices, const GLsizei* vertex_counts, GLsizei drawcount)
-{
-	glMultiDrawArrays((GLenum)mode, first_vertices, vertex_counts, drawcount);
-}
-
-void vg::draw::multi::elements(DrawMode mode, const GLsizei* index_counts, const GLsizeiptr* first_index_bytes, IndexDataType idt, GLsizei drawcount)
-{
-	glMultiDrawElements((GLenum)mode, index_counts, (GLenum)idt, (void**)first_index_bytes, drawcount);
-}
-
-void vg::draw::multi::elements_base_vertex(DrawMode mode, GLsizei* index_counts, const GLintptr* first_index_bytes, IndexDataType idt, GLint* base_vertices, GLsizei drawcount)
-{
-	glMultiDrawElementsBaseVertex((GLenum)mode, index_counts, (GLenum)idt, (void**)first_index_bytes, drawcount, base_vertices);
 }

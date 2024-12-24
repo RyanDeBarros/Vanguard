@@ -6,6 +6,7 @@
 
 #include "raii/Window.h"
 #include "Renderable.h"
+#include "Draw.h"
 
 int main()
 {
@@ -33,11 +34,9 @@ int main()
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, cpubuf.size(), cpubuf);
 	// TODO create CPUVertexBuffer that abstracts this kind of stuff. Then, there could be a series of Renderable classes that hold VertexBuffer/VertexBufferBlock/MultiVertexBuffer, VertexBufferLayout, and CPUVertexBuffer.
 	
-	vg::raii::GLBuffer index_buffer;
-	vg::bind_index_buffer_to_vertex_array(index_buffer, vertex_buffer.vao());
-	std::array<GLubyte, 6> indbuf = { 0, 1, 2, 2, 3, 0 };
-	vg::buffers::bind(index_buffer, vg::BufferTarget::INDEX);
-	vg::buffers::init_immutable(vg::BufferTarget::INDEX, sizeof(indbuf), &indbuf);
+	vg::CPUIndexBuffer index_buffer(vg::IndexDataType::UBYTE);
+	index_buffer.bind_to_vertex_array(vertex_buffer.vao());
+	index_buffer.init_immutable_quads(1);
 
 	vg::VertexBufferBlock white_square(2, vb_layout, { { 0, { 0 } }, { 1, { 1 } } });
 	vg::VoidArray wsbuf0 = white_square.init_immutable_cpu_buffer(0, 4);
@@ -54,7 +53,7 @@ int main()
 	white_square.set_attribute(wsbuf1, 1, 1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 	white_square.bind_vb(1);
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, wsbuf1.size(), wsbuf1);
-	vg::bind_index_buffer_to_vertex_array(index_buffer, white_square.vao());
+	index_buffer.bind_to_vertex_array(white_square.vao());
 
 	vg::MultiVertexBuffer tripair({ vb_layout, vb_layout });
 	vg::VoidArray tribuf0 = tripair.init_immutable_cpu_buffer(0, 3);
@@ -80,7 +79,7 @@ int main()
 	window.render_frame = [&]() {
 		vg::bind_shader(shader);
 		vertex_buffer.bind_vao();
-		vg::draw::elements(vg::DrawMode::TRIANGLES, 6, 0, vg::IndexDataType::UBYTE); // TODO make 6 a method on CPUIndexBuffer
+		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 
 		auto offset0 = vertex_buffer.layout()->buffer_offset(0, 1) + 0 * sizeof(float);
 		cpubuf.ref<float>(offset0) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 0 * glm::pi<float>() / 3)));
@@ -102,7 +101,7 @@ int main()
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, white_square.buffer_offset(0, 0, 0), sizeof(glm::vec2), wsbuf0);
 
 		white_square.bind_vao();
-		vg::draw::elements(vg::DrawMode::TRIANGLES, 6, 0, vg::IndexDataType::UBYTE);
+		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, vg::IndexDataType::UBYTE);
 
 		tripair.bind_vao(0);
 		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(0, tribuf0));

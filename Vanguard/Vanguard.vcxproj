@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Draw.cpp" />
     <ClCompile Include="src\Renderable.cpp" />
     <ClCompile Include="src\Errors.cpp" />
     <ClCompile Include="src\utils\FilePath.cpp" />
@@ -177,6 +178,7 @@
   <ItemGroup>
     <ClInclude Include="src\Errors.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\Draw.h" />
     <ClInclude Include="src\utils\DynamicArray.h" />
     <ClInclude Include="src\utils\FilePath.h" />
     <ClInclude Include="src\GLConstants.h" />

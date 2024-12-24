@@ -9,7 +9,7 @@
 // LATER use Logger
 #include <iostream>
 
-void vg::init()
+void vg::init(const vg::InitializationConfiguration& config)
 {
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
@@ -17,10 +17,12 @@ void vg::init()
 	_::query_gl_constants();
 	_::init_bound_textures();
 	
-	// TODO put in some kind of configuration struct
-	enable_standard_blending();
-	enable_scissor_test();
-	enable_vsync();
+	if (config.standard_blending)
+		enable_standard_blending();
+	if (config.scissor_test)
+		enable_scissor_test();
+	if (config.vsync_on)
+		enable_vsync();
 }
 
 void vg::terminate()

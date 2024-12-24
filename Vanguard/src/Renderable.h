@@ -7,24 +7,25 @@
 
 namespace vg
 {
-	// TODO convert to char enum, but then define conversion function that will convert to OpenGL enums? Because GL_ enums don't fit in char.
-	enum class VertexAttributeDataType
-	{
-		CHAR = GL_BYTE,
-		UCHAR = GL_UNSIGNED_BYTE,
-		SHORT = GL_SHORT,
-		USHORT = GL_UNSIGNED_SHORT,
-		INT = GL_INT,
-		UINT = GL_UNSIGNED_INT,
-		HALF = GL_HALF_FLOAT,
-		FLOAT = GL_FLOAT,
-		DOUBLE = GL_DOUBLE,
-		FIXED = GL_FIXED
-	};
-
 	class VertexAttribute
 	{
-		VertexAttributeDataType type = VertexAttributeDataType::FLOAT;
+	public:
+		enum DataType : char
+		{
+			CHAR = GL_BYTE - GL_BYTE,
+			UCHAR = GL_UNSIGNED_BYTE - GL_BYTE,
+			SHORT = GL_SHORT - GL_BYTE,
+			USHORT = GL_UNSIGNED_SHORT - GL_BYTE,
+			INT = GL_INT - GL_BYTE,
+			UINT = GL_UNSIGNED_INT - GL_BYTE,
+			HALF = GL_HALF_FLOAT - GL_BYTE,
+			FLOAT = GL_FLOAT - GL_BYTE,
+			DOUBLE = GL_DOUBLE - GL_BYTE,
+			FIXED = GL_FIXED - GL_BYTE
+		};
+
+	private:
+		DataType type = DataType::FLOAT;
 		bool normalized = false;
 		bool pass_by_integer = false;
 		GLubyte rows = 0;
@@ -38,11 +39,12 @@ namespace vg
 		void attrib_pointer(GLuint i, GLsizei stride) const;
 		void attrib_pointer(GLuint i, GLsizei stride, GLuint offset) const;
 		GLsizei bytes() const;
-		void set_type(VertexAttributeDataType type) { this->type = type; }
+		void set_type(DataType type) { this->type = type; }
 		void set_normalized(bool normalized) { this->normalized = normalized; }
 		void set_pass_by_integer(bool pass_by_integer) { this->pass_by_integer = pass_by_integer; }
 		void set_instance_divisor(GLuint instance_divisor) { this->instance_divisor = instance_divisor; }
 		GLuint get_offset() const { return offset; }
+		GLenum type_as_gl_enum() const { return (GLenum)type + GL_BYTE; }
 
 		static GLuint location_coverage(ShaderAttribute attrib);
 	};
@@ -51,13 +53,13 @@ namespace vg
 	{
 		std::vector<std::pair<GLuint, bool>> normalized = {};
 		std::vector<std::pair<GLuint, bool>> pass_by_integer = {};
-		std::vector<std::pair<GLuint, VertexAttributeDataType>> ordered_override_data_types = {};
+		std::vector<std::pair<GLuint, VertexAttribute::DataType>> ordered_override_data_types = {};
 		std::vector<std::pair<GLuint, GLuint>> instance_divisor = {};
 	};
 
 	class VertexBufferLayout
 	{
-		std::vector<VertexAttribute> _attributes; // TODO get_location_coverage() should just be 1. Instead, just use multiple attributes per covered location.
+		std::vector<VertexAttribute> _attributes;
 		GLuint _stride = 0;
 
 	public:
@@ -223,8 +225,6 @@ namespace vg
 		MultiVertexBuffer(std::vector<std::shared_ptr<VertexBufferLayout>>&& layouts);
 		MultiVertexBuffer(const MultiVertexBuffer&) = delete;
 
-		// TODO in all Block classes, use a struct BlockIndex instead of GLuint
-
 		const std::shared_ptr<VertexBufferLayout>& layout(GLuint i) const { return _layouts[i]; }
 		ids::VertexArray vao(GLuint i) const { return _vaos[i]; }
 		ids::GLBuffer vb(GLuint i) const { return _vbs[i]; }
@@ -277,5 +277,93 @@ namespace vg
 		VoidArray init_immutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
 		VoidArray init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
 		GLuint vertex_count(GLuint i, const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / _layouts[i]->stride()); }
+	};
+
+	class IndexBuffer
+	{
+		raii::GLBuffer _ib;
+		IndexDataType idt;
+
+	public:
+		IndexBuffer(IndexDataType idt) : idt(idt) {}
+
+		ids::GLBuffer ib() const { return _ib; }
+		void bind_to_vertex_array(ids::VertexArray va) const { bind_index_buffer_to_vertex_array(_ib, va); }
+		void bind() const { buffers::bind(_ib, BufferTarget::INDEX); }
+		IndexDataType data_type() const { return idt; }
+		GLsizei query_size() const { return GLsizei(buffers::size(_ib) / index_data_type_size(idt)); }
+
+		void init_immutable(const void* cpubuf, GLsizei size) const { bind(); buffers::init_immutable(BufferTarget::INDEX, size, cpubuf); }
+		void init_mutable(const void* cpubuf, GLsizei size) const { bind(); buffers::init_mutable(BufferTarget::INDEX, size, cpubuf); }
+	};
+
+	class IndexBufferBlock
+	{
+		raii::GLBufferBlock _ibs;
+		std::vector<IndexDataType> _idts;
+
+	public:
+		IndexBufferBlock(const std::vector<IndexDataType>& idts) : _ibs((GLuint)idts.size()), _idts(idts) {}
+		IndexBufferBlock(std::vector<IndexDataType>&& idts) : _ibs((GLuint)idts.size()), _idts(std::move(idts)) {}
+
+		ids::GLBuffer ib(GLuint i) const { return _ibs[i]; }
+		void bind_to_vertex_array(GLuint i, ids::VertexArray va) const { bind_index_buffer_to_vertex_array(_ibs[i], va); }
+		void bind(GLuint i) const { buffers::bind(_ibs[i], BufferTarget::INDEX); }
+		IndexDataType data_type(GLuint i) const { return _idts[i]; }
+		GLsizei query_size(GLuint i) const { return GLsizei(buffers::size(_ibs[i]) / index_data_type_size(_idts[i])); }
+
+		void init_immutable(GLuint i, const void* cpubuf, GLsizei size) const { bind(i); buffers::init_immutable(BufferTarget::INDEX, size, cpubuf); }
+		void init_mutable(GLuint i, const void* cpubuf, GLsizei size) const { bind(i); buffers::init_mutable(BufferTarget::INDEX, size, cpubuf); }
+	};
+
+	class CPUIndexBuffer
+	{
+		raii::GLBuffer _ib;
+		IndexDataType idt;
+		VoidArray cpubuf;
+
+	public:
+		CPUIndexBuffer(IndexDataType idt) : idt(idt) {}
+
+		const VoidArray& buffer() const { return cpubuf; }
+		VoidArray& buffer() { return cpubuf; }
+		ids::GLBuffer ib() const { return _ib; }
+		void bind_to_vertex_array(ids::VertexArray va) const { bind_index_buffer_to_vertex_array(_ib, va); }
+		void bind() const { buffers::bind(_ib, BufferTarget::INDEX); }
+		IndexDataType data_type() const { return idt; }
+		GLsizei size() const { return GLsizei(cpubuf.size() / index_data_type_size(idt)); }
+
+		void init_immutable(GLsizei count) { cpubuf.resize(count * index_data_type_size(idt)); init_immutable(); }
+		void init_immutable() { bind(); buffers::init_immutable(BufferTarget::INDEX, cpubuf.size(), cpubuf); }
+		void init_mutable(GLsizei count) { cpubuf.resize(count * index_data_type_size(idt)); init_mutable(); }
+		void init_mutable() { bind(); buffers::init_mutable(BufferTarget::INDEX, cpubuf.size(), cpubuf); }
+
+		void init_immutable_quads(GLuint num_quads);
+		void init_mutable_quads(GLuint num_quads);
+	};
+
+	class CPUIndexBufferBlock
+	{
+		raii::GLBufferBlock _ibs;
+		std::vector<std::pair<IndexDataType, VoidArray>> idt_cpubufs;
+
+	public:
+		CPUIndexBufferBlock(const std::vector<IndexDataType>& idts);
+
+		const VoidArray& buffer(GLuint i) const { return idt_cpubufs[i].second; }
+		VoidArray& buffer(GLuint i) { return idt_cpubufs[i].second; }
+		ids::GLBuffer ib(GLuint i) const { return _ibs[i]; }
+		void bind_to_vertex_array(GLuint i, ids::VertexArray va) const { bind_index_buffer_to_vertex_array(_ibs[i], va); }
+		void bind(GLuint i) const { buffers::bind(_ibs[i], BufferTarget::INDEX); }
+		IndexDataType data_type(GLuint i) const { return idt_cpubufs[i].first; }
+		GLsizei size(GLuint i) const { const auto& idt_cpubuf = idt_cpubufs[i]; return GLsizei(idt_cpubuf.second.size() / index_data_type_size(idt_cpubuf.first)); }
+
+		void init_immutable(GLuint i, GLsizei count);
+		void init_immutable(GLuint i);
+		void init_mutable(GLuint i, GLsizei count);
+		void init_mutable(GLuint i);
+
+		void init_immutable_quads(GLuint i, GLuint num_quads);
+		void init_mutable_quads(GLuint i, GLuint num_quads);
 	};
 }

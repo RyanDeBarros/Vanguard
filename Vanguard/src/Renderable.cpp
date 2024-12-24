@@ -11,13 +11,13 @@ vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GL
 	case ShaderDataType::I2:
 	case ShaderDataType::I3:
 	case ShaderDataType::I4:
-		type = VertexAttributeDataType::INT;
+		type = DataType::INT;
 		break;
 	case ShaderDataType::UI:
 	case ShaderDataType::UI2:
 	case ShaderDataType::UI3:
 	case ShaderDataType::UI4:
-		type = VertexAttributeDataType::UINT;
+		type = DataType::UINT;
 		break;
 	case ShaderDataType::F:
 	case ShaderDataType::F2:
@@ -32,7 +32,7 @@ vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GL
 	case ShaderDataType::FM3x4:
 	case ShaderDataType::FM4x3:
 	case ShaderDataType::FM4:
-		type = VertexAttributeDataType::FLOAT;
+		type = DataType::FLOAT;
 		break;
 	case ShaderDataType::D:
 	case ShaderDataType::D2:
@@ -47,7 +47,7 @@ vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GL
 	case ShaderDataType::DM3x4:
 	case ShaderDataType::DM4x3:
 	case ShaderDataType::DM4:
-		type = VertexAttributeDataType::DOUBLE;
+		type = DataType::DOUBLE;
 		break;
 	}
 	switch (attrib.type)
@@ -103,12 +103,12 @@ void vg::VertexAttribute::attrib_pointer(GLuint i, GLsizei stride) const
 {
 #pragma warning(push)
 #pragma warning(disable : 4312)
-	if (type == VertexAttributeDataType::DOUBLE)
-		glVertexAttribLPointer(i, rows, (GLenum)type, stride, (void*)offset);
-	else if (type != VertexAttributeDataType::FLOAT && type != VertexAttributeDataType::HALF && pass_by_integer)
-		glVertexAttribIPointer(i, rows, (GLenum)type, stride, (void*)offset);
+	if (type == DataType::DOUBLE)
+		glVertexAttribLPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
+	else if (type != DataType::FLOAT && type != DataType::HALF && pass_by_integer)
+		glVertexAttribIPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
 	else
-		glVertexAttribPointer(i, rows, (GLenum)type, normalized, stride, (void*)offset);
+		glVertexAttribPointer(i, rows, type_as_gl_enum(), normalized, stride, (void*)offset);
 #pragma warning(pop)
 	glEnableVertexAttribArray(i);
 	glVertexAttribDivisor(i, instance_divisor);
@@ -118,12 +118,12 @@ void vg::VertexAttribute::attrib_pointer(GLuint i, GLsizei stride, GLuint offset
 {
 #pragma warning(push)
 #pragma warning(disable : 4312)
-	if (type == VertexAttributeDataType::DOUBLE)
-		glVertexAttribLPointer(i, rows, (GLenum)type, stride, (void*)offset);
-	else if (type != VertexAttributeDataType::FLOAT && type != VertexAttributeDataType::HALF && pass_by_integer)
-		glVertexAttribIPointer(i, rows, (GLenum)type, stride, (void*)offset);
+	if (type == DataType::DOUBLE)
+		glVertexAttribLPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
+	else if (type != DataType::FLOAT && type != DataType::HALF && pass_by_integer)
+		glVertexAttribIPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
 	else
-		glVertexAttribPointer(i, rows, (GLenum)type, normalized, stride, (void*)offset);
+		glVertexAttribPointer(i, rows, type_as_gl_enum(), normalized, stride, (void*)offset);
 #pragma warning(pop)
 	glEnableVertexAttribArray(i);
 	glVertexAttribDivisor(i, instance_divisor);
@@ -134,34 +134,34 @@ GLsizei vg::VertexAttribute::bytes() const
 	GLuint type_offset = 0;
 	switch (type)
 	{
-	case VertexAttributeDataType::CHAR:
+	case DataType::CHAR:
 		type_offset = sizeof(GLbyte);
 		break;
-	case VertexAttributeDataType::UCHAR:
+	case DataType::UCHAR:
 		type_offset = sizeof(GLubyte);
 		break;
-	case VertexAttributeDataType::SHORT:
+	case DataType::SHORT:
 		type_offset = sizeof(GLshort);
 		break;
-	case VertexAttributeDataType::USHORT:
+	case DataType::USHORT:
 		type_offset = sizeof(GLushort);
 		break;
-	case VertexAttributeDataType::INT:
+	case DataType::INT:
 		type_offset = sizeof(GLint);
 		break;
-	case VertexAttributeDataType::UINT:
+	case DataType::UINT:
 		type_offset = sizeof(GLuint);
 		break;
-	case VertexAttributeDataType::HALF:
+	case DataType::HALF:
 		type_offset = sizeof(GLhalf);
 		break;
-	case VertexAttributeDataType::FLOAT:
+	case DataType::FLOAT:
 		type_offset = sizeof(GLfloat);
 		break;
-	case VertexAttributeDataType::DOUBLE:
+	case DataType::DOUBLE:
 		type_offset = sizeof(GLdouble);
 		break;
-	case VertexAttributeDataType::FIXED:
+	case DataType::FIXED:
 		type_offset = sizeof(GLfixed);
 		break;
 	}
@@ -441,4 +441,114 @@ vg::VoidArray vg::MultiVertexBuffer::init_mutable_cpu_buffer(GLuint i, GLuint ve
 	bind_vb(i);
 	buffers::init_mutable(BufferTarget::VERTEX, v.size());
 	return v;
+}
+
+template<typename DataType>
+static void fill_quad_indexes(vg::VoidArray& cpubuf, GLuint num_quads)
+{
+	for (GLuint i = 0; i < num_quads; ++i)
+	{
+		cpubuf.ref<DataType>((0 + 6 * i) * sizeof(DataType)) = 0 + 4 * i;
+		cpubuf.ref<DataType>((1 + 6 * i) * sizeof(DataType)) = 1 + 4 * i;
+		cpubuf.ref<DataType>((2 + 6 * i) * sizeof(DataType)) = 2 + 4 * i;
+		cpubuf.ref<DataType>((3 + 6 * i) * sizeof(DataType)) = 2 + 4 * i;
+		cpubuf.ref<DataType>((4 + 6 * i) * sizeof(DataType)) = 3 + 4 * i;
+		cpubuf.ref<DataType>((5 + 6 * i) * sizeof(DataType)) = 0 + 4 * i;
+	}
+}
+
+void vg::CPUIndexBuffer::init_immutable_quads(GLuint num_quads)
+{
+	cpubuf.resize(num_quads * 6 * index_data_type_size(idt));
+
+	if (idt == IndexDataType::UBYTE)
+		fill_quad_indexes<GLubyte>(cpubuf, num_quads);
+	else if (idt == IndexDataType::USHORT)
+		fill_quad_indexes<GLushort>(cpubuf, num_quads);
+	else if (idt == IndexDataType::UINT)
+		fill_quad_indexes<GLuint>(cpubuf, num_quads);
+
+	init_immutable();
+}
+
+void vg::CPUIndexBuffer::init_mutable_quads(GLuint num_quads)
+{
+	cpubuf.resize(num_quads * 6 * index_data_type_size(idt));
+
+	if (idt == IndexDataType::UBYTE)
+		fill_quad_indexes<GLubyte>(cpubuf, num_quads);
+	else if (idt == IndexDataType::USHORT)
+		fill_quad_indexes<GLushort>(cpubuf, num_quads);
+	else if (idt == IndexDataType::UINT)
+		fill_quad_indexes<GLuint>(cpubuf, num_quads);
+
+	init_mutable();
+}
+
+vg::CPUIndexBufferBlock::CPUIndexBufferBlock(const std::vector<IndexDataType>& idts)
+	: _ibs((GLuint)idts.size())
+{
+	idt_cpubufs.reserve(_ibs.get_count());
+	for (IndexDataType idt : idts)
+		idt_cpubufs.push_back({ idt, VoidArray() });
+}
+
+void vg::CPUIndexBufferBlock::init_immutable(GLuint i, GLsizei count)
+{
+	auto& idt_cpubuf = idt_cpubufs[i];
+	idt_cpubuf.second.resize(count * index_data_type_size(idt_cpubuf.first));
+	bind(i);
+	buffers::init_immutable(BufferTarget::INDEX, idt_cpubuf.second.size(), idt_cpubuf.second);
+}
+
+void vg::CPUIndexBufferBlock::init_immutable(GLuint i)
+{
+	bind(i);
+	const auto& cpubuf = idt_cpubufs[i].second;
+	buffers::init_immutable(BufferTarget::INDEX, cpubuf.size(), cpubuf);
+}
+
+void vg::CPUIndexBufferBlock::init_mutable(GLuint i, GLsizei count)
+{
+	auto& idt_cpubuf = idt_cpubufs[i];
+	idt_cpubuf.second.resize(count * index_data_type_size(idt_cpubuf.first));
+	bind(i);
+	buffers::init_mutable(BufferTarget::INDEX, idt_cpubuf.second.size(), idt_cpubuf.second);
+}
+
+void vg::CPUIndexBufferBlock::init_mutable(GLuint i)
+{
+	bind(i);
+	const auto& cpubuf = idt_cpubufs[i].second;
+	buffers::init_mutable(BufferTarget::INDEX, cpubuf.size(), cpubuf);
+}
+
+void vg::CPUIndexBufferBlock::init_immutable_quads(GLuint i, GLuint num_quads)
+{
+	auto& idt_cpubuf = idt_cpubufs[i];
+	idt_cpubuf.second.resize(num_quads * 6 * index_data_type_size(idt_cpubuf.first));
+
+	if (idt_cpubuf.first == IndexDataType::UBYTE)
+		fill_quad_indexes<GLubyte>(idt_cpubuf.second, num_quads);
+	else if (idt_cpubuf.first == IndexDataType::USHORT)
+		fill_quad_indexes<GLushort>(idt_cpubuf.second, num_quads);
+	else if (idt_cpubuf.first == IndexDataType::UINT)
+		fill_quad_indexes<GLuint>(idt_cpubuf.second, num_quads);
+
+	init_immutable(i);
+}
+
+void vg::CPUIndexBufferBlock::init_mutable_quads(GLuint i, GLuint num_quads)
+{
+	auto& idt_cpubuf = idt_cpubufs[i];
+	idt_cpubuf.second.resize(num_quads * 6 * index_data_type_size(idt_cpubuf.first));
+
+	if (idt_cpubuf.first == IndexDataType::UBYTE)
+		fill_quad_indexes<GLubyte>(idt_cpubuf.second, num_quads);
+	else if (idt_cpubuf.first == IndexDataType::USHORT)
+		fill_quad_indexes<GLushort>(idt_cpubuf.second, num_quads);
+	else if (idt_cpubuf.first == IndexDataType::UINT)
+		fill_quad_indexes<GLuint>(idt_cpubuf.second, num_quads);
+
+	init_mutable(i);
 }
