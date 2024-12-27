@@ -163,7 +163,6 @@
     <ClCompile Include="src\Renderable.cpp" />
     <ClCompile Include="src\Errors.cpp" />
     <ClCompile Include="src\utils\FilePath.cpp" />
-    <ClCompile Include="src\GLConstants.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\utils\IO.cpp" />
     <ClCompile Include="src\raii\GLBuffer.cpp" />
@@ -181,7 +180,6 @@
     <ClInclude Include="src\Draw.h" />
     <ClInclude Include="src\utils\DynamicArray.h" />
     <ClInclude Include="src\utils\FilePath.h" />
-    <ClInclude Include="src\GLConstants.h" />
     <ClInclude Include="src\Input.h" />
     <ClInclude Include="src\utils\IO.h" />
     <ClInclude Include="src\raii\GLBuffer.h" />

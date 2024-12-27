@@ -79,12 +79,19 @@ namespace vg
 		void hint() const;
 	};
 
+	struct ContextConfig
+	{
+		bool standard_blending = true;
+		bool scissor_test = true;
+		bool vsync_on = true;
+	};
+
 	class Window
 	{
 		GLFWwindow* _w = nullptr;
 
 	public:
-		Window(int width, int height, const char* title, const WindowHint& hint = {});
+		Window(int width, int height, const char* title, const WindowHint& hint = {}, const ContextConfig& config = {});
 		Window(const Window&) = delete;
 		Window(Window&&) noexcept;
 		Window& operator=(Window&&) noexcept;
@@ -93,6 +100,10 @@ namespace vg
 		operator const GLFWwindow* () const { return _w; }
 		operator GLFWwindow* () { return _w; }
 
+	private:
+		void init_gl_constants() const;
+	
+	public:
 		void focus() const;
 		void focus_context() const;
 		bool should_close() const;
@@ -149,5 +160,14 @@ namespace vg
 			input::WindowRefreshEventHandler window_refresh;
 			input::WindowResizeEventHandler window_resize;
 		} root_input_handlers = {};
+
+	private:
+		struct GLConstants
+		{
+			GLuint max_texture_image_units = 0;
+		} gl_constants = {};
+
+	public:
+		const GLConstants& constants() const { return gl_constants; }
 	};
 }

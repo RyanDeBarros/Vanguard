@@ -31,9 +31,7 @@ namespace vg
 {
 	struct InitializationConfiguration
 	{
-		bool standard_blending = true;
-		bool scissor_test = true;
-		bool vsync_on = true;
+		bool stbi_flip_vertically_on_load = true;
 	};
 
 	extern void init(const vg::InitializationConfiguration& config = {});

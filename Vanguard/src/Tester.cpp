@@ -7,6 +7,8 @@
 #include "raii/Window.h"
 #include "Renderable.h"
 #include "Draw.h"
+#include "utils/IO.h"
+#include "raii/Texture.h"
 
 int main()
 {
@@ -76,6 +78,38 @@ int main()
 	tripair.bind_vb(1);
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, tribuf1.size(), tribuf1);
 
+	std::string image_vert = vg::io::read_file("shaders/image.vert");
+	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
+	vg::Shader img_shader(image_vert, image_frag);
+	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader);
+	vg::VertexBuffer sprite(img_layout);
+	
+	index_buffer.bind_to_vertex_array(sprite.vao());
+
+	auto sprite_buf = sprite.init_immutable_cpu_buffer(4);
+	sprite.set_attributes(sprite_buf, 0, 0, std::array<glm::vec2, 4>{
+		glm::vec2{ -0.8f, -0.8f },
+		glm::vec2{ -0.2f, -0.8f },
+		glm::vec2{ -0.2f, -0.2f },
+		glm::vec2{ -0.8f, -0.2f }
+	});
+	sprite.set_attribute(sprite_buf, 1, GLint(0)); // TODO images should use a block, with texture slot in a different buffer, since it updates more than other attributes.
+	sprite.set_attributes(sprite_buf, 2, 0, std::array<glm::vec2, 4>{
+		glm::vec2{ 0.0f, 0.0f },
+		glm::vec2{ 1.0f, 0.0f },
+		glm::vec2{ 1.0f, 1.0f },
+		glm::vec2{ 0.0f, 1.0f }
+	});
+	sprite.set_attribute(sprite_buf, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	sprite.bind_vb();
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf.size(), sprite_buf);
+
+	vg::ImageTexture tex_einstein(vg::load_image("ex/flag.png"));
+
+	GLboolean blendEnabled;
+	glGetBooleanv(GL_BLEND, &blendEnabled);
+	printf("Blending enabled: %d\n", blendEnabled);
+
 	window.render_frame = [&]() {
 		vg::bind_shader(shader);
 		vertex_buffer.bind_vao();
@@ -101,23 +135,30 @@ int main()
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, white_square.buffer_offset(0, 0, 0), sizeof(glm::vec2), wsbuf0);
 
 		white_square.bind_vao();
-		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, vg::IndexDataType::UBYTE);
+		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 
 		tripair.bind_vao(0);
 		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(0, tribuf0));
 		tripair.bind_vao(1);
 		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1, tribuf1));
+
+		vg::bind_shader(img_shader);
+		tex_einstein.bind(0);
+		sprite.bind_vao();
+		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 		};
 
 	// TODO Interleaved Vertex Buffers. Not a separate VertexBuffer class, but a different struct that doesn't even have a reference to any buffers/VAOs. All it stores is offsets and object sizes.
 
 	for (;;)
 	{
-		vg::new_frame();
+		glfwPollEvents();
 		if (window.should_close())
 			break;
 		window.frame_cycle();
 	}
+
+	vg::delete_image(tex_einstein.image()); // TODO raii Image ?
 
 	vg::terminate();
 	return 0;

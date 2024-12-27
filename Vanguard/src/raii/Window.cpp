@@ -71,7 +71,7 @@ void vg::WindowHint::hint() const
 	glfwWindowHint(GLFW_OPENGL_PROFILE, opengl_profile);
 }
 
-vg::Window::Window(int width, int height, const char* title, const WindowHint& hint)
+vg::Window::Window(int width, int height, const char* title, const WindowHint& hint, const ContextConfig& config)
 {
 	if (!min_opengl_version_is_at_most(hint.context_version_major, hint.context_version_minor) || min_opengl_version_is_at_most(3, 3))
 		throw Error(ErrorCode::OPENGL_VERSION);
@@ -96,12 +96,19 @@ vg::Window::Window(int width, int height, const char* title, const WindowHint& h
 		glViewport(0, 0, e.w, e.h);
 		frame_cycle();
 		};
+
+	init_gl_constants();
+
+	vg::enable_standard_blending(config.standard_blending);
+	vg::enable_scissor_test(config.scissor_test);
+	vg::enable_vsync(config.vsync_on);
 }
 
 vg::Window::Window(Window&& other) noexcept
-	: _w(other._w)
+	: _w(other._w), root_input_handlers(std::move(other.root_input_handlers))
 {
 	other._w = nullptr;
+	init_gl_constants();
 }
 
 vg::Window& vg::Window::operator=(Window&& other) noexcept
@@ -118,6 +125,11 @@ vg::Window& vg::Window::operator=(Window&& other) noexcept
 vg::Window::~Window()
 {
 	glfwDestroyWindow(_w);
+}
+
+void vg::Window::init_gl_constants() const
+{
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, (GLint*)&gl_constants.max_texture_image_units);
 }
 
 void vg::Window::focus() const

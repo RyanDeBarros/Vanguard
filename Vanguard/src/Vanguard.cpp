@@ -1,8 +1,9 @@
 #include "Vanguard.h"
 
+#include <stb/stb_image.h>
+
 #include "Errors.h"
 #include "Input.h"
-#include "GLConstants.h"
 #include "raii/Shader.h"
 #include "raii/Texture.h"
 
@@ -14,15 +15,10 @@ void vg::init(const vg::InitializationConfiguration& config)
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
 	_::init_input();
-	_::query_gl_constants();
 	_::init_bound_textures();
 	
-	if (config.standard_blending)
-		enable_standard_blending();
-	if (config.scissor_test)
-		enable_scissor_test();
-	if (config.vsync_on)
-		enable_vsync();
+	if (config.stbi_flip_vertically_on_load)
+		stbi_set_flip_vertically_on_load(1);
 }
 
 void vg::terminate()

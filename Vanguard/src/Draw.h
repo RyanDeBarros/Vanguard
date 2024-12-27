@@ -1,6 +1,6 @@
 #pragma once
 
-#include "raii/GLBuffer.h"
+#include "Renderable.h"
 
 namespace vg
 {
