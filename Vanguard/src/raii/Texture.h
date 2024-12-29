@@ -4,6 +4,8 @@
 
 #include "Vanguard.h"
 #include "utils/FilePath.h"
+#include "utils/VoidArray.h"
+#include "utils/Meta.h"
 
 namespace vg
 {
@@ -197,6 +199,57 @@ namespace vg
 		bool same_shape_as(const Image& other) const { return width == other.width && height == other.height && chpp == other.chpp; }
 	};
 
+	namespace raii
+	{
+		template<tex::DataType DataType = vg::tex::DataType::UBYTE>
+		class Image2D
+		{
+			template<tex::DataType DT> struct _DTT { static_assert(false, "Unsupported texture Data Type."); };
+			template<> struct _DTT<tex::DataType::UBYTE> { using type = GLubyte; };
+			template<> struct _DTT<tex::DataType::BYTE> { using type = GLbyte; };
+			template<> struct _DTT<tex::DataType::USHORT> { using type = GLushort; };
+			template<> struct _DTT<tex::DataType::SHORT> { using type = GLshort; };
+			template<> struct _DTT<tex::DataType::UINT> { using type = GLuint; };
+			template<> struct _DTT<tex::DataType::INT> { using type = GLint; };
+			template<> struct _DTT<tex::DataType::FLOAT> { using type = GLfloat; };
+
+			using DT = typename _DTT<DataType>::type;
+
+			VoidArray _pxs;
+			int _w = 0;
+			int _h = 0;
+			CHPP _c = 0;
+			
+		public:
+			Image2D(int width, int height, CHPP chpp)
+				: _w(width), _h(height), _c(chpp), _pxs(width * height * chpp * sizeof(DT))
+			{
+			}
+			Image2D(vg::Image&& img)
+				: _w(img.width), _h(img.height), _c(img.chpp), _pxs(img.bytes(), img.pixels)
+			{
+			}
+
+			int width() const { return _w; }
+			int height() const { return _h; }
+			CHPP chpp() const { return _c; }
+			const DT* pixels() const { return (const DT*)(const void*)_pxs; }
+			DT* pixels() { return (DT*)(void*)_pxs; }
+			constexpr tex::DataType data_type() const { return DataType; }
+
+			int stride() const { return _w * _c; }
+			size_t number_of_pixels() const { return _w * _h * _c; }
+			size_t bytes() const { return _w * _h * _c * sizeof(DT); }
+			int index_offset(int x, int y) const { return x + y * _w; }
+			int pixel_offset(int x, int y) const { return (x + y * _w) * _c; }
+			size_t byte_offset(int x, int y) const { return (x + y * _w) * _c * sizeof(DT); }
+			DT* pos(int x, int y) const { return (DT*)_pxs.at(byte_offset(x, y)); }
+			void coordinates_of(int i, int& x, int& y) const { x = i % _w; y = i / _h; }
+			bool same_shape_as(const Image2D& other) const { return _w == other._w && _h == other._h && _c == other._c; }
+			bool same_shape_as(const vg::Image& other) const { return _w == other.width && _h == other.height && _c == other.chpp; }
+		};
+	}
+
 	enum class ImageFormat
 	{
 		PNG,
@@ -218,15 +271,60 @@ namespace vg
 	};
 
 	extern Image load_image(const FilePath& filepath);
+	template<vg::tex::DataType DataType = vg::tex::DataType::UBYTE>
+	inline raii::Image2D<DataType> load_image_2d(const FilePath& filepath) { return raii::Image2D<DataType>(std::move(load_image(filepath))); }
 	extern void load_image(Image& image, const FilePath& filepath);
 	extern bool save_image(const Image& image, const FilePath& filepath, ImageFormat format, JPGQuality jpg_quality = JPGQuality::HIGHEST);
 	extern void delete_image(const Image& image);
 
 	namespace image_2d
 	{
-		extern void send_texture(const Image& image, ids::Texture texture, TextureParams params = {});
+		extern void send_texture(int width, int height, CHPP chpp, ids::Texture texture, TextureParams params = {}, int border = 0);
+		extern void send_texture(const Image& image, ids::Texture texture, TextureParams params = {}, int border = 0);
+		
+		template<tex::DataType DataType = vg::tex::DataType::UBYTE>
+		inline void send_texture(const raii::Image2D<DataType>& image, ids::Texture texture, TextureParams params = {}, int border = 0)
+		{
+			bind_texture(texture);
+			params.bind();
+			align_texture_pixels(image.chpp());
+			tex::image_2d(image.width(), image.height(), image.chpp(), image.pixels(), border, DataType);
+		}
+
 		extern void update_texture_params(ids::Texture texture, TextureParams params = {});
+
 		extern void update_full_texture(const Image& image, ids::Texture texture, TextureParams params = {});
+		
+		template<tex::DataType DataType = vg::tex::DataType::UBYTE>
+		inline void update_full_texture(const raii::Image2D<DataType>& image, ids::Texture texture, TextureParams params = {})
+		{
+			bind_texture(texture);
+			tex::subimage_2d(0, 0, image.width(), image.height(), image.chpp(), image.pixels(), DataType);
+		}
+		
 		extern void update_sub_texture(const Image& image, ids::Texture texture, int x, int y, int w, int h);
+		
+		template<tex::DataType DataType = vg::tex::DataType::UBYTE>
+		extern void update_sub_texture(const raii::Image2D<DataType>& image, ids::Texture texture, int x, int y, int w, int h)
+		{
+			if (x >= 0 && x < image.width() && y >= 0 && y < image.height() && w >= 0 && h >= 0)
+			{
+				if (x + w >= image.width())
+					w = image.width() - x;
+				if (y + h >= image.height())
+					h = image.height() - y;
+				bind_texture(texture);
+				if (x == 0 && w == image.width())
+				{
+					tex::subimage_2d(x, y, w, h, image.chpp(), image.pos(x, y), DataType);
+				}
+				else
+				{
+					int end = y + h;
+					for (int r = y; r < end; ++r)
+						tex::subimage_2d(x, r, w, 1, image.chpp(), image.pos(x, r), DataType);
+				}
+			}
+		}
 	}
 }

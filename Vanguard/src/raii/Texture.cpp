@@ -279,12 +279,20 @@ void vg::delete_image(const Image& image)
 	delete[] image.pixels;
 }
 
-void vg::image_2d::send_texture(const Image& image, ids::Texture texture, TextureParams params)
+void vg::image_2d::send_texture(const Image& image, ids::Texture texture, TextureParams params, int border)
 {
 	bind_texture(texture);
 	params.bind();
 	align_texture_pixels(image.chpp);
-	tex::image_2d(image.width, image.height, image.chpp, image.pixels);
+	tex::image_2d(image.width, image.height, image.chpp, image.pixels, border);
+}
+
+void vg::image_2d::send_texture(int width, int height, CHPP chpp, ids::Texture texture, TextureParams params, int border)
+{
+	bind_texture(texture);
+	params.bind();
+	align_texture_pixels(chpp);
+	tex::image_2d(width, height, chpp, nullptr, border);
 }
 
 void vg::image_2d::update_texture_params(ids::Texture texture, TextureParams params)

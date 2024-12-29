@@ -189,6 +189,7 @@
     <ClInclude Include="src\raii\Texture.h" />
     <ClInclude Include="src\raii\Window.h" />
     <ClInclude Include="src\Renderable.h" />
+    <ClInclude Include="src\utils\Meta.h" />
     <ClInclude Include="src\utils\VoidArray.h" />
     <ClInclude Include="src\Vanguard.h" />
     <ClInclude Include="vendor\Vendor.h" />

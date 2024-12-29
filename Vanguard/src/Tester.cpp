@@ -92,7 +92,7 @@ int main()
 		glm::vec2{ -0.2f, -0.2f },
 		glm::vec2{ -0.8f, -0.2f }
 	});
-	sprite.set_attribute(sprite_buf, 1, GLint(0)); // TODO images should use a block, with texture slot in a different buffer, since it updates more than other attributes.
+	sprite.set_attribute(sprite_buf, 1, GLint(0)); // TODO images should use a VertexBufferBlock, with texture slot in a different buffer, since it updates more than other attributes.
 	sprite.set_attributes(sprite_buf, 2, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ 0.0f, 0.0f },
 		glm::vec2{ 1.0f, 0.0f },
@@ -103,7 +103,7 @@ int main()
 	sprite.bind_vb();
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf.size(), sprite_buf);
 
-	vg::Image img_einstein = vg::load_image("ex/flag.png");
+	vg::raii::Image2D img_einstein = vg::load_image_2d("ex/flag.png");
 	vg::raii::Texture tex_einstein;
 	vg::image_2d::send_texture(img_einstein, tex_einstein);
 
@@ -111,14 +111,14 @@ int main()
 	vg::bind_framebuffer(framebuffer);
 
 	vg::raii::Texture color_texture;
-	vg::image_2d::send_texture({ nullptr, 1440 / 2, 1080 / 3, 4}, color_texture);
+	vg::image_2d::send_texture(1440 / 2, 1080 / 3, 4, color_texture);
 	vg::image_2d::update_texture_params(color_texture, vg::TextureParams::LINEAR);
 	vg::raii::Texture normal_texture;
-	vg::image_2d::send_texture({ nullptr, 1440, 1080, 4 }, normal_texture);
+	vg::image_2d::send_texture(1440, 1080, 4, normal_texture);
 
 	vg::raii::Texture depth_texture;
 	vg::bind_texture(depth_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1440, 1080, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); // TODO float Image buffer.
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1440, 1080, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	vg::TextureParams::LINEAR.bind();
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (vg::ids::Texture)color_texture, 0);
@@ -143,17 +143,17 @@ int main()
 		auto offset0 = vertex_buffer.layout()->buffer_offset(0, 1) + 0 * sizeof(float);
 		cpubuf.ref<float>(offset0) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 0 * glm::pi<float>() / 3)));
 		vertex_buffer.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset0, sizeof(float), cpubuf[offset0]);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset0, sizeof(float), cpubuf.at(offset0));
 
 		auto offset1 = vertex_buffer.layout()->buffer_offset(1, 1) + 1 * sizeof(float);
 		cpubuf.ref<float>(offset1) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 1 * glm::pi<float>() / 3)));
 		vertex_buffer.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset1, sizeof(float), cpubuf[offset1]);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset1, sizeof(float), cpubuf.at(offset1));
 
 		auto offset2 = vertex_buffer.layout()->buffer_offset(2, 1) + 2 * sizeof(float);
 		cpubuf.ref<float>(offset2) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 2 * glm::pi<float>() / 3)));
 		vertex_buffer.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset2, sizeof(float), cpubuf[offset2]);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset2, sizeof(float), cpubuf.at(offset2));
 
 		white_square.ref<glm::vec2>(wsbuf0, 0, 0, 0).x -= float(0.008f * glm::sin(glfwGetTime() * 20.0f));
 		white_square.bind_vb(0);
@@ -191,8 +191,6 @@ int main()
 			break;
 		window.frame_cycle();
 	}
-
-	vg::delete_image(img_einstein); // TODO raii Image ?
 
 	vg::terminate();
 	return 0;
