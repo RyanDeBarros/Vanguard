@@ -165,12 +165,8 @@ GLintptr vg::index_data_type_size(IndexDataType idt)
 
 void vg::bind_index_buffer_to_vertex_array(ids::GLBuffer ib, ids::VertexArray va)
 {
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-	glVertexArrayElementBuffer(va, ib);
-#else
 	glBindVertexArray(va);
 	buffers::bind(ib, BufferTarget::INDEX);
-#endif
 	glBindVertexArray(0);
 }
 
@@ -178,12 +174,8 @@ void vg::bind_index_buffers_to_vertex_arrays(const ids::GLBuffer* ibs, const ids
 {
 	for (GLuint i = 0; i < count; ++i)
 	{
-#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-		glVertexArrayElementBuffer(vas[i], ibs[i]);
-#else
 		glBindVertexArray(vas[i]);
 		buffers::bind(ibs[i], BufferTarget::INDEX);
-#endif
 	}
 	glBindVertexArray(0);
 }
@@ -400,9 +392,7 @@ void vg::buffers::unbind(BufferTarget target)
 
 void vg::buffers::init_immutable(BufferTarget target, GLsizeiptr size, const void* data, int usage)
 {
-	VANGUARD_ASSERT_GL_OKAY
 	glBufferStorage((GLenum)target, size, data, usage);
-	VANGUARD_ASSERT_GL_OKAY
 }
 
 void vg::buffers::init_mutable(BufferTarget target, GLsizeiptr size, const void* data, BufferMutableUsage usage)

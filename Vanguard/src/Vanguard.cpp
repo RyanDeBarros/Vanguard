@@ -15,7 +15,6 @@ void vg::init(const vg::InitializationConfiguration& config)
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
 	_::init_input();
-	_::init_bound_textures();
 	
 	if (config.stbi_flip_vertically_on_load)
 		stbi_set_flip_vertically_on_load(1);
@@ -30,7 +29,6 @@ void vg::new_frame()
 {
 	glfwPollEvents();
 	update_bound_shader();
-	update_bound_texture2Ds();
 }
 
 bool vg::min_opengl_version_is_at_least(GLuint major, GLuint minor)
@@ -127,6 +125,5 @@ void vg::set_clear_color(glm::vec4 rgba)
 
 void vg::clear_buffer()
 {
-	glClear(GL_COLOR_BUFFER_BIT);
-	VANGUARD_ASSERT_GL_OKAY
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

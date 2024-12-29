@@ -9,6 +9,7 @@
 #include "Draw.h"
 #include "utils/IO.h"
 #include "raii/Texture.h"
+#include "raii/FrameBuffer.h"
 
 int main()
 {
@@ -16,8 +17,6 @@ int main()
 	vg::init();
 
 	vg::Window window(1440, 1080, "Hello World");
-
-	vg::set_clear_color({ 0.5f, 0.7f, 0.9f, 1.0f });
 
 	vg::Shader shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
 	auto vb_layout = std::make_shared<vg::VertexBufferLayout>(shader);
@@ -35,7 +34,7 @@ int main()
 	vertex_buffer.bind_vb();
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, cpubuf.size(), cpubuf);
 	// TODO create CPUVertexBuffer that abstracts this kind of stuff. Then, there could be a series of Renderable classes that hold VertexBuffer/VertexBufferBlock/MultiVertexBuffer, VertexBufferLayout, and CPUVertexBuffer.
-	
+
 	vg::CPUIndexBuffer index_buffer(vg::IndexDataType::UBYTE);
 	index_buffer.bind_to_vertex_array(vertex_buffer.vao());
 	index_buffer.init_immutable_quads(1);
@@ -104,13 +103,39 @@ int main()
 	sprite.bind_vb();
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf.size(), sprite_buf);
 
-	vg::ImageTexture tex_einstein(vg::load_image("ex/flag.png"));
+	vg::Image img_einstein = vg::load_image("ex/flag.png");
+	vg::raii::Texture tex_einstein;
+	vg::image_2d::send_texture(img_einstein, tex_einstein);
 
-	GLboolean blendEnabled;
-	glGetBooleanv(GL_BLEND, &blendEnabled);
-	printf("Blending enabled: %d\n", blendEnabled);
+	vg::raii::FrameBuffer framebuffer;
+	vg::bind_framebuffer(framebuffer);
+
+	vg::raii::Texture color_texture;
+	vg::image_2d::send_texture({ nullptr, 1440 / 2, 1080 / 3, 4}, color_texture);
+	vg::image_2d::update_texture_params(color_texture, vg::TextureParams::LINEAR);
+	vg::raii::Texture normal_texture;
+	vg::image_2d::send_texture({ nullptr, 1440, 1080, 4 }, normal_texture);
+
+	vg::raii::Texture depth_texture;
+	vg::bind_texture(depth_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1440, 1080, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr); // TODO float Image buffer.
+	vg::TextureParams::LINEAR.bind();
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (vg::ids::Texture)color_texture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, (vg::ids::Texture)normal_texture, 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, (vg::ids::Texture)depth_texture, 0);
+	VANGUARD_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+	GLenum draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, draw_buffers);
 
 	window.render_frame = [&]() {
+		vg::bind_framebuffer(framebuffer);
+		glViewport(0, 0, 1440 / 2, 1080 / 3);
+		vg::set_clear_color({ 0.5f, 0.7f, 0.9f, 1.0f });
+		vg::clear_buffer();
+		vg::set_clear_color({ 0.0f, 0.0f, 0.0f, 1.0f });
+
 		vg::bind_shader(shader);
 		vertex_buffer.bind_vao();
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
@@ -142,10 +167,19 @@ int main()
 		tripair.bind_vao(1);
 		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1, tribuf1));
 
+		vg::unbind_framebuffer();
+		glViewport(0, 0, 1440, 1080);
+
 		vg::bind_shader(img_shader);
-		tex_einstein.bind(0);
+		vg::select_texture_slot(0);
+		//vg::bind_texture(tex_einstein);
+		vg::bind_texture(color_texture);
 		sprite.bind_vao();
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+
+		sprite.ref<glm::vec2>(sprite_buf, 0, 0).x += 0.002f;
+		sprite.bind_vb();
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, sprite.buffer_offset(0, 0), sizeof(glm::vec2), sprite_buf);
 		};
 
 	// TODO Interleaved Vertex Buffers. Not a separate VertexBuffer class, but a different struct that doesn't even have a reference to any buffers/VAOs. All it stores is offsets and object sizes.
@@ -158,7 +192,7 @@ int main()
 		window.frame_cycle();
 	}
 
-	vg::delete_image(tex_einstein.image()); // TODO raii Image ?
+	vg::delete_image(img_einstein); // TODO raii Image ?
 
 	vg::terminate();
 	return 0;

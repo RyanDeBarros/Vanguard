@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "Vendor.h"
+#include "Vanguard.h"
 #include "utils/FilePath.h"
 
 namespace vg
@@ -32,7 +32,7 @@ namespace vg
 		MIRROR_CLAMP_TO_EDGE = GL_MIRROR_CLAMP_TO_EDGE
 	};
 
-	struct Texture2DParams
+	struct TextureParams
 	{
 		MinFilter min_filter = MinFilter::NEAREST;
 		MagFilter mag_filter = MagFilter::NEAREST;
@@ -40,12 +40,14 @@ namespace vg
 		TextureWrap wrap_t = TextureWrap::CLAMP_TO_EDGE;
 
 		void bind() const;
-		bool operator==(const Texture2DParams& other) const = default;
+		bool operator==(const TextureParams& other) const = default;
 
-		static const Texture2DParams LINEAR;
+		static const TextureParams LINEAR;
+		static const TextureParams NEAREST;
 	};
 
-	inline const Texture2DParams Texture2DParams::LINEAR = { MinFilter::LINEAR, MagFilter::LINEAR };
+	inline const TextureParams TextureParams::LINEAR = { MinFilter::LINEAR, MagFilter::LINEAR };
+	inline const TextureParams TextureParams::NEAREST = { MinFilter::NEAREST, MagFilter::NEAREST };
 
 	namespace ids
 	{
@@ -94,23 +96,96 @@ namespace vg
 		};
 	}
 
-	namespace _
-	{
-		extern void init_bound_textures();
-	}
+	extern void select_texture_slot(GLuint slot);
 
-	extern void bind_texture2D(ids::Texture texture, GLuint slot);
-	extern void unbind_texture2D(GLuint slot);
-	extern void update_bound_texture2Ds();
+	enum class TextureTarget
+	{
+		_1D = GL_TEXTURE_1D,
+		_2D = GL_TEXTURE_2D,
+		_3D = GL_TEXTURE_3D,
+		_1D_ARRAY = GL_TEXTURE_1D_ARRAY,
+		_2D_ARRAY = GL_TEXTURE_2D_ARRAY,
+		RECTANGLE = GL_TEXTURE_RECTANGLE,
+		CUBE_MAP = GL_TEXTURE_CUBE_MAP,
+		CUBE_MAP_ARRAY = GL_TEXTURE_CUBE_MAP_ARRAY,
+		BUFFER = GL_TEXTURE_BUFFER,
+		_2D_MULTISAMPLE = GL_TEXTURE_2D_MULTISAMPLE,
+		_2D_MULTISAMPLE_ARRAY = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+	};
+
+	extern void bind_texture(ids::Texture texture, TextureTarget target = TextureTarget::_2D);
+	extern void unbind_texture(TextureTarget target = TextureTarget::_2D);
+	extern void bind_texture_to_slot(ids::Texture texture, GLuint slot);
+	extern void bind_textures_to_slots(const ids::Texture* textures, GLuint first_slot, GLuint count);
 
 	typedef GLint CHPP;
 
+	extern void align_texture_pixels(CHPP chpp);
+
+	namespace tex
+	{
+		enum class DataType
+		{
+			UBYTE = GL_UNSIGNED_BYTE,
+			BYTE = GL_BYTE,
+			USHORT = GL_UNSIGNED_SHORT,
+			SHORT = GL_SHORT,
+			UINT = GL_UNSIGNED_INT,
+			INT = GL_INT,
+			FLOAT = GL_FLOAT
+		};
+
+		enum class Target2D : unsigned char
+		{
+			_2D = 0,
+			_1D_ARRAY = 2,
+			RECTANGLE = 4
+		};
+
+		enum class Target3D : unsigned char
+		{
+			_3D = 0,
+			_2D_ARRAY = 2
+		};
+
+		enum class CubeMapTarget
+		{
+			X_POS = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+			X_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+			Y_POS = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+			Y_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+			Z_POS = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+			Z_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+			PROXY = GL_PROXY_TEXTURE_CUBE_MAP
+		};
+
+		extern void image_1d(int width, CHPP chpp, const void* pixels, int border = 0, DataType data_type = DataType::UBYTE, bool proxy = false);
+		extern void image_2d(int width, int height, CHPP chpp, const void* pixels, int border = 0, DataType data_type = DataType::UBYTE, Target2D target = Target2D::_2D, bool proxy = false);
+		extern void image_3d(int width, int height, int depth, CHPP chpp, const void* pixels, int border = 0, DataType data_type = DataType::UBYTE, Target3D target = Target3D::_3D, bool proxy = false);
+		extern void image_cube_map(int width, int height, CHPP chpp, const void* pixels, CubeMapTarget target, int border = 0, DataType data_type = DataType::UBYTE);
+		
+		extern void multisample_2d(GLsizei samples, int width, int height, CHPP chpp, bool fixed, bool proxy);
+		extern void multisample_3d(GLsizei samples, int width, int height, int depth, CHPP chpp, bool fixed, bool proxy);
+		
+		extern void subimage_1d(int xoff, int width, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void subimage_2d(int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE, Target2D target = Target2D::_2D);
+		extern void subimage_3d(int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE, Target3D target = Target3D::_3D);
+		extern void subimage_cube_map(int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, CubeMapTarget target, DataType data_type = DataType::UBYTE);
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		extern void direct_subimage_1d(ids::Texture texture, int xoff, int width, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void direct_subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void direct_subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void direct_subimage_cube_map(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+#endif
+	}
+
 	struct Image
 	{
-		unsigned char* pixels;
-		int width;
-		int height;
-		CHPP chpp;
+		unsigned char* pixels = nullptr; // TODO use VoidArray instead. provide special ref/get-pointer functions for UBYTE, FLOAT, etc.
+		int width = 0;
+		int height = 0;
+		CHPP chpp = 0;
 
 		void pxnew() { pixels = new unsigned char[width * height * chpp]; }
 		int stride() const { return width * chpp; }
@@ -147,45 +222,11 @@ namespace vg
 	extern bool save_image(const Image& image, const FilePath& filepath, ImageFormat format, JPGQuality jpg_quality = JPGQuality::HIGHEST);
 	extern void delete_image(const Image& image);
 
-	class ImageTexture
+	namespace image_2d
 	{
-		Image _image;
-		raii::Texture _texture;
-
-	public:
-		ImageTexture() = default;
-		ImageTexture(const Image& image, Texture2DParams params = {});
-
-		void bind(GLuint slot) const { bind_texture2D(_texture, slot); }
-		ids::Texture texture() const { return _texture; }
-		const Image& image() const { return _image; }
-		Image& image() { return _image; }
-
-		void send_texture(Texture2DParams params = {}) const;
-		void update_texture_params(Texture2DParams params = {}) const;
-		void update_texture() const;
-		void update_subtexture(int x, int y, int w, int h) const;
-	};
-
-	class ImageTextureBlock
-	{
-		std::vector<Image> _images;
-		raii::TextureBlock _textures;
-
-	public:
-		ImageTextureBlock(GLuint block_count);
-		ImageTextureBlock(const std::vector<Image>& images);
-		ImageTextureBlock(std::vector<Image>&& images);
-
-		void bind(GLuint i, GLuint slot) const { bind_texture2D(_textures[i], slot); }
-		ids::Texture texture(GLuint i) const { return _textures[i]; }
-		const Image& image(GLuint i) const { return _images[i]; }
-		Image& image(GLuint i) { return _images[i]; }
-		GLuint get_count() const { return _textures.get_count(); }
-
-		void send_texture(GLuint i, Texture2DParams params = {}) const;
-		void update_texture_params(GLuint i, Texture2DParams params = {}) const;
-		void update_texture(GLuint i) const;
-		void update_subtexture(GLuint i, int x, int y, int w, int h) const;
-	};
+		extern void send_texture(const Image& image, ids::Texture texture, TextureParams params = {});
+		extern void update_texture_params(ids::Texture texture, TextureParams params = {});
+		extern void update_full_texture(const Image& image, ids::Texture texture, TextureParams params = {});
+		extern void update_sub_texture(const Image& image, ids::Texture texture, int x, int y, int w, int h);
+	}
 }
