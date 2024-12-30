@@ -107,11 +107,11 @@ int main()
 	vg::raii::Texture tex_einstein;
 	vg::image_2d::send_texture(img_einstein, tex_einstein);
 
-	vg::raii::FrameBuffer framebuffer;
-	vg::bind_framebuffer(framebuffer);
+	vg::FrameBufferObject fbo(0, 0, 1440, 1080, { 0.5f, 0.7f, 0.9f, 1.0f });
+	fbo.bind();
 
 	vg::raii::Texture color_texture;
-	vg::image_2d::send_texture(1440 / 2, 1080 / 3, 4, color_texture);
+	vg::image_2d::send_texture(1440, 1080, 4, color_texture);
 	vg::image_2d::update_texture_params(color_texture, vg::TextureParams::LINEAR);
 	vg::raii::Texture normal_texture;
 	vg::image_2d::send_texture(1440, 1080, 4, normal_texture);
@@ -121,20 +121,17 @@ int main()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1440, 1080, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	vg::TextureParams::LINEAR.bind();
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (vg::ids::Texture)color_texture, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, (vg::ids::Texture)normal_texture, 0);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, (vg::ids::Texture)depth_texture, 0);
-	VANGUARD_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+	fbo.attach_texture(color_texture, vg::framebuffers::Attachment::COLOR0);
+	fbo.attach_texture(normal_texture, vg::framebuffers::Attachment::COLOR1);
+	fbo.attach_texture(depth_texture, vg::framebuffers::Attachment::DEPTH);
+	VANGUARD_ASSERT(vg::framebuffers::is_complete(fbo.framebuffer()));
 
-	GLenum draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, draw_buffers);
+	const vg::framebuffers::Attachment draw_attachments[] = {vg::framebuffers::Attachment::COLOR0, vg::framebuffers::Attachment::COLOR1};
+	fbo.draw_into(draw_attachments, 2);
 
 	window.render_frame = [&]() {
-		vg::bind_framebuffer(framebuffer);
-		glViewport(0, 0, 1440 / 2, 1080 / 3);
-		vg::set_clear_color({ 0.5f, 0.7f, 0.9f, 1.0f });
-		vg::clear_buffer();
-		vg::set_clear_color({ 0.0f, 0.0f, 0.0f, 1.0f });
+		fbo.begin_render();
+		fbo.draw_into(draw_attachments, 2);
 
 		vg::bind_shader(shader);
 		vertex_buffer.bind_vao();
@@ -155,6 +152,8 @@ int main()
 		vertex_buffer.bind_vb();
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset2, sizeof(float), cpubuf.at(offset2));
 
+		fbo.draw_into(vg::framebuffers::Attachment::COLOR0);
+
 		white_square.ref<glm::vec2>(wsbuf0, 0, 0, 0).x -= float(0.008f * glm::sin(glfwGetTime() * 20.0f));
 		white_square.bind_vb(0);
 		vg::buffers::subsend(vg::BufferTarget::VERTEX, white_square.buffer_offset(0, 0, 0), sizeof(glm::vec2), wsbuf0);
@@ -167,13 +166,13 @@ int main()
 		tripair.bind_vao(1);
 		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1, tribuf1));
 
-		vg::unbind_framebuffer();
-		glViewport(0, 0, 1440, 1080);
+		window.unbind_framebuffer();
 
 		vg::bind_shader(img_shader);
 		vg::select_texture_slot(0);
 		//vg::bind_texture(tex_einstein);
 		vg::bind_texture(color_texture);
+		//vg::bind_texture(normal_texture);
 		sprite.bind_vao();
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 

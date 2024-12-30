@@ -3,6 +3,7 @@
 #include "Vanguard.h"
 #include "Errors.h"
 #include "Input.h"
+#include "raii/FrameBuffer.h"
 
 // LATER use Logger instead
 #include <iostream>
@@ -157,9 +158,16 @@ void vg::Window::swap_buffers() const
 	glfwSwapBuffers(_w);
 }
 
+void vg::Window::unbind_framebuffer() const
+{
+	vg::framebuffers::unbind();
+	glViewport(0, 0, width(), height());
+}
+
 void vg::Window::new_frame() const
 {
 	VANGUARD_ASSERT_GL_OKAY;
+	set_clear_color(clear_color);
 	clear_buffer();
 }
 

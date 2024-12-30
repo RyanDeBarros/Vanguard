@@ -109,6 +109,7 @@ namespace vg
 		bool should_close() const;
 		void request_close(bool close = true) const;
 		void swap_buffers() const;
+		void unbind_framebuffer() const;
 
 		void new_frame() const;
 		void end_frame() const;
@@ -169,5 +170,7 @@ namespace vg
 
 	public:
 		const GLConstants& constants() const { return gl_constants; }
+
+		glm::vec4 clear_color{ 0.0f, 0.0f, 0.0f, 1.0f };
 	};
 }

@@ -7,6 +7,8 @@
 #include "utils/VoidArray.h"
 #include "utils/Meta.h"
 
+// LATER texture minmap level
+
 namespace vg
 {
 	enum class MinFilter
@@ -175,10 +177,10 @@ namespace vg
 		extern void subimage_cube_map(int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, CubeMapTarget target, DataType data_type = DataType::UBYTE);
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-		extern void direct_subimage_1d(ids::Texture texture, int xoff, int width, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
-		extern void direct_subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
-		extern void direct_subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
-		extern void direct_subimage_cube_map(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void subimage_1d(ids::Texture texture, int xoff, int width, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
+		extern void subimage_cube_map(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type = DataType::UBYTE);
 #endif
 	}
 

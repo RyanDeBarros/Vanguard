@@ -212,22 +212,22 @@ void vg::tex::subimage_cube_map(int xoff, int yoff, int width, int height, CHPP 
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 
-void vg::tex::direct_subimage_1d(ids::Texture texture, int xoff, int width, CHPP chpp, const void* pixels, DataType data_type)
+void vg::tex::subimage_1d(ids::Texture texture, int xoff, int width, CHPP chpp, const void* pixels, DataType data_type)
 {
 	glTextureSubImage1D(texture, 0, xoff, width, chpp_format(chpp), (GLenum)data_type, pixels);
 }
 
-void vg::tex::direct_subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type)
+void vg::tex::subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type)
 {
 	glTextureSubImage2D(texture, 0, xoff, yoff, width, height, chpp_format(chpp), (GLenum)data_type, pixels);
 }
 
-void vg::tex::direct_subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type)
+void vg::tex::subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type)
 {
 	glTextureSubImage3D(texture, 0, xoff, yoff, zoff, width, height, depth, chpp_format(chpp), (GLenum)data_type, pixels);
 }
 
-void vg::tex::direct_subimage_cube_map(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type)
+void vg::tex::subimage_cube_map(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type)
 {
 	glTextureSubImage2D(texture, 0, xoff, yoff, width, height, chpp_format(chpp), (GLenum)data_type, pixels);
 }
@@ -238,12 +238,16 @@ vg::Image vg::load_image(const FilePath& filepath)
 {
 	Image image{};
 	image.pixels = stbi_load(filepath.c_str(), &image.width, &image.height, &image.chpp, 0);
+	if (!image.pixels)
+		throw Error(ErrorCode::FILE_IO);
 	return image;
 }
 
 void vg::load_image(Image& image, const FilePath& filepath)
 {
 	image.pixels = stbi_load(filepath.c_str(), &image.width, &image.height, &image.chpp, 0);
+	if (!image.pixels)
+		throw Error(ErrorCode::FILE_IO);
 }
 
 bool vg::save_image(const Image& image, const FilePath& filepath, ImageFormat format, JPGQuality jpg_quality)
@@ -303,8 +307,7 @@ void vg::image_2d::update_texture_params(ids::Texture texture, TextureParams par
 
 void vg::image_2d::update_full_texture(const Image& image, ids::Texture texture, TextureParams params)
 {
-	bind_texture(texture);
-	tex::subimage_2d(0, 0, image.width, image.height, image.chpp, image.pixels);
+	tex::subimage_2d(texture, 0, 0, image.width, image.height, image.chpp, image.pixels);
 }
 
 void vg::image_2d::update_sub_texture(const Image& image, ids::Texture texture, int x, int y, int w, int h)
@@ -315,16 +318,15 @@ void vg::image_2d::update_sub_texture(const Image& image, ids::Texture texture, 
 			w = image.width - x;
 		if (y + h >= image.height)
 			h = image.height - y;
-		bind_texture(texture);
 		if (x == 0 && w == image.width)
 		{
-			tex::subimage_2d(x, y, w, h, image.chpp, image.pos(x, y));
+			tex::subimage_2d(texture, x, y, w, h, image.chpp, image.pos(x, y));
 		}
 		else
 		{
 			int end = y + h;
 			for (int r = y; r < end; ++r)
-				tex::subimage_2d(x, r, w, 1, image.chpp, image.pos(x, r));
+				tex::subimage_2d(texture, x, r, w, 1, image.chpp, image.pos(x, r));
 		}
 	}
 }
