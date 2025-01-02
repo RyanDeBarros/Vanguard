@@ -112,14 +112,14 @@ int main()
 
 	vg::raii::Texture color_texture;
 	vg::image_2d::send_texture(1440, 1080, 4, color_texture);
-	vg::image_2d::update_texture_params(color_texture, vg::TextureParams::LINEAR);
+	vg::texture_params::linear(vg::texture_params::T2D);
 	vg::raii::Texture normal_texture;
 	vg::image_2d::send_texture(1440, 1080, 4, normal_texture);
 
 	vg::raii::Texture depth_texture;
-	vg::bind_texture(depth_texture);
+	vg::bind_texture(depth_texture, vg::TextureTarget::T2D);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1440, 1080, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	vg::TextureParams::LINEAR.bind();
+	vg::texture_params::linear(vg::texture_params::T2D);
 
 	fbo.attach_texture(color_texture, vg::framebuffers::Attachment::COLOR0);
 	fbo.attach_texture(normal_texture, vg::framebuffers::Attachment::COLOR1);
@@ -167,12 +167,13 @@ int main()
 		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1, tribuf1));
 
 		window.unbind_framebuffer();
+		vg::tex::barrier();
 
 		vg::bind_shader(img_shader);
 		vg::select_texture_slot(0);
-		//vg::bind_texture(tex_einstein);
-		vg::bind_texture(color_texture);
-		//vg::bind_texture(normal_texture);
+		//vg::bind_texture(tex_einstein, vg::TextureTarget::T2D);
+		vg::bind_texture(color_texture, vg::TextureTarget::T2D);
+		//vg::bind_texture(normal_texture, vg::TextureTarget::T2D);
 		sprite.bind_vao();
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 

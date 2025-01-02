@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Vendor.h"
 #include "Texture.h"
-#include "VGMath.h"
 
 // LATER glInvalidate* functions
 
