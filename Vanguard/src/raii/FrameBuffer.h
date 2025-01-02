@@ -2,6 +2,9 @@
 
 #include "Vendor.h"
 #include "Texture.h"
+#include "VGMath.h"
+
+// LATER glInvalidate* functions
 
 namespace vg
 {
@@ -51,17 +54,19 @@ namespace vg
 	}
 
 	// LATER RenderBuffer objects.
+	// LATER EXT functions.
 
 	// TODO named (direct) versions of functions everywhere
-	// TODO later, EXT functions.
+
+	// TODO glReadBuffer, glReadPixels, glCopyTexImage2D.
 
 	namespace framebuffers
 	{
-		enum class Target : unsigned char
+		enum class Target
 		{
-			DUAL,
-			DRAW,
-			READ
+			DUAL = GL_FRAMEBUFFER,
+			DRAW = GL_DRAW_FRAMEBUFFER,
+			READ = GL_READ_FRAMEBUFFER
 		};
 
 		enum class Attachment
@@ -104,17 +109,95 @@ namespace vg
 		extern void bind(ids::FrameBuffer fb, Target target = Target::DUAL);
 		extern void unbind(Target target = Target::DUAL);
 		extern void attach_texture(ids::Texture texture, Attachment attachment, Target target = Target::DUAL);
+		extern void attach_texture_layer(ids::Texture texture, Attachment attachment, Target target, GLuint layer);
 		extern Status status(Target target = Target::DUAL);
 		extern bool is_complete(Target target = Target::DUAL);
 		extern void draw_into(Attachment attachment);
 		extern void draw_into(const Attachment* attachments, GLuint count);
-		
+
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 		extern void attach_texture(ids::FrameBuffer fb, ids::Texture texture, Attachment attachment);
+		extern void attach_texture(ids::FrameBuffer fb, ids::Texture texture, Attachment attachment, GLuint layer);
 		extern Status status(ids::FrameBuffer fb, Target target = Target::DUAL);
 		extern bool is_complete(ids::FrameBuffer fb, Target target = Target::DUAL);
 		extern void draw_into(ids::FrameBuffer fb, Attachment attachment);
 		extern void draw_into(ids::FrameBuffer fb, const Attachment* attachments, GLuint count);
+#endif
+
+		enum class ReadBuffer
+		{
+			FRONT_LEFT = GL_FRONT_LEFT,
+			FRONT_RIGHT = GL_FRONT_RIGHT,
+			BACK_LEFT = GL_BACK_LEFT,
+			BACK_RIGHT = GL_BACK_RIGHT,
+			FRONT = GL_FRONT,
+			BACK = GL_BACK,
+			LEFT = GL_LEFT,
+			RIGHT = GL_RIGHT,
+			COLOR0 = GL_COLOR_ATTACHMENT0,
+			COLOR1 = GL_COLOR_ATTACHMENT1,
+			COLOR2 = GL_COLOR_ATTACHMENT2,
+			COLOR3 = GL_COLOR_ATTACHMENT3,
+			COLOR4 = GL_COLOR_ATTACHMENT4,
+			COLOR5 = GL_COLOR_ATTACHMENT5,
+			COLOR6 = GL_COLOR_ATTACHMENT6,
+			COLOR7 = GL_COLOR_ATTACHMENT7,
+			COLOR8 = GL_COLOR_ATTACHMENT8,
+			COLOR9 = GL_COLOR_ATTACHMENT9,
+			COLOR10 = GL_COLOR_ATTACHMENT10,
+			COLOR11 = GL_COLOR_ATTACHMENT11,
+			COLOR12 = GL_COLOR_ATTACHMENT12,
+			COLOR13 = GL_COLOR_ATTACHMENT13,
+			COLOR14 = GL_COLOR_ATTACHMENT14,
+			COLOR15 = GL_COLOR_ATTACHMENT15
+		};
+
+		extern void select_read_mode(ReadBuffer mode);
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		extern void select_read_mode(ids::FrameBuffer fb, ReadBuffer mode);
+#endif
+
+		template<tex::DataType DataType = tex::DataType::UBYTE>
+		inline void read_pixels(GLuint x, GLuint y, raii::Image2D<DataType>& image)
+		{
+			glReadPixels(x, y, image.width(), image.height(), chpp_format(image.chpp()), (GLenum)DataType, image.pixels());
+		}
+
+		template<tex::DataType DataType = tex::DataType::UBYTE>
+		inline raii::Image2D<DataType> read_pixels(GLuint x, GLuint y, GLuint width, GLuint height, CHPP chpp)
+		{
+			raii::Image2D<DataType> image(width, height, chpp);
+			glReadPixels(x, y, width, height, chpp_format(chpp), (GLenum)DataType, image.pixels());
+			return image;
+		}
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		template<tex::DataType DataType = tex::DataType::UBYTE>
+		inline void read_n_pixels(GLuint x, GLuint y, raii::Image2D<DataType>& image)
+		{
+			glReadnPixels(x, y, image.width(), image.height(), chpp_format(image.chpp()), (GLenum)DataType, image.bytes(), image.pixels());
+		}
+
+		template<tex::DataType DataType = tex::DataType::UBYTE>
+		inline raii::Image2D<DataType> read_n_pixels(GLuint x, GLuint y, GLuint width, GLuint height, CHPP chpp)
+		{
+			raii::Image2D<DataType> image(width, height, chpp);
+			glReadnPixels(x, y, width, height, chpp_format(chpp), (GLenum)DataType, image.bytes(), image.pixels());
+			return image;
+		}
+#endif
+
+		enum class BlitMask
+		{
+			COLOR = GL_COLOR_BUFFER_BIT,
+			DEPTH = GL_DEPTH_BUFFER_BIT,
+			STENCIL = GL_STENCIL_BUFFER_BIT
+		};
+
+		// Make sure to bind the appropriate framebuffers to READ and DRAW when copying from different framebuffers.
+		extern void blit(IntBounds src, IntBounds dst, BlitMask mask, MagFilter filter);
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		extern void blit(ids::FrameBuffer src_fb, ids::FrameBuffer dst_fb, IntBounds src, IntBounds dst, BlitMask mask, MagFilter filter);
 #endif
 	}
 

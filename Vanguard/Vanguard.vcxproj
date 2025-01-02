@@ -192,6 +192,7 @@
     <ClInclude Include="src\utils\Meta.h" />
     <ClInclude Include="src\utils\VoidArray.h" />
     <ClInclude Include="src\Vanguard.h" />
+    <ClInclude Include="src\VGMath.h" />
     <ClInclude Include="vendor\Vendor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

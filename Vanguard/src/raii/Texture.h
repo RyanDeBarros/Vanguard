@@ -124,7 +124,10 @@ namespace vg
 
 	typedef GLint CHPP;
 
+	extern GLint chpp_alignment(CHPP chpp);
 	extern void align_texture_pixels(CHPP chpp);
+	extern GLenum chpp_format(CHPP chpp);
+	extern GLint chpp_internal_format(CHPP chpp);
 
 	namespace tex
 	{
@@ -186,7 +189,7 @@ namespace vg
 
 	struct Image
 	{
-		unsigned char* pixels = nullptr; // TODO use VoidArray instead. provide special ref/get-pointer functions for UBYTE, FLOAT, etc.
+		unsigned char* pixels = nullptr;
 		int width = 0;
 		int height = 0;
 		CHPP chpp = 0;

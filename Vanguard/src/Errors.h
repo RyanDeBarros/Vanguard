@@ -23,6 +23,7 @@ namespace vg
 		WINDOW_CREATION,
 		SUBSHADER_COMPILATION,
 		SHADER_LINKAGE,
+		INVALID_TEXTURE_SLOT,
 	};
 
 	struct Error : public std::runtime_error

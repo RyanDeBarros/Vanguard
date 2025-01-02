@@ -67,26 +67,29 @@ vg::ids::FrameBuffer vg::raii::FrameBufferBlock::operator[](GLuint i) const
 	return _fs[i];
 }
 
-static const GLenum vg_targets[] = { GL_FRAMEBUFFER, GL_DRAW_FRAMEBUFFER, GL_READ_FRAMEBUFFER };
-
 void vg::framebuffers::bind(ids::FrameBuffer fb, Target target)
 {
-	glBindFramebuffer(vg_targets[(unsigned char)target], fb);
+	glBindFramebuffer((GLenum)target, fb);
 }
 
 void vg::framebuffers::unbind(Target target)
 {
-	glBindFramebuffer(vg_targets[(unsigned char)target], 0);
+	glBindFramebuffer((GLenum)target, 0);
 }
 
 void vg::framebuffers::attach_texture(ids::Texture texture, Attachment attachment, Target target)
 {
-	glFramebufferTexture(vg_targets[(unsigned char)target], (GLenum)attachment, texture, 0);
+	glFramebufferTexture((GLenum)target, (GLenum)attachment, texture, 0);
+}
+
+void vg::framebuffers::attach_texture_layer(ids::Texture texture, Attachment attachment, Target target, GLuint layer)
+{
+	glFramebufferTextureLayer((GLenum)target, (GLenum)attachment, texture, 0, layer);
 }
 
 vg::framebuffers::Status vg::framebuffers::status(Target target)
 {
-	return (Status)glCheckFramebufferStatus(vg_targets[(unsigned char)target]);
+	return (Status)glCheckFramebufferStatus((GLenum)target);
 }
 
 bool vg::framebuffers::is_complete(Target target)
@@ -111,9 +114,14 @@ void vg::framebuffers::attach_texture(ids::FrameBuffer fb, ids::Texture texture,
 	glNamedFramebufferTexture(fb, (GLenum)attachment, texture, 0);
 }
 
+void vg::framebuffers::attach_texture(ids::FrameBuffer fb, ids::Texture texture, Attachment attachment, GLuint layer)
+{
+	glNamedFramebufferTextureLayer(fb, (GLenum)attachment, texture, 0, layer);
+}
+
 vg::framebuffers::Status vg::framebuffers::status(ids::FrameBuffer fb, Target target)
 {
-	return (Status)glCheckNamedFramebufferStatus(fb, vg_targets[(unsigned char)target]);
+	return (Status)glCheckNamedFramebufferStatus(fb, (GLenum)target);
 }
 
 bool vg::framebuffers::is_complete(ids::FrameBuffer fb, Target target)
@@ -131,6 +139,30 @@ void vg::framebuffers::draw_into(ids::FrameBuffer fb, const Attachment* attachme
 	glNamedFramebufferDrawBuffers(fb, count, (const GLenum*)attachments);
 }
 
+#endif
+
+void vg::framebuffers::select_read_mode(ReadBuffer mode)
+{
+	glReadBuffer((GLenum)mode);
+}
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+void vg::framebuffers::select_read_mode(ids::FrameBuffer fb, ReadBuffer mode)
+{
+	glNamedFramebufferReadBuffer(fb, (GLenum)mode);
+}
+#endif
+
+void vg::framebuffers::blit(IntBounds src, IntBounds dst, BlitMask mask, MagFilter filter)
+{
+	glBlitFramebuffer(src.x0, src.y0, src.x1, src.y1, dst.x0, dst.y0, dst.x1, dst.y1, (GLbitfield)mask, (GLenum)filter);
+}
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+void vg::framebuffers::blit(ids::FrameBuffer src_fb, ids::FrameBuffer dst_fb, IntBounds src, IntBounds dst, BlitMask mask, MagFilter filter)
+{
+	glBlitNamedFramebuffer(src_fb, dst_fb, src.x0, src.y0, src.x1, src.y1, dst.x0, dst.y0, dst.x1, dst.y1, (GLbitfield)mask, (GLenum)filter);
+}
 #endif
 
 void vg::FrameBufferObject::attach_texture(ids::Texture texture, framebuffers::Attachment attachment)

@@ -33,7 +33,7 @@ int main()
 	vertex_buffer.set_attribute(cpubuf, 1, glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 	vertex_buffer.bind_vb();
 	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, cpubuf.size(), cpubuf);
-	// TODO create CPUVertexBuffer that abstracts this kind of stuff. Then, there could be a series of Renderable classes that hold VertexBuffer/VertexBufferBlock/MultiVertexBuffer, VertexBufferLayout, and CPUVertexBuffer.
+	// TODO create CPUVertexBuffer that abstracts this kind of stuff. Then, there could be a series of Renderable classes that hold VertexBuffer/VertexBufferBlock/MultiVertexBuffer and CPUVertexBuffer.
 
 	vg::CPUIndexBuffer index_buffer(vg::IndexDataType::UBYTE);
 	index_buffer.bind_to_vertex_array(vertex_buffer.vao());

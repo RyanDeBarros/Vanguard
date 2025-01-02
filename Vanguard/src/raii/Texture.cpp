@@ -85,7 +85,8 @@ void vg::select_texture_slot(GLuint slot)
 {
 	if (slot >= 0 && slot < 32)
 		glActiveTexture(GL_TEXTURE0 + slot);
-	// TODO else throw error ??
+	else
+		throw Error(ErrorCode::INVALID_TEXTURE_SLOT);
 }
 
 void vg::bind_texture(vg::ids::Texture texture, TextureTarget target)
@@ -108,7 +109,7 @@ void vg::bind_textures_to_slots(const ids::Texture* textures, GLuint first_slot,
 	glBindTextures(first_slot, count, (const GLuint*)textures);
 }
 
-static GLint chpp_alignment(vg::CHPP chpp)
+GLint vg::chpp_alignment(CHPP chpp)
 {
 	if (chpp == 4)
 		return 4;
@@ -127,7 +128,7 @@ void vg::align_texture_pixels(CHPP chpp)
 	glPixelStorei(GL_UNPACK_ALIGNMENT, chpp_alignment(chpp));
 }
 
-static GLenum chpp_format(vg::CHPP chpp)
+GLenum vg::chpp_format(CHPP chpp)
 {
 	if (chpp == 4)
 		return GL_RGBA;
@@ -141,7 +142,7 @@ static GLenum chpp_format(vg::CHPP chpp)
 		return 0;
 }
 
-static GLint chpp_internal_format(vg::CHPP chpp)
+GLint vg::chpp_internal_format(CHPP chpp)
 {
 	if (chpp == 4)
 		return GL_RGBA8;
