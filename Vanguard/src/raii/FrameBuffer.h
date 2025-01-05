@@ -54,10 +54,6 @@ namespace vg
 	// LATER RenderBuffer objects.
 	// LATER EXT functions.
 
-	// TODO named (direct) versions of functions everywhere
-
-	// TODO glReadBuffer, glReadPixels, glCopyTexImage2D.
-
 	namespace framebuffers
 	{
 		enum class Target

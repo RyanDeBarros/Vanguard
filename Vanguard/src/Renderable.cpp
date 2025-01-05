@@ -12,12 +12,14 @@ vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GL
 	case ShaderDataType::I3:
 	case ShaderDataType::I4:
 		type = DataType::INT;
+		pass_by_integer = true;
 		break;
 	case ShaderDataType::UI:
 	case ShaderDataType::UI2:
 	case ShaderDataType::UI3:
 	case ShaderDataType::UI4:
 		type = DataType::UINT;
+		pass_by_integer = true;
 		break;
 	case ShaderDataType::F:
 	case ShaderDataType::F2:

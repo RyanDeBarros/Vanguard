@@ -3,8 +3,6 @@
 #include "Vendor.h"
 #include "utils/VoidArray.h"
 
-// TODO clone() functions everywhere
-
 namespace vg
 {
 	namespace ids

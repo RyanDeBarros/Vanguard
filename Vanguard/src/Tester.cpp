@@ -81,45 +81,50 @@ int main()
 	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
 	vg::Shader img_shader(image_vert, image_frag);
 	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader);
-	vg::VertexBuffer sprite(img_layout);
+	vg::VertexBufferBlock sprite(2, img_layout, { { 0, { 0, 2, 3 } }, { 1, { 1 } } });
 	
 	index_buffer.bind_to_vertex_array(sprite.vao());
 
-	auto sprite_buf = sprite.init_immutable_cpu_buffer(4);
-	sprite.set_attributes(sprite_buf, 0, 0, std::array<glm::vec2, 4>{
+	auto sprite_buf_main = sprite.init_immutable_cpu_buffer(0, 4);
+	auto sprite_buf_texslots = sprite.init_immutable_cpu_buffer(1, 4);
+	sprite.set_attributes(sprite_buf_main, 0, 0, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ -0.8f, -0.8f },
 		glm::vec2{ -0.2f, -0.8f },
 		glm::vec2{ -0.2f, -0.2f },
 		glm::vec2{ -0.8f, -0.2f }
 	});
-	sprite.set_attribute(sprite_buf, 1, GLint(0)); // TODO images should use a VertexBufferBlock, with texture slot in a different buffer, since it updates more than other attributes.
-	sprite.set_attributes(sprite_buf, 2, 0, std::array<glm::vec2, 4>{
+	sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(0));
+	sprite.set_attributes(sprite_buf_main, 0, 2, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ 0.0f, 0.0f },
 		glm::vec2{ 1.0f, 0.0f },
 		glm::vec2{ 1.0f, 1.0f },
 		glm::vec2{ 0.0f, 1.0f }
 	});
-	sprite.set_attribute(sprite_buf, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-	sprite.bind_vb();
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf.size(), sprite_buf);
+	sprite.set_attribute(sprite_buf_main, 0, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	sprite.bind_vb(0);
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_main.size(), sprite_buf_main);
+	sprite.bind_vb(1);
+	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
 
 	vg::raii::Image2D img_einstein = vg::load_image_2d("ex/flag.png");
 	vg::raii::Texture tex_einstein;
 	vg::image_2d::send_texture(img_einstein, tex_einstein);
+	vg::texture_params::nearest(vg::texture_params::T2D);
 
 	vg::FrameBufferObject fbo(0, 0, 1440, 1080, { 0.5f, 0.7f, 0.9f, 1.0f });
 	fbo.bind();
 
 	vg::raii::Texture color_texture;
 	vg::image_2d::send_texture(1440, 1080, 4, color_texture);
-	vg::texture_params::linear(vg::texture_params::T2D);
+	vg::texture_params::nearest(vg::texture_params::T2D);
 	vg::raii::Texture normal_texture;
 	vg::image_2d::send_texture(1440, 1080, 4, normal_texture);
+	vg::texture_params::nearest(vg::texture_params::T2D);
 
 	vg::raii::Texture depth_texture;
 	vg::bind_texture(depth_texture, vg::TextureTarget::T2D);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1440, 1080, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	vg::texture_params::linear(vg::texture_params::T2D);
+	vg::texture_params::nearest(vg::texture_params::T2D);
 
 	fbo.attach_texture(color_texture, vg::framebuffers::Attachment::COLOR0);
 	fbo.attach_texture(normal_texture, vg::framebuffers::Attachment::COLOR1);
@@ -170,16 +175,34 @@ int main()
 		vg::tex::barrier();
 
 		vg::bind_shader(img_shader);
+		
 		vg::select_texture_slot(0);
-		//vg::bind_texture(tex_einstein, vg::TextureTarget::T2D);
+		vg::bind_texture(tex_einstein, vg::TextureTarget::T2D);
+		vg::select_texture_slot(1);
 		vg::bind_texture(color_texture, vg::TextureTarget::T2D);
-		//vg::bind_texture(normal_texture, vg::TextureTarget::T2D);
+		vg::select_texture_slot(2);
+		vg::bind_texture(normal_texture, vg::TextureTarget::T2D);
+		
 		sprite.bind_vao();
+		
+		sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(0));
+		sprite.bind_vb(1);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
+		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		
+		sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(1));
+		sprite.bind_vb(1);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
+		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		
+		sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(2));
+		sprite.bind_vb(1);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 
-		sprite.ref<glm::vec2>(sprite_buf, 0, 0).x += 0.002f;
-		sprite.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, sprite.buffer_offset(0, 0), sizeof(glm::vec2), sprite_buf);
+		sprite.ref<glm::vec2>(sprite_buf_main, 0, 0, 0).x += 0.002f;
+		sprite.bind_vb(0);
+		vg::buffers::subsend(vg::BufferTarget::VERTEX, sprite.buffer_offset(0, 0, 0), sizeof(glm::vec2), sprite_buf_main);
 		};
 
 	// TODO Interleaved Vertex Buffers. Not a separate VertexBuffer class, but a different struct that doesn't even have a reference to any buffers/VAOs. All it stores is offsets and object sizes.
