@@ -12,14 +12,12 @@ vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GL
 	case ShaderDataType::I3:
 	case ShaderDataType::I4:
 		type = DataType::INT;
-		pass_by_integer = true;
 		break;
 	case ShaderDataType::UI:
 	case ShaderDataType::UI2:
 	case ShaderDataType::UI3:
 	case ShaderDataType::UI4:
 		type = DataType::UINT;
-		pass_by_integer = true;
 		break;
 	case ShaderDataType::F:
 	case ShaderDataType::F2:
@@ -107,10 +105,10 @@ void vg::VertexAttribute::attrib_pointer(GLuint i, GLsizei stride) const
 #pragma warning(disable : 4312)
 	if (type == DataType::DOUBLE)
 		glVertexAttribLPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
-	else if (type != DataType::FLOAT && type != DataType::HALF && pass_by_integer)
+	else if (type != DataType::FLOAT && type != DataType::HALF && integer_case == IntegerCase::INTEGER)
 		glVertexAttribIPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
 	else
-		glVertexAttribPointer(i, rows, type_as_gl_enum(), normalized, stride, (void*)offset);
+		glVertexAttribPointer(i, rows, type_as_gl_enum(), integer_case == IntegerCase::NORMALIZED_FLOAT, stride, (void*)offset);
 #pragma warning(pop)
 	glEnableVertexAttribArray(i);
 	glVertexAttribDivisor(i, instance_divisor);
@@ -122,10 +120,10 @@ void vg::VertexAttribute::attrib_pointer(GLuint i, GLsizei stride, GLuint offset
 #pragma warning(disable : 4312)
 	if (type == DataType::DOUBLE)
 		glVertexAttribLPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
-	else if (type != DataType::FLOAT && type != DataType::HALF && pass_by_integer)
+	else if (type != DataType::FLOAT && type != DataType::HALF && integer_case == IntegerCase::INTEGER)
 		glVertexAttribIPointer(i, rows, type_as_gl_enum(), stride, (void*)offset);
 	else
-		glVertexAttribPointer(i, rows, type_as_gl_enum(), normalized, stride, (void*)offset);
+		glVertexAttribPointer(i, rows, type_as_gl_enum(), integer_case == IntegerCase::NORMALIZED_FLOAT, stride, (void*)offset);
 #pragma warning(pop)
 	glEnableVertexAttribArray(i);
 	glVertexAttribDivisor(i, instance_divisor);
@@ -241,12 +239,10 @@ vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader, const VertexAtt
 			_attributes.push_back(attrib);
 		}
 	}
-	for (auto [i, normalized] : specifications.normalized)
-		_attributes[i].set_normalized(normalized);
+	for (auto [i, integer_case] : specifications.integer_cases)
+		_attributes[i].set_integer_case(integer_case);
 	for (auto [i, instance_divisor] : specifications.instance_divisor)
 		_attributes[i].set_instance_divisor(instance_divisor);
-	for (auto [i, pass_by_integer] : specifications.pass_by_integer)
-		_attributes[i].set_pass_by_integer(pass_by_integer);
 }
 
 void vg::VertexBufferLayout::attrib_pointer(GLuint attrib) const
@@ -308,12 +304,26 @@ vg::VoidArray vg::VertexBuffer::init_immutable_cpu_buffer(GLuint vertex_count) c
 	return v;
 }
 
+void vg::VertexBuffer::init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const
+{
+	cpubuf.resize(_layout->stride() * vertex_count);
+	bind_vb();
+	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
+}
+
 vg::VoidArray vg::VertexBuffer::init_mutable_cpu_buffer(GLuint vertex_count) const
 {
 	VoidArray v(_layout->stride() * vertex_count);
 	bind_vb();
 	buffers::init_mutable(BufferTarget::VERTEX, v.size());
 	return v;
+}
+
+void vg::VertexBuffer::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const
+{
+	cpubuf.resize(_layout->stride() * vertex_count);
+	bind_vb();
+	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
 void vg::VertexBufferBlock::init(const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
@@ -381,12 +391,26 @@ vg::VoidArray vg::VertexBufferBlock::init_immutable_cpu_buffer(GLuint i, GLuint 
 	return v;
 }
 
+void vg::VertexBufferBlock::init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const
+{
+	cpubuf.resize(vb_stride(i) * vertex_count);
+	bind_vb(i);
+	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
+}
+
 vg::VoidArray vg::VertexBufferBlock::init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const
 {
 	VoidArray v(vb_stride(i) * vertex_count);
 	bind_vb(i);
 	buffers::init_mutable(BufferTarget::VERTEX, v.size());
 	return v;
+}
+
+void vg::VertexBufferBlock::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const
+{
+	cpubuf.resize(vb_stride(i) * vertex_count);
+	bind_vb(i);
+	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
 void vg::MultiVertexBuffer::init() const
@@ -414,6 +438,12 @@ vg::MultiVertexBuffer::MultiVertexBuffer(std::vector<std::shared_ptr<VertexBuffe
 	init();
 }
 
+vg::MultiVertexBuffer::MultiVertexBuffer(const std::shared_ptr<VertexBufferLayout>& layout, GLuint block_count)
+	: _layouts(block_count, layout), _vaos(block_count), _vbs(block_count)
+{
+	init();
+}
+
 void vg::MultiVertexBuffer::bind_vao(GLuint i) const
 {
 	_vaos.bind(i);
@@ -437,12 +467,26 @@ vg::VoidArray vg::MultiVertexBuffer::init_immutable_cpu_buffer(GLuint i, GLuint 
 	return v;
 }
 
+void vg::MultiVertexBuffer::init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const
+{
+	cpubuf.resize(_layouts[i]->stride() * vertex_count);
+	bind_vb(i);
+	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
+}
+
 vg::VoidArray vg::MultiVertexBuffer::init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const
 {
 	VoidArray v(_layouts[i]->stride() * vertex_count);
 	bind_vb(i);
 	buffers::init_mutable(BufferTarget::VERTEX, v.size());
 	return v;
+}
+
+void vg::MultiVertexBuffer::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const
+{
+	cpubuf.resize(_layouts[i]->stride() * vertex_count);
+	bind_vb(i);
+	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
 template<typename DataType>
@@ -553,4 +597,204 @@ void vg::CPUIndexBufferBlock::init_mutable_quads(GLuint i, GLuint num_quads)
 		fill_quad_indexes<GLuint>(idt_cpubuf.second, num_quads);
 
 	init_mutable(i);
+}
+
+vg::CPUVertexBuffer::CPUVertexBuffer(VertexBuffer&& vb, GLuint vertex_count, bool is_mutable)
+	: _vb(std::move(vb)), _vertex_count(vertex_count)
+{
+	if (is_mutable)
+		_vb.init_mutable_cpu_buffer(_cpubuf, _vertex_count);
+	else
+		_vb.init_immutable_cpu_buffer(_cpubuf, _vertex_count);
+}
+
+void vg::CPUVertexBuffer::subsend_full() const
+{
+	buffers::subsend(BufferTarget::VERTEX, 0, _cpubuf.size(), _cpubuf);
+}
+
+void vg::CPUVertexBuffer::subsend(size_t offset, size_t bytes) const
+{
+	buffers::subsend(BufferTarget::VERTEX, offset, bytes, _cpubuf.at(offset));
+}
+
+void vg::CPUVertexBuffer::subsend_single(GLuint vertex) const
+{
+	GLintptr offset = buffer_offset(vertex, 0);
+	GLuint stride = _vb.layout()->stride();
+	buffers::subsend(BufferTarget::VERTEX, offset, stride, _cpubuf.at(offset));
+}
+
+void vg::CPUVertexBuffer::subsend_single(GLuint vertex, GLuint attrib) const
+{
+	GLintptr offset = buffer_offset(vertex, attrib);
+	GLuint size = _vb.layout()->attributes()[attrib].bytes();
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf.at(offset));
+}
+
+vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, const std::vector<bool>& is_mutables)
+	: _vbb(std::move(vbb))
+{
+	for (GLuint i = 0; i < _vbb.block_count(); ++i)
+	{
+		if (is_mutables[i])
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+		else
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+	}
+}
+
+vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint vertex_count, const std::vector<bool>& is_mutables)
+	: _vbb(std::move(vbb))
+{
+	for (GLuint i = 0; i < _vbb.block_count(); ++i)
+	{
+		if (is_mutables[i])
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_count), vertex_count });
+		else
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_count), vertex_count });
+	}
+}
+
+vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, bool is_mutable)
+	: _vbb(std::move(vbb))
+{
+	if (is_mutable)
+	{
+		for (GLuint i = 0; i < _vbb.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+	}
+	else
+	{
+		for (GLuint i = 0; i < _vbb.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+	}
+}
+
+vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint vertex_count, bool is_mutable)
+	: _vbb(std::move(vbb))
+{
+	if (is_mutable)
+	{
+		for (GLuint i = 0; i < _vbb.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_count), vertex_count });
+	}
+	else
+	{
+		for (GLuint i = 0; i < _vbb.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_count), vertex_count });
+	}
+}
+
+void vg::CPUVertexBufferBlock::subsend_full(GLuint i) const
+{
+	buffers::subsend(BufferTarget::VERTEX, 0, _cpubuf_and_vcs[i].first.size(), _cpubuf_and_vcs[i].first);
+}
+
+void vg::CPUVertexBufferBlock::subsend_all_blocks() const
+{
+	for (GLuint i = 0; i < block_count(); ++i)
+	{
+		bind_vb(i);
+		subsend_full(i);
+	}
+}
+
+void vg::CPUVertexBufferBlock::subsend(GLuint i, size_t offset, size_t bytes) const
+{
+	buffers::subsend(BufferTarget::VERTEX, offset, bytes, _cpubuf_and_vcs[i].first.at(offset));
+}
+
+void vg::CPUVertexBufferBlock::subsend_single(GLuint i, GLuint vertex, GLuint attrib) const
+{
+	GLintptr offset = buffer_offset(i, vertex, attrib);
+	GLuint size = _vbb.layout()->attributes()[attrib].bytes();
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
+}
+
+vg::MultiCPUVertexBuffer::MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, const std::vector<GLuint>& vertex_counts, const std::vector<bool>& is_mutables)
+	: _vbs(std::move(vbs))
+{
+	for (GLuint i = 0; i < _vbs.block_count(); ++i)
+	{
+		if (is_mutables[i])
+			_cpubuf_and_vcs.push_back({ _vbs.init_mutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+		else
+			_cpubuf_and_vcs.push_back({ _vbs.init_immutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+	}
+}
+
+vg::MultiCPUVertexBuffer::MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, GLuint vertex_count, const std::vector<bool>& is_mutables)
+	: _vbs(std::move(vbs))
+{
+	for (GLuint i = 0; i < _vbs.block_count(); ++i)
+	{
+		if (is_mutables[i])
+			_cpubuf_and_vcs.push_back({ _vbs.init_mutable_cpu_buffer(i, vertex_count), vertex_count });
+		else
+			_cpubuf_and_vcs.push_back({ _vbs.init_immutable_cpu_buffer(i, vertex_count), vertex_count });
+	}
+}
+
+vg::MultiCPUVertexBuffer::MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, const std::vector<GLuint>& vertex_counts, bool is_mutable)
+	: _vbs(std::move(vbs))
+{
+	if (is_mutable)
+	{
+		for (GLuint i = 0; i < _vbs.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbs.init_mutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+	}
+	else
+	{
+		for (GLuint i = 0; i < _vbs.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbs.init_immutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+	}
+}
+
+vg::MultiCPUVertexBuffer::MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, GLuint vertex_count, bool is_mutable)
+	: _vbs(std::move(vbs))
+{
+	if (is_mutable)
+	{
+		for (GLuint i = 0; i < _vbs.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbs.init_mutable_cpu_buffer(i, vertex_count), vertex_count });
+	}
+	else
+	{
+		for (GLuint i = 0; i < _vbs.block_count(); ++i)
+			_cpubuf_and_vcs.push_back({ _vbs.init_immutable_cpu_buffer(i, vertex_count), vertex_count });
+	}
+}
+
+void vg::MultiCPUVertexBuffer::subsend_full(GLuint i) const
+{
+	buffers::subsend(BufferTarget::VERTEX, 0, _cpubuf_and_vcs[i].first.size(), _cpubuf_and_vcs[i].first);
+}
+
+void vg::MultiCPUVertexBuffer::subsend_all_blocks() const
+{
+	for (GLuint i = 0; i < block_count(); ++i)
+	{
+		bind_vb(i);
+		subsend_full(i);
+	}
+}
+
+void vg::MultiCPUVertexBuffer::subsend(GLuint i, size_t offset, size_t bytes) const
+{
+	buffers::subsend(BufferTarget::VERTEX, offset, bytes, _cpubuf_and_vcs[i].first.at(offset));
+}
+
+void vg::MultiCPUVertexBuffer::subsend_single(GLuint i, GLuint vertex) const
+{
+	GLintptr offset = buffer_offset(i, vertex, 0);
+	GLuint stride = _vbs.layout(i)->stride();
+	buffers::subsend(BufferTarget::VERTEX, offset, stride, _cpubuf_and_vcs[i].first.at(offset));
+}
+
+void vg::MultiCPUVertexBuffer::subsend_single(GLuint i, GLuint vertex, GLuint attrib) const
+{
+	GLintptr offset = buffer_offset(i, vertex, attrib);
+	GLuint size = _vbs.layout(i)->attributes()[attrib].bytes();
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
 }

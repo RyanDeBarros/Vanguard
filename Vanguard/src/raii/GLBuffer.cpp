@@ -111,7 +111,7 @@ vg::raii::VertexArrayBlock::VertexArrayBlock(GLuint count)
 }
 
 vg::raii::VertexArrayBlock::VertexArrayBlock(VertexArrayBlock&& other) noexcept
-	: count(other.count)
+	: _vaos(other._vaos), count(other.count)
 {
 	other.count = 0;
 	other._vaos = nullptr;

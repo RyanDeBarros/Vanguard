@@ -21,90 +21,74 @@ int main()
 	vg::Shader shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
 	auto vb_layout = std::make_shared<vg::VertexBufferLayout>(shader);
 
-	vg::VertexBuffer vertex_buffer(vb_layout);
-	vg::VoidArray cpubuf = vertex_buffer.init_immutable_cpu_buffer(4);
+	vg::CPUVertexBuffer vertex_buffer(vg::VertexBuffer(vb_layout), 4, false);
 
-	vertex_buffer.set_attributes(cpubuf, 0, 0, std::array<glm::vec2, 4>{
+	vertex_buffer.set_attributes(0, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ -0.5f, -0.5f },
 		glm::vec2{  0.5f, -0.5f },
 		glm::vec2{  0.0f,  0.5f },
 		glm::vec2{  0.8f,  0.8f }
 		});
-	vertex_buffer.set_attribute(cpubuf, 1, glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
+	vertex_buffer.set_attribute(1, glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 	vertex_buffer.bind_vb();
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, cpubuf.size(), cpubuf);
-	// TODO create CPUVertexBuffer that abstracts this kind of stuff. Then, there could be a series of Renderable classes that hold VertexBuffer/VertexBufferBlock/MultiVertexBuffer and CPUVertexBuffer.
+	vertex_buffer.subsend_full();
 
 	vg::CPUIndexBuffer index_buffer(vg::IndexDataType::UBYTE);
 	index_buffer.bind_to_vertex_array(vertex_buffer.vao());
 	index_buffer.init_immutable_quads(1);
 
-	vg::VertexBufferBlock white_square(2, vb_layout, { { 0, { 0 } }, { 1, { 1 } } });
-	vg::VoidArray wsbuf0 = white_square.init_immutable_cpu_buffer(0, 4);
-	vg::VoidArray wsbuf1 = white_square.init_immutable_cpu_buffer(1, 4);
+	vg::CPUVertexBufferBlock white_square(vg::VertexBufferBlock(2, vb_layout, { { 0, { 0 } }, { 1, { 1 } } }), 4, false);
 
-	white_square.set_attributes(wsbuf0, 0, 0, 0, std::array<glm::vec2, 4>{
+	white_square.set_attributes(0, 0, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ 0.7f, -0.7f },
 		glm::vec2{ 0.9f, -0.7f },
 		glm::vec2{ 0.9f, -0.9f },
 		glm::vec2{ 0.7f, -0.9f }
 	});
-	white_square.bind_vb(0);
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, wsbuf0.size(), wsbuf0);
-	white_square.set_attribute(wsbuf1, 1, 1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-	white_square.bind_vb(1);
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, wsbuf1.size(), wsbuf1);
+	white_square.set_attribute(1, 1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	white_square.subsend_all_blocks();
 	index_buffer.bind_to_vertex_array(white_square.vao());
 
-	vg::MultiVertexBuffer tripair({ vb_layout, vb_layout });
-	vg::VoidArray tribuf0 = tripair.init_immutable_cpu_buffer(0, 3);
-	vg::VoidArray tribuf1 = tripair.init_immutable_cpu_buffer(1, 3);
+	vg::MultiCPUVertexBuffer tripair(vg::MultiVertexBuffer(vb_layout, 2), 3, false);
 
-	tripair.set_attributes(0, tribuf0, 0, 0, std::array<glm::vec2, 3>{
+	tripair.set_attributes(0, 0, 0, std::array<glm::vec2, 3>{
 		glm::vec2{ -0.9f, 0.9f },
 		glm::vec2{ -0.8f, 0.9f },
 		glm::vec2{ -0.9f, 0.8f }
 	});
-	tripair.set_attributes(1, tribuf1, 0, 0, std::array<glm::vec2, 3>{
+	tripair.set_attributes(1, 0, 0, std::array<glm::vec2, 3>{
 		glm::vec2{ -0.7f, 0.9f },
 		glm::vec2{ -0.7f, 0.8f },
 		glm::vec2{ -0.8f, 0.8f }
 	});
-	tripair.set_attribute(0, tribuf0, 1, glm::vec4{ 0.8f, 0.5f, 0.3f, 0.7f });
-	tripair.set_attribute(1, tribuf1, 1, glm::vec4{ 0.7f, 0.5f, 0.4f, 0.6f });
-	tripair.bind_vb(0);
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, tribuf0.size(), tribuf0);
-	tripair.bind_vb(1);
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, tribuf1.size(), tribuf1);
+	tripair.set_attribute(0, 1, glm::vec4{ 0.8f, 0.5f, 0.3f, 0.7f });
+	tripair.set_attribute(1, 1, glm::vec4{ 0.7f, 0.5f, 0.4f, 0.6f });
+	tripair.subsend_all_blocks();
 
 	std::string image_vert = vg::io::read_file("shaders/image.vert");
 	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
 	vg::Shader img_shader(image_vert, image_frag);
-	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader);
-	vg::VertexBufferBlock sprite(2, img_layout, { { 0, { 0, 2, 3 } }, { 1, { 1 } } });
-	
+	// It is possible to have a vertex buffer with only one vertex's attribute, but only if setting the divisor. This works even with non-instanced rendering
+	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 1, 1 } } });
+
+	vg::CPUVertexBufferBlock sprite(vg::VertexBufferBlock(2, img_layout, { { 0, { 0, 2, 3 } }, { 1, { 1 } } }), { 4, 1 }, false);
 	index_buffer.bind_to_vertex_array(sprite.vao());
 
-	auto sprite_buf_main = sprite.init_immutable_cpu_buffer(0, 4);
-	auto sprite_buf_texslots = sprite.init_immutable_cpu_buffer(1, 4);
-	sprite.set_attributes(sprite_buf_main, 0, 0, 0, std::array<glm::vec2, 4>{
+	sprite.set_attributes(0, 0, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ -0.8f, -0.8f },
 		glm::vec2{ -0.2f, -0.8f },
 		glm::vec2{ -0.2f, -0.2f },
 		glm::vec2{ -0.8f, -0.2f }
 	});
-	sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(0));
-	sprite.set_attributes(sprite_buf_main, 0, 2, 0, std::array<glm::vec2, 4>{
+	sprite.set_attribute(1, 1, GLint(0));
+	sprite.set_attributes(0, 2, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ 0.0f, 0.0f },
 		glm::vec2{ 1.0f, 0.0f },
 		glm::vec2{ 1.0f, 1.0f },
 		glm::vec2{ 0.0f, 1.0f }
 	});
-	sprite.set_attribute(sprite_buf_main, 0, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-	sprite.bind_vb(0);
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_main.size(), sprite_buf_main);
-	sprite.bind_vb(1);
-	vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
+	sprite.set_attribute(0, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	sprite.subsend_all_blocks();
 
 	vg::raii::Image2D img_einstein = vg::load_image_2d("ex/flag.png");
 	vg::raii::Texture tex_einstein;
@@ -142,34 +126,27 @@ int main()
 		vertex_buffer.bind_vao();
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 
-		auto offset0 = vertex_buffer.layout()->buffer_offset(0, 1) + 0 * sizeof(float);
-		cpubuf.ref<float>(offset0) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 0 * glm::pi<float>() / 3)));
 		vertex_buffer.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset0, sizeof(float), cpubuf.at(offset0));
-
-		auto offset1 = vertex_buffer.layout()->buffer_offset(1, 1) + 1 * sizeof(float);
-		cpubuf.ref<float>(offset1) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 1 * glm::pi<float>() / 3)));
-		vertex_buffer.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset1, sizeof(float), cpubuf.at(offset1));
-
-		auto offset2 = vertex_buffer.layout()->buffer_offset(2, 1) + 2 * sizeof(float);
-		cpubuf.ref<float>(offset2) = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 2 * glm::pi<float>() / 3)));
-		vertex_buffer.bind_vb();
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, offset2, sizeof(float), cpubuf.at(offset2));
+		vertex_buffer.ref<glm::vec4>(0, 1).x = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 0 * glm::pi<float>() / 3)));
+		vertex_buffer.subsend_single(0, 1);
+		vertex_buffer.ref<glm::vec4>(1, 1).y = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 1 * glm::pi<float>() / 3)));
+		vertex_buffer.subsend_single(1, 1);
+		vertex_buffer.ref<glm::vec4>(2, 1).z = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 2 * glm::pi<float>() / 3)));
+		vertex_buffer.subsend_single(2, 1);
 
 		fbo.draw_into(vg::framebuffers::Attachment::COLOR0);
 
-		white_square.ref<glm::vec2>(wsbuf0, 0, 0, 0).x -= float(0.008f * glm::sin(glfwGetTime() * 20.0f));
+		white_square.ref<glm::vec2>(0, 0, 0).x -= float(0.008f * glm::sin(glfwGetTime() * 20.0f));
 		white_square.bind_vb(0);
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, white_square.buffer_offset(0, 0, 0), sizeof(glm::vec2), wsbuf0);
+		white_square.subsend_single(0, 0, 0);
 
 		white_square.bind_vao();
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 
 		tripair.bind_vao(0);
-		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(0, tribuf0));
+		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(0)); // TODO arrays draw function abstraction on vertex buffer classes, and elements draw function abstraction on index buffer classes.
 		tripair.bind_vao(1);
-		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1, tribuf1));
+		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1));
 
 		window.unbind_framebuffer();
 		vg::tex::barrier();
@@ -184,25 +161,23 @@ int main()
 		vg::bind_texture(normal_texture, vg::TextureTarget::T2D);
 		
 		sprite.bind_vao();
-		
-		sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(0));
 		sprite.bind_vb(1);
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
+		
+		sprite.set_attribute(1, 1, GLint(0));
+		sprite.subsend_full(1);
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 		
-		sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(1));
-		sprite.bind_vb(1);
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
+		sprite.set_attribute(1, 1, GLint(1));
+		sprite.subsend_full(1);
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 		
-		sprite.set_attribute(sprite_buf_texslots, 1, 1, GLint(2));
-		sprite.bind_vb(1);
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, 0, sprite_buf_texslots.size(), sprite_buf_texslots);
+		sprite.set_attribute(1, 1, GLint(2));
+		sprite.subsend_full(1);
 		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
 
-		sprite.ref<glm::vec2>(sprite_buf_main, 0, 0, 0).x += 0.002f;
+		sprite.ref<glm::vec2>(0, 0, 0).x += 0.002f;
 		sprite.bind_vb(0);
-		vg::buffers::subsend(vg::BufferTarget::VERTEX, sprite.buffer_offset(0, 0, 0), sizeof(glm::vec2), sprite_buf_main);
+		sprite.subsend_single(0, 0, 0);
 		};
 
 	// TODO Interleaved Vertex Buffers. Not a separate VertexBuffer class, but a different struct that doesn't even have a reference to any buffers/VAOs. All it stores is offsets and object sizes.

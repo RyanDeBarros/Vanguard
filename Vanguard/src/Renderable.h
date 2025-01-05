@@ -24,10 +24,16 @@ namespace vg
 			FIXED = GL_FIXED - GL_BYTE
 		};
 
+		enum class IntegerCase : char
+		{
+			INTEGER,
+			NORMALIZED_FLOAT,
+			PASS_AS_FLOAT
+		};
+
 	private:
 		DataType type = DataType::FLOAT;
-		bool normalized = false;
-		bool pass_by_integer = false;
+		IntegerCase integer_case = IntegerCase::INTEGER;
 		GLubyte rows = 0;
 		GLuint instance_divisor = 0;
 		GLuint offset = 0;
@@ -40,8 +46,7 @@ namespace vg
 		void attrib_pointer(GLuint i, GLsizei stride, GLuint offset) const;
 		GLsizei bytes() const;
 		void set_type(DataType type) { this->type = type; }
-		void set_normalized(bool normalized) { this->normalized = normalized; }
-		void set_pass_by_integer(bool pass_by_integer) { this->pass_by_integer = pass_by_integer; }
+		void set_integer_case(IntegerCase integer_case) { this->integer_case = integer_case; }
 		void set_instance_divisor(GLuint instance_divisor) { this->instance_divisor = instance_divisor; }
 		GLuint get_offset() const { return offset; }
 		GLenum type_as_gl_enum() const { return (GLenum)type + GL_BYTE; }
@@ -51,8 +56,7 @@ namespace vg
 
 	struct VertexAttributeSpecificationList
 	{
-		std::vector<std::pair<GLuint, bool>> normalized = {};
-		std::vector<std::pair<GLuint, bool>> pass_by_integer = {};
+		std::vector<std::pair<GLuint, VertexAttribute::IntegerCase>> integer_cases = {};
 		std::vector<std::pair<GLuint, VertexAttribute::DataType>> ordered_override_data_types = {};
 		std::vector<std::pair<GLuint, GLuint>> instance_divisor = {};
 	};
@@ -87,6 +91,8 @@ namespace vg
 		VertexBuffer(const std::shared_ptr<VertexBufferLayout>& layout);
 		VertexBuffer(std::shared_ptr<VertexBufferLayout>&& layout);
 		VertexBuffer(const VertexBuffer&) = delete;
+		VertexBuffer(VertexBuffer&&) noexcept = default;
+		VertexBuffer& operator=(VertexBuffer&&) noexcept = default;
 		
 		const std::shared_ptr<VertexBufferLayout>& layout() const { return _layout; }
 		ids::VertexArray vao() const { return _vao; }
@@ -137,7 +143,9 @@ namespace vg
 		}
 
 		VoidArray init_immutable_cpu_buffer(GLuint vertex_count) const;
+		void init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const;
 		VoidArray init_mutable_cpu_buffer(GLuint vertex_count) const;
+		void init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const;
 		GLuint vertex_count(const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / _layout->stride()); }
 	};
 
@@ -156,6 +164,8 @@ namespace vg
 		VertexBufferBlock(GLuint block_count, const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
 		VertexBufferBlock(GLuint block_count, std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
 		VertexBufferBlock(const VertexBufferBlock&) = delete;
+		VertexBufferBlock(VertexBufferBlock&&) noexcept = default;
+		VertexBufferBlock& operator=(VertexBufferBlock&&) noexcept = default;
 
 		const std::shared_ptr<VertexBufferLayout>& layout() const { return _layout; }
 		ids::VertexArray vao() const { return _vao; }
@@ -207,11 +217,13 @@ namespace vg
 		}
 
 		VoidArray init_immutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
+		void init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const;
 		VoidArray init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
+		void init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const;
 		GLuint vertex_count(GLuint i, const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / vb_stride(i)); }
 	};
 
-	// Use MultiVertexBuffer for a group of sole attachments to a group of VAOs. In other words, a MultiVertexBuffer is just a fixed-size vector of VertexBuffer-VertexArray pairs that are stored optimally in GPU memory.
+	// Use MultiVertexBuffer for a group of sole attachments to a group of VAOs. In other words, a MultiVertexBuffer is just a fixed-size vector of VertexBuffer-VertexArray pairs that are stored optimally in GPU/CPU memory.
 	class MultiVertexBuffer
 	{
 		std::vector<std::shared_ptr<VertexBufferLayout>> _layouts;
@@ -223,7 +235,10 @@ namespace vg
 	public:
 		MultiVertexBuffer(const std::vector<std::shared_ptr<VertexBufferLayout>>& layouts);
 		MultiVertexBuffer(std::vector<std::shared_ptr<VertexBufferLayout>>&& layouts);
+		MultiVertexBuffer(const std::shared_ptr<VertexBufferLayout>& layout, GLuint block_count);
 		MultiVertexBuffer(const MultiVertexBuffer&) = delete;
+		MultiVertexBuffer(MultiVertexBuffer&&) noexcept = default;
+		MultiVertexBuffer& operator=(MultiVertexBuffer&&) noexcept = default;
 
 		const std::shared_ptr<VertexBufferLayout>& layout(GLuint i) const { return _layouts[i]; }
 		ids::VertexArray vao(GLuint i) const { return _vaos[i]; }
@@ -275,7 +290,9 @@ namespace vg
 		}
 
 		VoidArray init_immutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
+		void init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const;
 		VoidArray init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
+		void init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const;
 		GLuint vertex_count(GLuint i, const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / _layouts[i]->stride()); }
 	};
 
@@ -315,6 +332,8 @@ namespace vg
 		void init_immutable(GLuint i, const void* cpubuf, GLsizei size) const { bind(i); buffers::init_immutable(BufferTarget::INDEX, size, cpubuf); }
 		void init_mutable(GLuint i, const void* cpubuf, GLsizei size) const { bind(i); buffers::init_mutable(BufferTarget::INDEX, size, cpubuf); }
 	};
+
+	// TODO draw elements functions on IndexBuffer classes.
 
 	class CPUIndexBuffer
 	{
@@ -365,5 +384,290 @@ namespace vg
 
 		void init_immutable_quads(GLuint i, GLuint num_quads);
 		void init_mutable_quads(GLuint i, GLuint num_quads);
+	};
+
+	class CPUVertexBuffer
+	{
+		VertexBuffer _vb;
+		VoidArray _cpubuf;
+		GLuint _vertex_count;
+
+	public:
+		CPUVertexBuffer(VertexBuffer&& vb, GLuint vertex_count, bool is_mutable);
+
+		const std::shared_ptr<VertexBufferLayout>& layout() const { return _vb.layout(); }
+		ids::VertexArray vao() const { return _vb.vao(); }
+		ids::GLBuffer vb() const { return _vb.vb(); }
+		void bind_vao() const { _vb.bind_vao(); }
+		void bind_vb() const { _vb.bind_vb(); }
+
+		GLintptr buffer_offset(GLuint vertex, GLuint attrib) const { return _vb.buffer_offset(vertex, attrib); }
+
+		GLuint vertex_count() const { return _vertex_count; }
+
+		void subsend_full() const;
+		void subsend(size_t offset, size_t bytes) const;
+		void subsend_single(GLuint vertex) const;
+		void subsend_single(GLuint vertex, GLuint attrib) const;
+
+		template<typename Type>
+		const Type& ref(GLuint vertex, GLuint attrib) const
+		{
+			return _cpubuf.ref<Type>(buffer_offset(vertex, attrib));
+		}
+
+		template<typename Type>
+		Type& ref(GLuint vertex, GLuint attrib)
+		{
+			return _cpubuf.ref<Type>(buffer_offset(vertex, attrib));
+		}
+
+		template<typename Type>
+		const Type& ref(size_t offset_bytes) const
+		{
+			return _cpubuf.ref<Type>(offset_bytes);
+		}
+
+		template<typename Type>
+		Type& ref(size_t offset_bytes)
+		{
+			return _cpubuf.ref<Type>(offset_bytes);
+		}
+
+		template<typename Type>
+		Type val(GLuint vertex, GLuint attrib) const
+		{
+			return _cpubuf.val<Type>(buffer_offset(vertex, attrib));
+		}
+
+		template<typename Type>
+		Type val(size_t offset_bytes) const
+		{
+			return _cpubuf.val<Type>(offset_bytes);
+		}
+
+		const void* at(size_t offset_bytes) const
+		{
+			return _cpubuf.at(offset_bytes);
+		}
+
+		void* at(size_t offset_bytes)
+		{
+			return _cpubuf.at(offset_bytes);
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
+		{
+			for (GLuint i = 0; i < count; ++i)
+				_cpubuf.ref<Type>(buffer_offset(starting_vertex + i, attrib)) = obj;
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint attrib, const Type& obj)
+		{
+			for (GLuint i = 0; i < _vertex_count; ++i)
+				_cpubuf.ref<Type>(buffer_offset(i, attrib)) = obj;
+		}
+
+		template<typename Type, size_t N>
+		void set_attributes(GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
+		{
+			for (GLuint i = 0; i < N; ++i)
+				_cpubuf.ref<Type>(buffer_offset(starting_vertex + i, attrib)) = objs[i];
+		}
+	};
+
+	class CPUVertexBufferBlock
+	{
+		VertexBufferBlock _vbb;
+		std::vector<std::pair<VoidArray, GLuint>> _cpubuf_and_vcs;
+
+	public:
+		CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, const std::vector<bool>& is_mutables);
+		CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint vertex_count, const std::vector<bool>& is_mutables);
+		CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, bool is_mutable);
+		CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint vertex_count, bool is_mutable);
+
+		const std::shared_ptr<VertexBufferLayout>& layout() const { return _vbb.layout(); }
+		ids::VertexArray vao() const { return _vbb.vao(); }
+		ids::GLBuffer vb(GLuint i) const { return _vbb.vb(i); }
+		void bind_vao() const { _vbb.bind_vao(); }
+		void bind_vb(GLuint i) const { _vbb.bind_vb(i); }
+
+		GLintptr buffer_offset(GLuint i, GLuint vertex, GLuint attrib) const { return _vbb.buffer_offset(i, vertex, attrib); }
+
+		GLuint vertex_count(GLuint i) const { return _cpubuf_and_vcs[i].second; }
+		GLuint block_count() const { return _vbb.block_count(); }
+
+		void subsend_full(GLuint i) const;
+		void subsend_all_blocks() const;
+		void subsend(GLuint i, size_t offset, size_t bytes) const;
+		void subsend_single(GLuint i, GLuint vertex, GLuint attrib) const;
+
+		template<typename Type>
+		const Type& ref(GLuint i, GLuint vertex, GLuint attrib) const
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, vertex, attrib));
+		}
+
+		template<typename Type>
+		Type& ref(GLuint i, GLuint vertex, GLuint attrib)
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, vertex, attrib));
+		}
+
+		template<typename Type>
+		const Type& ref(GLuint i, size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(offset_bytes);
+		}
+
+		template<typename Type>
+		Type& ref(GLuint i, size_t offset_bytes)
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(offset_bytes);
+		}
+
+		template<typename Type>
+		Type val(GLuint i, GLuint vertex, GLuint attrib) const
+		{
+			return _cpubuf_and_vcs[i].first.val<Type>(buffer_offset(i, vertex, attrib));
+		}
+
+		template<typename Type>
+		Type val(GLuint i, size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[i].first.val<Type>(offset_bytes);
+		}
+
+		const void* at(GLuint i, size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[i].first.at(offset_bytes);
+		}
+
+		void* at(GLuint i, size_t offset_bytes)
+		{
+			return _cpubuf_and_vcs[i].first.at(offset_bytes);
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint i, GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
+		{
+			for (GLuint n = 0; n < count; ++n)
+				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = obj;
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint i, GLuint attrib, const Type& obj)
+		{
+			GLuint vertex_count = _cpubuf_and_vcs[i].second;
+			for (GLuint n = 0; n < vertex_count; ++n)
+				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, n, attrib)) = obj;
+		}
+
+		template<typename Type, size_t N>
+		void set_attributes(GLuint i, GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
+		{
+			for (GLuint n = 0; n < N; ++n)
+				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = objs[n];
+		}
+	};
+
+	class MultiCPUVertexBuffer
+	{
+		MultiVertexBuffer _vbs;
+		std::vector<std::pair<VoidArray, GLuint>> _cpubuf_and_vcs;
+
+	public:
+		MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, const std::vector<GLuint>& vertex_counts, const std::vector<bool>& is_mutables);
+		MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, GLuint vertex_count, const std::vector<bool>& is_mutables);
+		MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, const std::vector<GLuint>& vertex_counts, bool is_mutable);
+		MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, GLuint vertex_count, bool is_mutable);
+
+		const std::shared_ptr<VertexBufferLayout>& layout(GLuint i) const { return _vbs.layout(i); }
+		ids::VertexArray vao(GLuint i) const { return _vbs.vao(i); }
+		ids::GLBuffer vb(GLuint i) const { return _vbs.vb(i); }
+		void bind_vao(GLuint i) const { _vbs.bind_vao(i); }
+		void bind_vb(GLuint i) const { _vbs.bind_vb(i); }
+
+		GLintptr buffer_offset(GLuint i, GLuint vertex, GLuint attrib) const { return _vbs.buffer_offset(i, vertex, attrib); }
+
+		GLuint vertex_count(GLuint i) const { return _cpubuf_and_vcs[i].second; }
+		GLuint block_count() const { return _vbs.block_count(); }
+
+		void subsend_full(GLuint i) const;
+		void subsend_all_blocks() const;
+		void subsend(GLuint i, size_t offset, size_t bytes) const;
+		void subsend_single(GLuint i, GLuint vertex) const;
+		void subsend_single(GLuint i, GLuint vertex, GLuint attrib) const;
+
+		template<typename Type>
+		const Type& ref(GLuint i, GLuint vertex, GLuint attrib) const
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, vertex, attrib));
+		}
+
+		template<typename Type>
+		Type& ref(GLuint i, GLuint vertex, GLuint attrib)
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, vertex, attrib));
+		}
+
+		template<typename Type>
+		const Type& ref(GLuint i, size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(offset_bytes);
+		}
+
+		template<typename Type>
+		Type& ref(GLuint i, size_t offset_bytes)
+		{
+			return _cpubuf_and_vcs[i].first.ref<Type>(offset_bytes);
+		}
+
+		template<typename Type>
+		Type val(GLuint i, GLuint vertex, GLuint attrib) const
+		{
+			return _cpubuf_and_vcs[i].first.val<Type>(buffer_offset(i, vertex, attrib));
+		}
+
+		template<typename Type>
+		Type val(GLuint i, size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[i].first.val<Type>(offset_bytes);
+		}
+
+		const void* at(GLuint i, size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[i].first.at(offset_bytes);
+		}
+
+		void* at(GLuint i, size_t offset_bytes)
+		{
+			return _cpubuf_and_vcs[i].first.at(offset_bytes);
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint i, GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
+		{
+			for (GLuint n = 0; n < count; ++n)
+				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = obj;
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint i, GLuint attrib, const Type& obj)
+		{
+			GLuint vertex_count = _cpubuf_and_vcs[i].second;
+			for (GLuint n = 0; n < vertex_count; ++n)
+				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, n, attrib)) = obj;
+		}
+
+		template<typename Type, size_t N>
+		void set_attributes(GLuint i, GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
+		{
+			for (GLuint n = 0; n < N; ++n)
+				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = objs[n];
+		}
 	};
 }
