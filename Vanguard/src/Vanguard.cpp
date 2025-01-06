@@ -91,7 +91,7 @@ bool vg::_::no_gl_errors(const char* file, int line)
 	return no_err;
 }
 
-void vg::enable_scissor_test(bool enable)
+void vg::enable::scissor_test(bool enable)
 {
 	if (enable)
 		glEnable(GL_SCISSOR_TEST);
@@ -99,18 +99,18 @@ void vg::enable_scissor_test(bool enable)
 		glDisable(GL_SCISSOR_TEST);
 }
 
-void vg::enable_standard_blending(bool enable)
+void vg::enable::standard_blending(bool enable)
 {
 	if (enable)
 	{
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // TODO put in separate function
 	}
 	else
 		glDisable(GL_BLEND);
 }
 
-void vg::enable_vsync(bool enable)
+void vg::enable::vsync(bool enable)
 {
 	if (enable)
 		glfwSwapInterval(1);

@@ -796,3 +796,56 @@ void vg::MultiCPUVertexBuffer::subsend_single(GLuint i, GLuint vertex, GLuint at
 	GLuint size = _vbs.layout(i)->attributes()[attrib].bytes();
 	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
 }
+
+vg::CompactVBIndexer::CompactVBIndexer(const std::vector<GLuint>& vertex_counts)
+{
+	GLuint offset = 0;
+	for (GLuint vc : vertex_counts)
+	{
+		indexes.push_back({ vc, offset });
+		offset += vc;
+	}
+}
+
+void vg::CompactVBIndexer::push_back(GLuint vc)
+{
+	GLuint offset = vertex_count();
+	indexes.push_back({ vc, offset });
+}
+
+void vg::CompactVBIndexer::insert(GLuint pos, GLuint vc)
+{
+	if (pos == indexes.size() - 1)
+	{
+		GLuint offset = vertex_count();
+		indexes.push_back({ vc, offset });
+	}
+	else if (pos < indexes.size() - 1)
+	{
+		GLuint offset = indexes[pos].vertex_offset;
+		indexes.insert(indexes.begin() + pos, { vc, offset });
+		for (auto iter = indexes.begin() + pos + 1; iter != indexes.end(); ++iter)
+			iter->vertex_offset += vc;
+	}
+}
+
+void vg::CompactVBIndexer::erase(GLuint pos)
+{
+	GLuint vc = indexes[pos].vertex_count;
+	indexes.erase(indexes.begin() + pos);
+	for (auto iter = indexes.begin() + pos; iter != indexes.end(); ++iter)
+		iter->vertex_offset -= vc;
+}
+
+void vg::CompactVBIndexer::swap(GLuint pos1, GLuint pos2)
+{
+	if (pos2 < pos1)
+		std::swap(pos1, pos2);
+	else if (pos1 == pos2)
+		return;
+
+	GLint vc_diff = (GLint)indexes[pos2].vertex_count - (GLint)indexes[pos1].vertex_count;
+	std::swap(indexes[pos1].vertex_count, indexes[pos2].vertex_count);
+	for (GLuint i = pos1 + 1; i <= pos2; ++i)
+		indexes[i].vertex_offset += vc_diff;
+}

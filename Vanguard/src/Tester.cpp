@@ -49,21 +49,22 @@ int main()
 	white_square.subsend_all_blocks();
 	index_buffer.bind_to_vertex_array(white_square.vao());
 
-	vg::MultiCPUVertexBuffer tripair(vg::MultiVertexBuffer(vb_layout, 2), 3, false);
+	vg::CompactVBIndexer tripair_indexer({ 3, 3 });
+	vg::CPUVertexBuffer tripair(vg::VertexBuffer(vb_layout), tripair_indexer.vertex_count(), false);
 
-	tripair.set_attributes(0, 0, 0, std::array<glm::vec2, 3>{
+	tripair.set_attributes(0, tripair_indexer.vertex(0, 0), std::array<glm::vec2, 3>{
 		glm::vec2{ -0.9f, 0.9f },
 		glm::vec2{ -0.8f, 0.9f },
 		glm::vec2{ -0.9f, 0.8f }
 	});
-	tripair.set_attributes(1, 0, 0, std::array<glm::vec2, 3>{
+	tripair.set_attributes(0, tripair_indexer.vertex(1, 0), std::array<glm::vec2, 3>{
 		glm::vec2{ -0.7f, 0.9f },
 		glm::vec2{ -0.7f, 0.8f },
 		glm::vec2{ -0.8f, 0.8f }
 	});
-	tripair.set_attribute(0, 1, glm::vec4{ 0.8f, 0.5f, 0.3f, 0.7f });
-	tripair.set_attribute(1, 1, glm::vec4{ 0.7f, 0.5f, 0.4f, 0.6f });
-	tripair.subsend_all_blocks();
+	tripair.set_attribute(1, tripair_indexer.vertex(0, 0), tripair_indexer.vertex_count(0), glm::vec4{0.8f, 0.5f, 0.3f, 1.0f});
+	tripair.set_attribute(1, tripair_indexer.vertex(1, 0), tripair_indexer.vertex_count(1), glm::vec4{0.6f, 0.5f, 0.5f, 1.0f});
+	tripair.subsend_full();
 
 	std::string image_vert = vg::io::read_file("shaders/image.vert");
 	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
@@ -76,9 +77,9 @@ int main()
 
 	sprite.set_attributes(0, 0, 0, std::array<glm::vec2, 4>{
 		glm::vec2{ -0.8f, -0.8f },
-		glm::vec2{ -0.2f, -0.8f },
-		glm::vec2{ -0.2f, -0.2f },
-		glm::vec2{ -0.8f, -0.2f }
+		glm::vec2{  0.4f, -0.8f },
+		glm::vec2{  0.4f,  0.4f },
+		glm::vec2{ -0.8f,  0.4f }
 	});
 	sprite.set_attribute(1, 1, GLint(0));
 	sprite.set_attributes(0, 2, 0, std::array<glm::vec2, 4>{
@@ -144,10 +145,8 @@ int main()
 		white_square.bind_vao();
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
-		tripair.bind_vao(0);
-		vg::draw::vertex_buffer::full(tripair, 0, vg::DrawMode::TRIANGLES);
-		tripair.bind_vao(1);
-		vg::draw::vertex_buffer::full(tripair, 1, vg::DrawMode::TRIANGLES);
+		tripair.bind_vao();
+		vg::draw::vertex_buffer::full(tripair, vg::DrawMode::TRIANGLES);
 
 		window.unbind_framebuffer();
 		vg::tex::barrier();
@@ -180,8 +179,6 @@ int main()
 		sprite.bind_vb(0);
 		sprite.subsend_single(0, 0, 0);
 		};
-
-	// TODO Interleaved Vertex Buffers. Not a separate VertexBuffer class, but a different struct that doesn't even have a reference to any buffers/VAOs. All it stores is offsets and object sizes.
 
 	for (;;)
 	{

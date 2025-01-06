@@ -668,4 +668,29 @@ namespace vg
 				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = objs[n];
 		}
 	};
+
+	class CompactVBIndexer
+	{
+		struct IndexedVB
+		{
+			GLuint vertex_count = 0;
+			GLuint vertex_offset = 0;
+		};
+
+		std::vector<IndexedVB> indexes;
+
+	public:
+		CompactVBIndexer() = default;
+		CompactVBIndexer(const std::vector<GLuint>& vertex_counts);
+
+		GLuint vertex(GLuint index, GLuint local_vertex) const { return indexes[index].vertex_offset + local_vertex; }
+		GLuint vertex_count() const { return indexes.empty() ? 0 : indexes.back().vertex_offset + indexes.back().vertex_count; }
+		GLuint vertex_count(GLuint index) const { return indexes[index].vertex_count; }
+		
+		GLuint size() const { return indexes.size(); }
+		void push_back(GLuint vertex_count);
+		void insert(GLuint pos, GLuint vertex_count);
+		void erase(GLuint pos);
+		void swap(GLuint pos1, GLuint pos2);
+	};
 }

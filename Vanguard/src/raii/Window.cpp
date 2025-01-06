@@ -100,9 +100,9 @@ vg::Window::Window(int width, int height, const char* title, const WindowHint& h
 
 	init_gl_constants();
 
-	vg::enable_standard_blending(config.standard_blending);
-	vg::enable_scissor_test(config.scissor_test);
-	vg::enable_vsync(config.vsync_on);
+	vg::enable::standard_blending(config.standard_blending);
+	vg::enable::scissor_test(config.scissor_test);
+	vg::enable::vsync(config.vsync_on);
 }
 
 vg::Window::Window(Window&& other) noexcept

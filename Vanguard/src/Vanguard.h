@@ -46,9 +46,13 @@ namespace vg
 		extern bool no_gl_errors(const char* file, int line);
 	}
 
-	extern void enable_scissor_test(bool enable = true);
-	extern void enable_standard_blending(bool enable = true);
-	extern void enable_vsync(bool enable = true);
+	namespace enable
+	{
+		extern void standard_blending(bool enable);
+		extern void scissor_test(bool enable);
+		extern void vsync(bool enable);
+	}
+
 	extern void set_clear_color(glm::vec4 rgba);
 	extern void clear_buffer();
 }
