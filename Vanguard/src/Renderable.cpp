@@ -1,7 +1,5 @@
 #include "Renderable.h"
 
-#include "Vanguard.h"
-
 vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GLuint offset)
 	: location(location), offset(offset)
 {

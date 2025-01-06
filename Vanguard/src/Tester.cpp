@@ -123,8 +123,9 @@ int main()
 		fbo.draw_into(draw_attachments, 2);
 
 		vg::bind_shader(shader);
+
 		vertex_buffer.bind_vao();
-		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
 		vertex_buffer.bind_vb();
 		vertex_buffer.ref<glm::vec4>(0, 1).x = glm::sqrt(0.5f * (1.0f + (float)glm::sin(glfwGetTime() + 0 * glm::pi<float>() / 3)));
@@ -141,12 +142,12 @@ int main()
 		white_square.subsend_single(0, 0, 0);
 
 		white_square.bind_vao();
-		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
 		tripair.bind_vao(0);
-		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(0)); // TODO arrays draw function abstraction on vertex buffer classes, and elements draw function abstraction on index buffer classes.
+		vg::draw::vertex_buffer::full(tripair, 0, vg::DrawMode::TRIANGLES);
 		tripair.bind_vao(1);
-		vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair.vertex_count(1));
+		vg::draw::vertex_buffer::full(tripair, 1, vg::DrawMode::TRIANGLES);
 
 		window.unbind_framebuffer();
 		vg::tex::barrier();
@@ -165,15 +166,15 @@ int main()
 		
 		sprite.set_attribute(1, 1, GLint(0));
 		sprite.subsend_full(1);
-		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 		
 		sprite.set_attribute(1, 1, GLint(1));
 		sprite.subsend_full(1);
-		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 		
 		sprite.set_attribute(1, 1, GLint(2));
 		sprite.subsend_full(1);
-		vg::draw::elements(vg::DrawMode::TRIANGLES, index_buffer.size(), 0, index_buffer.data_type());
+		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
 		sprite.ref<glm::vec2>(0, 0, 0).x += 0.002f;
 		sprite.bind_vb(0);

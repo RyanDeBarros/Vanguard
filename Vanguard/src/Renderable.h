@@ -333,8 +333,6 @@ namespace vg
 		void init_mutable(GLuint i, const void* cpubuf, GLsizei size) const { bind(i); buffers::init_mutable(BufferTarget::INDEX, size, cpubuf); }
 	};
 
-	// TODO draw elements functions on IndexBuffer classes.
-
 	class CPUIndexBuffer
 	{
 		raii::GLBuffer _ib;

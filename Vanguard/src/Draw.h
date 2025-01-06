@@ -63,5 +63,44 @@ namespace vg
 		extern void indirect(const GPUIndirectElementsBlock& indirect, GLuint i, DrawMode mode, IndexDataType idt);
 		extern void multi_indirect(const GPUIndirectElementsBlock& indirect, DrawMode mode, GLuint first, GLuint count, IndexDataType idt);
 		extern void indirect(const CPUIndirectElements& indirect, DrawMode mode);
+
+		namespace index_buffer
+		{
+			extern void full(const CPUIndexBuffer& ib, DrawMode mode);
+			extern void part(const CPUIndexBuffer& ib, DrawMode mode, GLuint first);
+			extern void part(const CPUIndexBuffer& ib, DrawMode mode, GLuint first, GLuint count);
+
+			extern void instanced(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count);
+			extern void instanced(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first);
+			extern void instanced(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first, GLuint count);
+			
+			extern void instanced_offset(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first_instance);
+			extern void instanced_offset(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first_instance, GLuint first);
+			extern void instanced_offset(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first_instance, GLuint first, GLuint count);
+			
+			extern void base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex);
+			extern void base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint first);
+			extern void base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint first, GLuint count);
+			
+			extern void instanced_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count);
+			extern void instanced_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first);
+			extern void instanced_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first, GLuint count);
+			
+			extern void instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance);
+			extern void instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance, GLuint first);
+			extern void instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance, GLuint first, GLuint count);
+		}
+
+		namespace vertex_buffer
+		{
+			extern void full(const CPUVertexBuffer& vb, DrawMode mode);
+			extern void part(const CPUVertexBuffer& vb, DrawMode mode, GLuint first);
+
+			extern void full(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode);
+			extern void part(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode, GLuint first);
+
+			extern void full(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode);
+			extern void part(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode, GLuint first);
+		}
 	}
 }

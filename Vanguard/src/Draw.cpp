@@ -92,7 +92,7 @@ void vg::draw::multi_indirect(const GPUIndirectArraysBlock& indirect, DrawMode m
 
 void vg::draw::indirect(const CPUIndirectArrays& indirect, DrawMode mode)
 {
-	vg::draw::indirect(indirect.gpu_arrays(), mode);
+	draw::indirect(indirect.gpu_arrays(), mode);
 }
 
 void vg::draw::indirect(const GPUIndirectElements& indirect, DrawMode mode, IndexDataType idt)
@@ -117,5 +117,125 @@ void vg::draw::multi_indirect(const GPUIndirectElementsBlock& indirect, DrawMode
 
 void vg::draw::indirect(const CPUIndirectElements& indirect, DrawMode mode)
 {
-	vg::draw::indirect(indirect.gpu_elements(), mode, indirect.idt);
+	draw::indirect(indirect.gpu_elements(), mode, indirect.idt);
+}
+
+void vg::draw::index_buffer::full(const CPUIndexBuffer& ib, DrawMode mode)
+{
+	elements(mode, ib.size(), 0, ib.data_type());
+}
+
+void vg::draw::index_buffer::part(const CPUIndexBuffer& ib, DrawMode mode, GLuint first)
+{
+	elements(mode, ib.size() - first, first, ib.data_type());
+}
+
+void vg::draw::index_buffer::part(const CPUIndexBuffer& ib, DrawMode mode, GLuint first, GLuint count)
+{
+	elements(mode, count, first, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count)
+{
+	instanced::elements(mode, ib.size(), 0, instance_count, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first)
+{
+	instanced::elements(mode, ib.size() - first, first, instance_count, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first, GLuint count)
+{
+	instanced::elements(mode, count, first, instance_count, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_offset(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first_instance)
+{
+	instanced::elements(mode, ib.size(), 0, instance_count, first_instance, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_offset(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first_instance, GLuint first)
+{
+	instanced::elements(mode, ib.size() - first, first, instance_count, first_instance, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_offset(const CPUIndexBuffer& ib, DrawMode mode, GLuint instance_count, GLuint first_instance, GLuint first, GLuint count)
+{
+	instanced::elements(mode, count, first, instance_count, first_instance, ib.data_type());
+}
+
+void vg::draw::index_buffer::base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex)
+{
+	base_vertex::elements(mode, ib.size(), 0, base_vertex, ib.data_type());
+}
+
+void vg::draw::index_buffer::base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint first)
+{
+	base_vertex::elements(mode, ib.size() - first, first, base_vertex, ib.data_type());
+}
+
+void vg::draw::index_buffer::base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint first, GLuint count)
+{
+	base_vertex::elements(mode, count, first, base_vertex, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count)
+{
+	instanced_base_vertex::elements(mode, ib.size(), 0, instance_count, base_vertex, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first)
+{
+	instanced_base_vertex::elements(mode, ib.size() - first, first, instance_count, base_vertex, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first, GLuint count)
+{
+	instanced_base_vertex::elements(mode, count, first, instance_count, base_vertex, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance)
+{
+	instanced_base_vertex::elements(mode, ib.size(), 0, instance_count, base_vertex, first_instance, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance, GLuint first)
+{
+	instanced_base_vertex::elements(mode, ib.size() - first, first, instance_count, base_vertex, first_instance, ib.data_type());
+}
+
+void vg::draw::index_buffer::instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance, GLuint first, GLuint count)
+{
+	instanced_base_vertex::elements(mode, count, first, instance_count, base_vertex, first_instance, ib.data_type());
+}
+
+void vg::draw::vertex_buffer::full(const CPUVertexBuffer& vb, DrawMode mode)
+{
+	arrays(mode, 0, vb.vertex_count());
+}
+
+void vg::draw::vertex_buffer::part(const CPUVertexBuffer& vb, DrawMode mode, GLuint first)
+{
+	arrays(mode, first, vb.vertex_count() - first);
+}
+
+void vg::draw::vertex_buffer::full(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode)
+{
+	arrays(mode, 0, mvb.vertex_count(i));
+}
+
+void vg::draw::vertex_buffer::part(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode, GLuint first)
+{
+	arrays(mode, first, mvb.vertex_count(i) - first);
+}
+
+void vg::draw::vertex_buffer::full(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode)
+{
+	arrays(mode, 0, vbb.vertex_count(i));
+}
+
+void vg::draw::vertex_buffer::part(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode, GLuint first)
+{
+	arrays(mode, first, vbb.vertex_count(i) - first);
 }
