@@ -18,7 +18,7 @@ int main()
 
 	vg::Window window(1440, 1080, "Hello World");
 
-	vg::Shader shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
+	vg::raii::Shader shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
 	auto vb_layout = std::make_shared<vg::VertexBufferLayout>(shader);
 
 	vg::CPUVertexBuffer vertex_buffer(vg::VertexBuffer(vb_layout), 4, false);
@@ -68,7 +68,7 @@ int main()
 
 	std::string image_vert = vg::io::read_file("shaders/image.vert");
 	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
-	vg::Shader img_shader(image_vert, image_frag);
+	vg::raii::Shader img_shader(image_vert, image_frag);
 	// It is possible to have a vertex buffer with only one vertex's attribute, but only if setting the divisor. This works even with non-instanced rendering
 	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 1, 1 } } });
 

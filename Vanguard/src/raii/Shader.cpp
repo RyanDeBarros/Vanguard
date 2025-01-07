@@ -15,9 +15,9 @@ static GLenum subshader_type(vg::SubshaderType type)
 		return 0;
 }
 
-void vg::Subshader::compile(const std::string& subshader, const char* filepath)
+void vg::raii::Subshader::compile(const std::string& subshader, const char* filepath)
 {
-	_s = glCreateShader(subshader_type(_type));
+	_s = ids::Subshader(glCreateShader(subshader_type(_type)));
 	const char* c_subshader = subshader.c_str();
 	glShaderSource(_s, 1, &c_subshader, nullptr);
 	glCompileShader(_s);
@@ -34,7 +34,7 @@ void vg::Subshader::compile(const std::string& subshader, const char* filepath)
 			message.resize(length);
 			glGetShaderInfoLog(_s, length, &length, message.data());
 			glDeleteShader(_s);
-			_s = 0;
+			_s = ids::Subshader(0);
 			if (filepath == "")
 				throw Error(ErrorCode::SUBSHADER_COMPILATION, "Subshader compilation failed - " + message);
 			else
@@ -43,7 +43,7 @@ void vg::Subshader::compile(const std::string& subshader, const char* filepath)
 		else
 		{
 			glDeleteShader(_s);
-			_s = 0;
+			_s = ids::Subshader(0);
 			if (filepath == "")
 				throw Error(ErrorCode::SUBSHADER_COMPILATION, "Subshader compilation failed - no program info log provided");
 			else
@@ -52,37 +52,37 @@ void vg::Subshader::compile(const std::string& subshader, const char* filepath)
 	}
 }
 
-vg::Subshader::Subshader(const FilePath& filepath, SubshaderType type)
+vg::raii::Subshader::Subshader(const FilePath& filepath, SubshaderType type)
 	: _type(type)
 {
 	compile(vg::io::read_file(filepath), filepath.c_str());
 }
 
-vg::Subshader::Subshader(const std::string& subshader, SubshaderType type)
+vg::raii::Subshader::Subshader(const std::string& subshader, SubshaderType type)
 	: _type(type)
 {
 	compile(subshader);
 }
 
-vg::Subshader::Subshader(Subshader&& other) noexcept
+vg::raii::Subshader::Subshader(Subshader&& other) noexcept
 	: _s(other._s), _type(other._type)
 {
-	other._s = 0;
+	other._s = ids::Subshader(0);
 }
 
-vg::Subshader& vg::Subshader::operator=(Subshader&& other) noexcept
+vg::raii::Subshader& vg::raii::Subshader::operator=(Subshader&& other) noexcept
 {
 	if (this != &other)
 	{
 		glDeleteShader(_s);
 		_s = other._s;
-		other._s = 0;
+		other._s = ids::Subshader(0);
 		_type = other._type;
 	}
 	return *this;
 }
 
-vg::Subshader::~Subshader()
+vg::raii::Subshader::~Subshader()
 {
 	glDeleteShader(_s);
 }
@@ -209,10 +209,10 @@ bool vg::shader_data_type_is_long(ShaderDataType type)
 	}
 }
 
-void vg::Shader::link(const std::initializer_list<Subshader>& subshaders)
+void vg::raii::Shader::link(const std::initializer_list<ids::Subshader>& subshaders)
 {
-	_s = glCreateProgram();
-	for (const auto& subshader : subshaders)
+	_s = ids::Shader(glCreateProgram());
+	for (ids::Subshader subshader : subshaders)
 		glAttachShader(_s, subshader);
 	glLinkProgram(_s);
 	glValidateProgram(_s);
@@ -229,19 +229,19 @@ void vg::Shader::link(const std::initializer_list<Subshader>& subshaders)
 			message.resize(length);
 			glGetProgramInfoLog(_s, length, &length, message.data());
 			glDeleteProgram(_s);
-			_s = 0;
+			_s = ids::Shader(0);
 			throw Error(ErrorCode::SHADER_LINKAGE, "Shader linkage failed - " + message);
 		}
 		else
 		{
 			glDeleteProgram(_s);
-			_s = 0;
+			_s = ids::Shader(0);
 			throw Error(ErrorCode::SHADER_LINKAGE, "Shader linkage failed - no program info log provided");
 		}
 	}
 }
 
-void vg::Shader::load_vertex_data()
+void vg::raii::Shader::load_vertex_data()
 {
 	GLint num_attributes;
 	glGetProgramiv(_s, GL_ACTIVE_ATTRIBUTES, &num_attributes);
@@ -266,7 +266,7 @@ void vg::Shader::load_vertex_data()
 	}
 }
 
-void vg::Shader::load_uniform_data()
+void vg::raii::Shader::load_uniform_data()
 {
 	GLint num_uniforms;
 	glGetProgramiv(_s, GL_ACTIVE_UNIFORMS, &num_uniforms);
@@ -284,14 +284,14 @@ void vg::Shader::load_uniform_data()
 	}
 }
 
-vg::Shader::Shader(const std::initializer_list<Subshader>& subshaders)
+vg::raii::Shader::Shader(const std::initializer_list<ids::Subshader>& subshaders)
 {
 	link(subshaders);
 	load_vertex_data();
 	load_uniform_data();
 }
 
-vg::Shader::Shader(const FilePath& vertex, const FilePath& fragment, const FilePath& geometry)
+vg::raii::Shader::Shader(const FilePath& vertex, const FilePath& fragment, const FilePath& geometry)
 {
 	Subshader v(vertex, SubshaderType::VERTEX);
 	Subshader f(fragment, SubshaderType::FRAGMENT);
@@ -306,7 +306,7 @@ vg::Shader::Shader(const FilePath& vertex, const FilePath& fragment, const FileP
 	load_uniform_data();
 }
 
-vg::Shader::Shader(const std::string& vertex, const std::string& fragment, const std::string& geometry)
+vg::raii::Shader::Shader(const std::string& vertex, const std::string& fragment, const std::string& geometry)
 {
 	Subshader v(vertex, SubshaderType::VERTEX);
 	Subshader f(fragment, SubshaderType::FRAGMENT);
@@ -321,19 +321,19 @@ vg::Shader::Shader(const std::string& vertex, const std::string& fragment, const
 	load_uniform_data();
 }
 
-vg::Shader::Shader(Shader&& other) noexcept
+vg::raii::Shader::Shader(Shader&& other) noexcept
 	: _s(other._s), _stride(other._stride), _layout(std::move(other._layout)), _uniforms(std::move(other._uniforms))
 {
-	other._s = 0;
+	other._s = ids::Shader(0);
 }
 
-vg::Shader& vg::Shader::operator=(Shader&& other) noexcept
+vg::raii::Shader& vg::raii::Shader::operator=(Shader&& other) noexcept
 {
 	if (this != &other)
 	{
 		glDeleteProgram(_s);
 		_s = other._s;
-		other._s = 0;
+		other._s = ids::Shader(0);
 		_stride = other._stride;
 		_layout = std::move(other._layout);
 		_uniforms = std::move(other._uniforms);
@@ -341,12 +341,12 @@ vg::Shader& vg::Shader::operator=(Shader&& other) noexcept
 	return *this;
 }
 
-vg::Shader::~Shader()
+vg::raii::Shader::~Shader()
 {
 	glDeleteProgram(_s);
 }
 
-GLint vg::Shader::uniform_location(const std::string& name) const
+GLint vg::raii::Shader::uniform_location(const std::string& name) const
 {
 	auto iter = _uniforms.find(name);
 	if (iter == _uniforms.end())
@@ -354,9 +354,9 @@ GLint vg::Shader::uniform_location(const std::string& name) const
 	return iter->second.location;
 }
 
-static GLuint bound_shader = 0;
+static vg::ids::Shader bound_shader = vg::ids::Shader(0);
 
-void vg::bind_shader(const Shader& shader)
+void vg::bind_shader(vg::ids::Shader shader)
 {
 	if (shader != bound_shader)
 	{
@@ -370,11 +370,221 @@ void vg::unbind_shader()
 	if (bound_shader)
 	{
 		glUseProgram(0);
-		bound_shader = 0;
+		bound_shader = ids::Shader(0);
 	}
 }
 
 void vg::update_bound_shader()
 {
 	glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&bound_shader));
+}
+
+void vg::uniforms::send_1(const raii::Shader& shader, const char* uniform, float value, GLuint offset)
+{
+	glUniform1f(shader.uniform_location(uniform) + offset, value);
+}
+
+void vg::uniforms::send_2(const raii::Shader& shader, const char* uniform, glm::vec2 value, GLuint offset)
+{
+	glUniform2f(shader.uniform_location(uniform) + offset, value.x, value.y);
+}
+
+void vg::uniforms::send_3(const raii::Shader& shader, const char* uniform, glm::vec3 value, GLuint offset)
+{
+	glUniform3f(shader.uniform_location(uniform) + offset, value.x, value.y, value.z);
+}
+
+void vg::uniforms::send_4(const raii::Shader& shader, const char* uniform, glm::vec4 value, GLuint offset)
+{
+	glUniform4f(shader.uniform_location(uniform) + offset, value.x, value.y, value.z, value.w);
+}
+
+void vg::uniforms::send_1(const raii::Shader& shader, const char* uniform, int value, GLuint offset)
+{
+	glUniform1i(shader.uniform_location(uniform) + offset, value);
+}
+
+void vg::uniforms::send_2(const raii::Shader& shader, const char* uniform, glm::ivec2 value, GLuint offset)
+{
+	glUniform2i(shader.uniform_location(uniform) + offset, value.x, value.y);
+}
+
+void vg::uniforms::send_3(const raii::Shader& shader, const char* uniform, glm::ivec3 value, GLuint offset)
+{
+	glUniform3i(shader.uniform_location(uniform) + offset, value.x, value.y, value.z);
+}
+
+void vg::uniforms::send_4(const raii::Shader& shader, const char* uniform, glm::ivec4 value, GLuint offset)
+{
+	glUniform4i(shader.uniform_location(uniform) + offset, value.x, value.y, value.z, value.w);
+}
+
+void vg::uniforms::send_1(const raii::Shader& shader, const char* uniform, unsigned int value, GLuint offset)
+{
+	glUniform1ui(shader.uniform_location(uniform) + offset, value);
+}
+
+void vg::uniforms::send_2(const raii::Shader& shader, const char* uniform, glm::uvec2 value, GLuint offset)
+{
+	glUniform2ui(shader.uniform_location(uniform) + offset, value.x, value.y);
+}
+
+void vg::uniforms::send_3(const raii::Shader& shader, const char* uniform, glm::uvec3 value, GLuint offset)
+{
+	glUniform3ui(shader.uniform_location(uniform) + offset, value.x, value.y, value.z);
+}
+
+void vg::uniforms::send_4(const raii::Shader& shader, const char* uniform, glm::uvec4 value, GLuint offset)
+{
+	glUniform4ui(shader.uniform_location(uniform) + offset, value.x, value.y, value.z, value.w);
+}
+
+void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const float* values, size_t count, GLuint offset)
+{
+	glUniform1fv(shader.uniform_location(uniform) + offset, count, values);
+}
+
+void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::vec2* values, size_t count, GLuint offset)
+{
+	glUniform2fv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::vec3* values, size_t count, GLuint offset)
+{
+	glUniform3fv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::vec4* values, size_t count, GLuint offset)
+{
+	glUniform4fv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const int* values, size_t count, GLuint offset)
+{
+	glUniform1iv(shader.uniform_location(uniform) + offset, count, values);
+}
+
+void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::ivec2* values, size_t count, GLuint offset)
+{
+	glUniform2iv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::ivec3* values, size_t count, GLuint offset)
+{
+	glUniform3iv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::ivec4* values, size_t count, GLuint offset)
+{
+	glUniform4iv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const unsigned int* values, size_t count, GLuint offset)
+{
+	glUniform1uiv(shader.uniform_location(uniform) + offset, count, values);
+}
+
+void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::uvec2* values, size_t count, GLuint offset)
+{
+	glUniform2uiv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::uvec3* values, size_t count, GLuint offset)
+{
+	glUniform3uiv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::uvec4* values, size_t count, GLuint offset)
+{
+	glUniform4uiv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_2x2(const raii::Shader& shader, const char* uniform, const glm::mat2& value, GLuint offset)
+{
+	glUniformMatrix2fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_2x3(const raii::Shader& shader, const char* uniform, const glm::mat2x3& value, GLuint offset)
+{
+	glUniformMatrix2x3fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_2x4(const raii::Shader& shader, const char* uniform, const glm::mat2x4& value, GLuint offset)
+{
+	glUniformMatrix2x4fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_3x2(const raii::Shader& shader, const char* uniform, const glm::mat3x2& value, GLuint offset)
+{
+	glUniformMatrix3x2fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_3x3(const raii::Shader& shader, const char* uniform, const glm::mat3& value, GLuint offset)
+{
+	glUniformMatrix3fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_3x4(const raii::Shader& shader, const char* uniform, const glm::mat3x4& value, GLuint offset)
+{
+	glUniformMatrix3x4fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_4x2(const raii::Shader& shader, const char* uniform, const glm::mat4x2& value, GLuint offset)
+{
+	glUniformMatrix4x2fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_4x3(const raii::Shader& shader, const char* uniform, const glm::mat4x3& value, GLuint offset)
+{
+	glUniformMatrix4x3fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_4x4(const raii::Shader& shader, const char* uniform, const glm::mat4& value, GLuint offset)
+{
+	glUniformMatrix4fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void vg::uniforms::send_2x2(const raii::Shader& shader, const char* uniform, const glm::mat2* values, size_t count, GLuint offset)
+{
+	glUniformMatrix2fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_2x3(const raii::Shader& shader, const char* uniform, const glm::mat2x3* values, size_t count, GLuint offset)
+{
+	glUniformMatrix2x3fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_2x4(const raii::Shader& shader, const char* uniform, const glm::mat2x4* values, size_t count, GLuint offset)
+{
+	glUniformMatrix2x4fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_3x2(const raii::Shader& shader, const char* uniform, const glm::mat3x2* values, size_t count, GLuint offset)
+{
+	glUniformMatrix3x2fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_3x3(const raii::Shader& shader, const char* uniform, const glm::mat3* values, size_t count, GLuint offset)
+{
+	glUniformMatrix3fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_3x4(const raii::Shader& shader, const char* uniform, const glm::mat3x4* values, size_t count, GLuint offset)
+{
+	glUniformMatrix3x4fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_4x2(const raii::Shader& shader, const char* uniform, const glm::mat4x2* values, size_t count, GLuint offset)
+{
+	glUniformMatrix4x2fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_4x3(const raii::Shader& shader, const char* uniform, const glm::mat4x3* values, size_t count, GLuint offset)
+{
+	glUniformMatrix4x3fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
+}
+
+void vg::uniforms::send_4x4(const raii::Shader& shader, const char* uniform, const glm::mat4* values, size_t count, GLuint offset)
+{
+	glUniformMatrix4fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
