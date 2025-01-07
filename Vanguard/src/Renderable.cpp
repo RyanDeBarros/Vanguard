@@ -1,5 +1,7 @@
 #include "Renderable.h"
 
+#include "Vanguard.h"
+
 vg::VertexAttribute::VertexAttribute(ShaderAttribute attrib, GLuint location, GLuint offset)
 	: location(location), offset(offset)
 {
@@ -199,7 +201,7 @@ GLuint vg::VertexAttribute::location_coverage(ShaderAttribute attrib)
 	return columns * attrib.array_count;
 }
 
-vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader)
+vg::VertexBufferLayout::VertexBufferLayout(const raii::Shader& shader)
 {
 	_attributes.reserve(shader.layout().size());
 	GLuint location = 0;
@@ -216,7 +218,7 @@ vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader)
 	}
 }
 
-vg::VertexBufferLayout::VertexBufferLayout(const Shader& shader, const VertexAttributeSpecificationList& specifications)
+vg::VertexBufferLayout::VertexBufferLayout(const raii::Shader& shader, const VertexAttributeSpecificationList& specifications)
 {
 	_attributes.reserve(shader.layout().size());
 	auto spec_iter = specifications.ordered_override_data_types.begin();
@@ -352,16 +354,14 @@ void vg::VertexBufferBlock::init(const std::initializer_list<std::pair<GLuint, s
 	unbind_vertex_array();
 }
 
-vg::VertexBufferBlock::VertexBufferBlock(GLuint block_count, const std::shared_ptr<VertexBufferLayout>& layout,
-	const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
-	: _layout(layout), _vbs(block_count)
+vg::VertexBufferBlock::VertexBufferBlock(const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
+	: _layout(layout), _vbs((GLuint)attributes.size())
 {
 	init(attributes);
 }
 
-vg::VertexBufferBlock::VertexBufferBlock(GLuint block_count, std::shared_ptr<VertexBufferLayout>&& layout,
-	const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
-	: _layout(std::move(layout)), _vbs(block_count)
+vg::VertexBufferBlock::VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
+	: _layout(std::move(layout)), _vbs((GLuint)attributes.size())
 {
 	init(attributes);
 }
@@ -630,9 +630,16 @@ void vg::CPUVertexBuffer::subsend_single(GLuint vertex, GLuint attrib) const
 	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf.at(offset));
 }
 
+void vg::CPUVertexBuffer::subsend_single(GLuint vertex, GLuint attrib, GLuint size) const
+{
+	GLintptr offset = buffer_offset(vertex, attrib);
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf.at(offset));
+}
+
 vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, const std::vector<bool>& is_mutables)
 	: _vbb(std::move(vbb))
 {
+	VANGUARD_ASSERT(_vbb.block_count() == vertex_counts.size() && _vbb.block_count() == is_mutables.size());
 	for (GLuint i = 0; i < _vbb.block_count(); ++i)
 	{
 		if (is_mutables[i])
@@ -645,6 +652,7 @@ vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const st
 vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint vertex_count, const std::vector<bool>& is_mutables)
 	: _vbb(std::move(vbb))
 {
+	VANGUARD_ASSERT(_vbb.block_count() == is_mutables.size());
 	for (GLuint i = 0; i < _vbb.block_count(); ++i)
 	{
 		if (is_mutables[i])
@@ -657,6 +665,7 @@ vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint v
 vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, bool is_mutable)
 	: _vbb(std::move(vbb))
 {
+	VANGUARD_ASSERT(_vbb.block_count() == vertex_counts.size());
 	if (is_mutable)
 	{
 		for (GLuint i = 0; i < _vbb.block_count(); ++i)
@@ -707,6 +716,12 @@ void vg::CPUVertexBufferBlock::subsend_single(GLuint i, GLuint vertex, GLuint at
 {
 	GLintptr offset = buffer_offset(i, vertex, attrib);
 	GLuint size = _vbb.layout()->attributes()[attrib].bytes();
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
+}
+
+void vg::CPUVertexBufferBlock::subsend_single(GLuint i, GLuint vertex, GLuint attrib, GLuint size) const
+{
+	GLintptr offset = buffer_offset(i, vertex, attrib);
 	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
 }
 
@@ -794,6 +809,12 @@ void vg::MultiCPUVertexBuffer::subsend_single(GLuint i, GLuint vertex, GLuint at
 {
 	GLintptr offset = buffer_offset(i, vertex, attrib);
 	GLuint size = _vbs.layout(i)->attributes()[attrib].bytes();
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
+}
+
+void vg::MultiCPUVertexBuffer::subsend_single(GLuint i, GLuint vertex, GLuint attrib, GLuint size) const
+{
+	GLintptr offset = buffer_offset(i, vertex, attrib);
 	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
 }
 

@@ -169,20 +169,20 @@ namespace vg
 		extern void send_3(const raii::Shader& shader, const char* uniform, glm::uvec3 value, GLuint offset = 0);
 		extern void send_4(const raii::Shader& shader, const char* uniform, glm::uvec4 value, GLuint offset = 0);
 
-		extern void send_1s(const raii::Shader& shader, const char* uniform, const float* values, size_t count, GLuint offset = 0);
-		extern void send_2s(const raii::Shader& shader, const char* uniform, const glm::vec2* values, size_t count, GLuint offset = 0);
-		extern void send_3s(const raii::Shader& shader, const char* uniform, const glm::vec3* values, size_t count, GLuint offset = 0);
-		extern void send_4s(const raii::Shader& shader, const char* uniform, const glm::vec4* values, size_t count, GLuint offset = 0);
+		extern void send_1s(const raii::Shader& shader, const char* uniform, const float* values, GLsizei count, GLuint offset = 0);
+		extern void send_2s(const raii::Shader& shader, const char* uniform, const glm::vec2* values, GLsizei count, GLuint offset = 0);
+		extern void send_3s(const raii::Shader& shader, const char* uniform, const glm::vec3* values, GLsizei count, GLuint offset = 0);
+		extern void send_4s(const raii::Shader& shader, const char* uniform, const glm::vec4* values, GLsizei count, GLuint offset = 0);
 
-		extern void send_1s(const raii::Shader& shader, const char* uniform, const int* values, size_t count, GLuint offset = 0);
-		extern void send_2s(const raii::Shader& shader, const char* uniform, const glm::ivec2* values, size_t count, GLuint offset = 0);
-		extern void send_3s(const raii::Shader& shader, const char* uniform, const glm::ivec3* values, size_t count, GLuint offset = 0);
-		extern void send_4s(const raii::Shader& shader, const char* uniform, const glm::ivec4* values, size_t count, GLuint offset = 0);
+		extern void send_1s(const raii::Shader& shader, const char* uniform, const int* values, GLsizei count, GLuint offset = 0);
+		extern void send_2s(const raii::Shader& shader, const char* uniform, const glm::ivec2* values, GLsizei count, GLuint offset = 0);
+		extern void send_3s(const raii::Shader& shader, const char* uniform, const glm::ivec3* values, GLsizei count, GLuint offset = 0);
+		extern void send_4s(const raii::Shader& shader, const char* uniform, const glm::ivec4* values, GLsizei count, GLuint offset = 0);
 
-		extern void send_1s(const raii::Shader& shader, const char* uniform, const unsigned int* values, size_t count, GLuint offset = 0);
-		extern void send_2s(const raii::Shader& shader, const char* uniform, const glm::uvec2* values, size_t count, GLuint offset = 0);
-		extern void send_3s(const raii::Shader& shader, const char* uniform, const glm::uvec3* values, size_t count, GLuint offset = 0);
-		extern void send_4s(const raii::Shader& shader, const char* uniform, const glm::uvec4* values, size_t count, GLuint offset = 0);
+		extern void send_1s(const raii::Shader& shader, const char* uniform, const unsigned int* values, GLsizei count, GLuint offset = 0);
+		extern void send_2s(const raii::Shader& shader, const char* uniform, const glm::uvec2* values, GLsizei count, GLuint offset = 0);
+		extern void send_3s(const raii::Shader& shader, const char* uniform, const glm::uvec3* values, GLsizei count, GLuint offset = 0);
+		extern void send_4s(const raii::Shader& shader, const char* uniform, const glm::uvec4* values, GLsizei count, GLuint offset = 0);
 
 		extern void send_2x2(const raii::Shader& shader, const char* uniform, const glm::mat2& value, GLuint offset = 0);
 		extern void send_2x3(const raii::Shader& shader, const char* uniform, const glm::mat2x3& value, GLuint offset = 0);
@@ -194,14 +194,14 @@ namespace vg
 		extern void send_4x3(const raii::Shader& shader, const char* uniform, const glm::mat4x3& value, GLuint offset = 0);
 		extern void send_4x4(const raii::Shader& shader, const char* uniform, const glm::mat4& value, GLuint offset = 0);
 
-		extern void send_2x2(const raii::Shader& shader, const char* uniform, const glm::mat2* values, size_t count, GLuint offset = 0);
-		extern void send_2x3(const raii::Shader& shader, const char* uniform, const glm::mat2x3* values, size_t count, GLuint offset = 0);
-		extern void send_2x4(const raii::Shader& shader, const char* uniform, const glm::mat2x4* values, size_t count, GLuint offset = 0);
-		extern void send_3x2(const raii::Shader& shader, const char* uniform, const glm::mat3x2* values, size_t count, GLuint offset = 0);
-		extern void send_3x3(const raii::Shader& shader, const char* uniform, const glm::mat3* values, size_t count, GLuint offset = 0);
-		extern void send_3x4(const raii::Shader& shader, const char* uniform, const glm::mat3x4* values, size_t count, GLuint offset = 0);
-		extern void send_4x2(const raii::Shader& shader, const char* uniform, const glm::mat4x2* values, size_t count, GLuint offset = 0);
-		extern void send_4x3(const raii::Shader& shader, const char* uniform, const glm::mat4x3* values, size_t count, GLuint offset = 0);
-		extern void send_4x4(const raii::Shader& shader, const char* uniform, const glm::mat4* values, size_t count, GLuint offset = 0);
+		extern void send_2x2s(const raii::Shader& shader, const char* uniform, const glm::mat2* values, GLsizei count, GLuint offset = 0);
+		extern void send_2x3s(const raii::Shader& shader, const char* uniform, const glm::mat2x3* values, GLsizei count, GLuint offset = 0);
+		extern void send_2x4s(const raii::Shader& shader, const char* uniform, const glm::mat2x4* values, GLsizei count, GLuint offset = 0);
+		extern void send_3x2s(const raii::Shader& shader, const char* uniform, const glm::mat3x2* values, GLsizei count, GLuint offset = 0);
+		extern void send_3x3s(const raii::Shader& shader, const char* uniform, const glm::mat3* values, GLsizei count, GLuint offset = 0);
+		extern void send_3x4s(const raii::Shader& shader, const char* uniform, const glm::mat3x4* values, GLsizei count, GLuint offset = 0);
+		extern void send_4x2s(const raii::Shader& shader, const char* uniform, const glm::mat4x2* values, GLsizei count, GLuint offset = 0);
+		extern void send_4x3s(const raii::Shader& shader, const char* uniform, const glm::mat4x3* values, GLsizei count, GLuint offset = 0);
+		extern void send_4x4s(const raii::Shader& shader, const char* uniform, const glm::mat4* values, GLsizei count, GLuint offset = 0);
 	}
 }

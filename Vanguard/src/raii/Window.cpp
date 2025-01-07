@@ -256,6 +256,51 @@ void vg::Window::set_cursor_pos(glm::dvec2 pos) const
 	glfwSetCursorPos(_w, pos.x, pos.y);
 }
 
+glm::vec2 vg::Window::convert_coordinates(glm::vec2 coordinates, CoordinateSystem from, CoordinateSystem to) const
+{
+	switch (from)
+	{
+	case CoordinateSystem::CLIP:
+		switch (to)
+		{
+		case CoordinateSystem::SCREEN:
+			return 0.5f * coordinates * glm::vec2(size());
+		case CoordinateSystem::UI:
+			return 0.5f * (coordinates + glm::vec2(1.0f)) * glm::vec2(size());
+		}
+		break;
+	case CoordinateSystem::SCREEN:
+		switch (to)
+		{
+		case CoordinateSystem::CLIP:
+			return 2.0f * coordinates / glm::vec2(size());
+		case CoordinateSystem::UI:
+			return coordinates + 0.5f * glm::vec2(size());
+		}
+		break;
+	case CoordinateSystem::UI:
+		switch (to)
+		{
+		case CoordinateSystem::CLIP:
+			return 2.0f * coordinates / glm::vec2(size()) - glm::vec2(1.0f);
+		case CoordinateSystem::SCREEN:
+			return coordinates - 0.5f * glm::vec2(size());
+		}
+		break;
+	}
+	return coordinates;
+}
+
+glm::mat3 vg::Window::orthographic_projection() const
+{
+	return glm::ortho(0.0f, (float)width(), 0.0f, (float)height());
+}
+
+glm::mat4 vg::Window::orthographic_projection(float z_near, float z_far) const
+{
+	return glm::ortho(0.0f, (float)width(), 0.0f, (float)height(), z_near, z_far);
+}
+
 bool vg::Window::is_key_pressed(input::Key key) const
 {
 	return glfwGetKey(_w, int(key)) == int(input::Action::PRESS);

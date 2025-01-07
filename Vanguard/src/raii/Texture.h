@@ -172,6 +172,11 @@ namespace vg
 
 		extern void linear(Target target);
 		extern void nearest(Target target);
+		extern void clamp_to_edge(Target target);
+		extern void clamp_to_border(Target target);
+		extern void mirrored_repeat(Target target);
+		extern void repeat(Target target);
+		extern void mirror_clamp_to_edge(Target target);
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 		extern void min_filter(ids::Texture texture, MinFilter filter = MinFilter::NEAREST_MIPMAP_LINEAR);

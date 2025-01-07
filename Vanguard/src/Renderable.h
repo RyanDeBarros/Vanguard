@@ -67,8 +67,8 @@ namespace vg
 		GLuint _stride = 0;
 
 	public:
-		VertexBufferLayout(const Shader& shader);
-		VertexBufferLayout(const Shader& shader, const VertexAttributeSpecificationList& specifications);
+		VertexBufferLayout(const raii::Shader& shader);
+		VertexBufferLayout(const raii::Shader& shader, const VertexAttributeSpecificationList& specifications);
 
 		GLuint stride() const { return _stride; }
 		const std::vector<VertexAttribute>& attributes() const { return _attributes; }
@@ -161,8 +161,8 @@ namespace vg
 		void init(const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
 
 	public:
-		VertexBufferBlock(GLuint block_count, const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
-		VertexBufferBlock(GLuint block_count, std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
+		VertexBufferBlock(const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
+		VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
 		VertexBufferBlock(const VertexBufferBlock&) = delete;
 		VertexBufferBlock(VertexBufferBlock&&) noexcept = default;
 		VertexBufferBlock& operator=(VertexBufferBlock&&) noexcept = default;
@@ -407,6 +407,7 @@ namespace vg
 		void subsend(size_t offset, size_t bytes) const;
 		void subsend_single(GLuint vertex) const;
 		void subsend_single(GLuint vertex, GLuint attrib) const;
+		void subsend_single(GLuint vertex, GLuint attrib, GLuint size) const;
 
 		template<typename Type>
 		const Type& ref(GLuint vertex, GLuint attrib) const
@@ -502,6 +503,7 @@ namespace vg
 		void subsend_all_blocks() const;
 		void subsend(GLuint i, size_t offset, size_t bytes) const;
 		void subsend_single(GLuint i, GLuint vertex, GLuint attrib) const;
+		void subsend_single(GLuint i, GLuint vertex, GLuint attrib, GLuint size) const;
 
 		template<typename Type>
 		const Type& ref(GLuint i, GLuint vertex, GLuint attrib) const
@@ -599,6 +601,7 @@ namespace vg
 		void subsend(GLuint i, size_t offset, size_t bytes) const;
 		void subsend_single(GLuint i, GLuint vertex) const;
 		void subsend_single(GLuint i, GLuint vertex, GLuint attrib) const;
+		void subsend_single(GLuint i, GLuint vertex, GLuint attrib, GLuint size) const;
 
 		template<typename Type>
 		const Type& ref(GLuint i, GLuint vertex, GLuint attrib) const
@@ -687,7 +690,7 @@ namespace vg
 		GLuint vertex_count() const { return indexes.empty() ? 0 : indexes.back().vertex_offset + indexes.back().vertex_count; }
 		GLuint vertex_count(GLuint index) const { return indexes[index].vertex_count; }
 		
-		GLuint size() const { return indexes.size(); }
+		GLuint size() const { return (GLuint)indexes.size(); }
 		void push_back(GLuint vertex_count);
 		void insert(GLuint pos, GLuint vertex_count);
 		void erase(GLuint pos);

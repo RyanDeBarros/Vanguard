@@ -130,6 +130,19 @@ namespace vg
 		glm::dvec2 cursor_pos() const;
 		void set_cursor_pos(glm::dvec2 pos) const;
 
+		enum class CoordinateSystem
+		{
+			CLIP,
+			SCREEN,
+			UI
+		};
+
+		glm::vec2 convert_coordinates(glm::vec2 coordinates, CoordinateSystem from, CoordinateSystem to) const;
+
+		glm::mat3 orthographic_projection() const;
+		glm::mat4 orthographic_projection(float z_near, float z_far) const;
+		// TODO perspective projection
+
 		bool is_key_pressed(input::Key key) const;
 		bool is_shift_pressed() const;
 		bool is_ctrl_pressed() const;

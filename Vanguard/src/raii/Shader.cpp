@@ -439,62 +439,62 @@ void vg::uniforms::send_4(const raii::Shader& shader, const char* uniform, glm::
 	glUniform4ui(shader.uniform_location(uniform) + offset, value.x, value.y, value.z, value.w);
 }
 
-void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const float* values, size_t count, GLuint offset)
+void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const float* values, GLsizei count, GLuint offset)
 {
 	glUniform1fv(shader.uniform_location(uniform) + offset, count, values);
 }
 
-void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::vec2* values, size_t count, GLuint offset)
+void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::vec2* values, GLsizei count, GLuint offset)
 {
 	glUniform2fv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::vec3* values, size_t count, GLuint offset)
+void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::vec3* values, GLsizei count, GLuint offset)
 {
 	glUniform3fv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::vec4* values, size_t count, GLuint offset)
+void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::vec4* values, GLsizei count, GLuint offset)
 {
 	glUniform4fv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const int* values, size_t count, GLuint offset)
+void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const int* values, GLsizei count, GLuint offset)
 {
 	glUniform1iv(shader.uniform_location(uniform) + offset, count, values);
 }
 
-void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::ivec2* values, size_t count, GLuint offset)
+void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::ivec2* values, GLsizei count, GLuint offset)
 {
 	glUniform2iv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::ivec3* values, size_t count, GLuint offset)
+void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::ivec3* values, GLsizei count, GLuint offset)
 {
 	glUniform3iv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::ivec4* values, size_t count, GLuint offset)
+void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::ivec4* values, GLsizei count, GLuint offset)
 {
 	glUniform4iv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const unsigned int* values, size_t count, GLuint offset)
+void vg::uniforms::send_1s(const raii::Shader& shader, const char* uniform, const unsigned int* values, GLsizei count, GLuint offset)
 {
 	glUniform1uiv(shader.uniform_location(uniform) + offset, count, values);
 }
 
-void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::uvec2* values, size_t count, GLuint offset)
+void vg::uniforms::send_2s(const raii::Shader& shader, const char* uniform, const glm::uvec2* values, GLsizei count, GLuint offset)
 {
 	glUniform2uiv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::uvec3* values, size_t count, GLuint offset)
+void vg::uniforms::send_3s(const raii::Shader& shader, const char* uniform, const glm::uvec3* values, GLsizei count, GLuint offset)
 {
 	glUniform3uiv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::uvec4* values, size_t count, GLuint offset)
+void vg::uniforms::send_4s(const raii::Shader& shader, const char* uniform, const glm::uvec4* values, GLsizei count, GLuint offset)
 {
 	glUniform4uiv(shader.uniform_location(uniform) + offset, count, glm::value_ptr(*values));
 }
@@ -544,47 +544,47 @@ void vg::uniforms::send_4x4(const raii::Shader& shader, const char* uniform, con
 	glUniformMatrix4fv(shader.uniform_location(uniform) + offset, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void vg::uniforms::send_2x2(const raii::Shader& shader, const char* uniform, const glm::mat2* values, size_t count, GLuint offset)
+void vg::uniforms::send_2x2s(const raii::Shader& shader, const char* uniform, const glm::mat2* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix2fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_2x3(const raii::Shader& shader, const char* uniform, const glm::mat2x3* values, size_t count, GLuint offset)
+void vg::uniforms::send_2x3s(const raii::Shader& shader, const char* uniform, const glm::mat2x3* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix2x3fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_2x4(const raii::Shader& shader, const char* uniform, const glm::mat2x4* values, size_t count, GLuint offset)
+void vg::uniforms::send_2x4s(const raii::Shader& shader, const char* uniform, const glm::mat2x4* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix2x4fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_3x2(const raii::Shader& shader, const char* uniform, const glm::mat3x2* values, size_t count, GLuint offset)
+void vg::uniforms::send_3x2s(const raii::Shader& shader, const char* uniform, const glm::mat3x2* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix3x2fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_3x3(const raii::Shader& shader, const char* uniform, const glm::mat3* values, size_t count, GLuint offset)
+void vg::uniforms::send_3x3s(const raii::Shader& shader, const char* uniform, const glm::mat3* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix3fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_3x4(const raii::Shader& shader, const char* uniform, const glm::mat3x4* values, size_t count, GLuint offset)
+void vg::uniforms::send_3x4s(const raii::Shader& shader, const char* uniform, const glm::mat3x4* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix3x4fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_4x2(const raii::Shader& shader, const char* uniform, const glm::mat4x2* values, size_t count, GLuint offset)
+void vg::uniforms::send_4x2s(const raii::Shader& shader, const char* uniform, const glm::mat4x2* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix4x2fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_4x3(const raii::Shader& shader, const char* uniform, const glm::mat4x3* values, size_t count, GLuint offset)
+void vg::uniforms::send_4x3s(const raii::Shader& shader, const char* uniform, const glm::mat4x3* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix4x3fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void vg::uniforms::send_4x4(const raii::Shader& shader, const char* uniform, const glm::mat4* values, size_t count, GLuint offset)
+void vg::uniforms::send_4x4s(const raii::Shader& shader, const char* uniform, const glm::mat4* values, GLsizei count, GLuint offset)
 {
 	glUniformMatrix4fv(shader.uniform_location(uniform) + offset, count, GL_FALSE, glm::value_ptr(*values));
 }

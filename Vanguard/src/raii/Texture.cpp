@@ -117,6 +117,41 @@ void vg::texture_params::nearest(Target target)
 	mag_filter(target, MagFilter::NEAREST);
 }
 
+void vg::texture_params::clamp_to_edge(Target target)
+{
+	wrap_r(target, TextureWrap::CLAMP_TO_EDGE);
+	wrap_s(target, TextureWrap::CLAMP_TO_EDGE);
+	wrap_t(target, TextureWrap::CLAMP_TO_EDGE);
+}
+
+void vg::texture_params::clamp_to_border(Target target)
+{
+	wrap_r(target, TextureWrap::CLAMP_TO_BORDER);
+	wrap_s(target, TextureWrap::CLAMP_TO_BORDER);
+	wrap_t(target, TextureWrap::CLAMP_TO_BORDER);
+}
+
+void vg::texture_params::mirrored_repeat(Target target)
+{
+	wrap_r(target, TextureWrap::MIRRORED_REPEAT);
+	wrap_s(target, TextureWrap::MIRRORED_REPEAT);
+	wrap_t(target, TextureWrap::MIRRORED_REPEAT);
+}
+
+void vg::texture_params::repeat(Target target)
+{
+	wrap_r(target, TextureWrap::REPEAT);
+	wrap_s(target, TextureWrap::REPEAT);
+	wrap_t(target, TextureWrap::REPEAT);
+}
+
+void vg::texture_params::mirror_clamp_to_edge(Target target)
+{
+	wrap_r(target, TextureWrap::MIRROR_CLAMP_TO_EDGE);
+	wrap_s(target, TextureWrap::MIRROR_CLAMP_TO_EDGE);
+	wrap_t(target, TextureWrap::MIRROR_CLAMP_TO_EDGE);
+}
+
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 
 void vg::texture_params::min_filter(ids::Texture texture, MinFilter filter)
