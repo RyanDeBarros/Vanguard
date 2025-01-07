@@ -49,6 +49,7 @@ namespace vg
 	namespace enable
 	{
 		extern void standard_blending(bool enable);
+		extern void depth_test(bool enable);
 		extern void scissor_test(bool enable);
 		extern void vsync(bool enable);
 	}

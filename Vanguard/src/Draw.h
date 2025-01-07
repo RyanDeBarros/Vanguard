@@ -90,17 +90,5 @@ namespace vg
 			extern void instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance, GLuint first);
 			extern void instanced_offset_base_vertex(const CPUIndexBuffer& ib, DrawMode mode, GLuint base_vertex, GLuint instance_count, GLuint first_instance, GLuint first, GLuint count);
 		}
-
-		namespace vertex_buffer
-		{
-			extern void full(const CPUVertexBuffer& vb, DrawMode mode);
-			extern void part(const CPUVertexBuffer& vb, DrawMode mode, GLuint first);
-
-			extern void full(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode);
-			extern void part(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode, GLuint first);
-
-			extern void full(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode);
-			extern void part(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode, GLuint first);
-		}
 	}
 }

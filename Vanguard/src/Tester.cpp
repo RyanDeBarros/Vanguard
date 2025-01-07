@@ -55,24 +55,25 @@ int main()
 	white_square.subsend_all_blocks();
 	index_buffer.bind_to_vertex_array(white_square.vao());
 
-	vg::CompactVBIndexer tripair_indexer({ 3, 3 });
-	vg::CPUVertexBuffer tripair(vg::VertexBuffer(vb_color_layout), tripair_indexer.vertex_count(), false);
+	vg::CompactVBBlockIndexer tripair_indexer({ { 3, 3 }, { 1, 1 } });
+	auto vb_color_split_layout = std::make_shared<vg::VertexBufferLayout>(color_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 } } });
+	vg::CPUVertexBufferBlock tripair(vg::VertexBufferBlock(vb_color_split_layout, { { 0, 1 }, { 2, 3, 4 } }), { tripair_indexer.vertex_count(0), tripair_indexer.vertex_count(1) }, false);
 
-	tripair.set_attributes(0, tripair_indexer.vertex(0, 0), std::array<glm::vec2, 3>{
+	tripair.set_attributes(0, 0, tripair_indexer.vertex(0, 0, 0), std::array<glm::vec2, 3>{
 		window.convert_coordinates({ -0.9f, 0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.8f, 0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.9f, 0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 	});
-	tripair.set_attributes(0, tripair_indexer.vertex(1, 0), std::array<glm::vec2, 3>{
+	tripair.set_attributes(0, 0, tripair_indexer.vertex(0, 1, 0), std::array<glm::vec2, 3>{
 		window.convert_coordinates({ -0.7f, 0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.7f, 0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.8f, 0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 	});
-	tripair.set_attribute(1, tripair_indexer.vertex(0, 0), tripair_indexer.vertex_count(0), glm::vec4{0.8f, 0.5f, 0.3f, 1.0f});
-	tripair.set_attribute(1, tripair_indexer.vertex(1, 0), tripair_indexer.vertex_count(1), glm::vec4{0.6f, 0.5f, 0.5f, 1.0f});
-	tripair.set_attribute(2, tripair_indexer.vertex(0, 0), tripair_indexer.vertex_count(0), glm::mat3(1.0f));
-	tripair.set_attribute(2, tripair_indexer.vertex(1, 0), tripair_indexer.vertex_count(1), glm::mat3(1.0f));
-	tripair.subsend_full();
+	tripair.set_attribute(0, 1, tripair_indexer.vertex(0, 0, 0), tripair_indexer.vertex_count(0, 0), glm::vec4{ 0.8f, 0.5f, 0.3f, 1.0f });
+	tripair.set_attribute(0, 1, tripair_indexer.vertex(0, 1, 0), tripair_indexer.vertex_count(0, 1), glm::vec4{ 0.6f, 0.5f, 0.5f, 1.0f });
+	tripair.set_attribute(1, 2, tripair_indexer.vertex(1, 0, 0), tripair_indexer.vertex_count(1, 0), glm::mat3(1.0f));
+	tripair.set_attribute(1, 2, tripair_indexer.vertex(1, 1, 0), tripair_indexer.vertex_count(1, 1), glm::mat3({ 0.8f, 0.0f, 0.0f }, { 0.0f, 0.8f, 0.0f }, { 0.0f, 0.0f, 1.0f }));
+	tripair.subsend_all_blocks();
 
 	std::string image_vert = vg::io::read_file("shaders/image.vert");
 	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
@@ -149,7 +150,14 @@ int main()
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
 		tripair.bind_vao();
-		vg::draw::vertex_buffer::full(tripair, vg::DrawMode::TRIANGLES);
+		//vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair_indexer.vertex_count());
+		//vg::draw::instanced::arrays(vg::DrawMode::TRIANGLES, 0, 3, 1, 0);
+		//vg::draw::instanced::arrays(vg::DrawMode::TRIANGLES, 3, 3, 1, 1);
+		vg::draw::instanced::arrays(vg::DrawMode::TRIANGLES, 0, tripair_indexer.vertex_count(0), tripair_indexer.vertex_count(1), 0);
+
+		//tripair.set_attribute(1, 2, 1, 1, glm::mat3{ { glm::cos(glfwGetTime()), glm::sin(glfwGetTime()), 0.0f }, { -glm::sin(glfwGetTime()), glm::cos(glfwGetTime()), 0.0f }, { 0.0f, 0.0f, 1.0f } });
+		//tripair.bind_vb(1);
+		//tripair.subsend_single(1, 1, 2, sizeof(glm::mat3));
 
 		vg::bind_shader(img_shader);
 		
@@ -173,7 +181,9 @@ int main()
 
 		vg::bind_shader(color3d_shader);
 		spinning_cube.bind_vao();
+		vg::enable::depth_test(true); // only for 3d objects
 		vg::draw::index_buffer::full(index_buffer3d, vg::DrawMode::TRIANGLES);
+		vg::enable::depth_test(false);
 
 		// TODO abstract setting rotation angle/axis, spinning, etc.
 		spinning_cube_transformer.local.rotation *= glm::angleAxis(0.01f, glm::vec3{ 1.0f, 0.6f, 0.3f });

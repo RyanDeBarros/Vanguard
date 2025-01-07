@@ -209,33 +209,3 @@ void vg::draw::index_buffer::instanced_offset_base_vertex(const CPUIndexBuffer& 
 {
 	instanced_base_vertex::elements(mode, count, first, instance_count, base_vertex, first_instance, ib.data_type());
 }
-
-void vg::draw::vertex_buffer::full(const CPUVertexBuffer& vb, DrawMode mode)
-{
-	arrays(mode, 0, vb.vertex_count());
-}
-
-void vg::draw::vertex_buffer::part(const CPUVertexBuffer& vb, DrawMode mode, GLuint first)
-{
-	arrays(mode, first, vb.vertex_count() - first);
-}
-
-void vg::draw::vertex_buffer::full(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode)
-{
-	arrays(mode, 0, mvb.vertex_count(i));
-}
-
-void vg::draw::vertex_buffer::part(const MultiCPUVertexBuffer& mvb, GLuint i, DrawMode mode, GLuint first)
-{
-	arrays(mode, first, mvb.vertex_count(i) - first);
-}
-
-void vg::draw::vertex_buffer::full(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode)
-{
-	arrays(mode, 0, vbb.vertex_count(i));
-}
-
-void vg::draw::vertex_buffer::part(const CPUVertexBufferBlock& vbb, GLuint i, DrawMode mode, GLuint first)
-{
-	arrays(mode, first, vbb.vertex_count(i) - first);
-}

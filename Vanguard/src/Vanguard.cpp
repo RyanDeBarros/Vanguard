@@ -110,6 +110,14 @@ void vg::enable::standard_blending(bool enable)
 		glDisable(GL_BLEND);
 }
 
+void vg::enable::depth_test(bool enable)
+{
+	if (enable)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
+}
+
 void vg::enable::vsync(bool enable)
 {
 	if (enable)

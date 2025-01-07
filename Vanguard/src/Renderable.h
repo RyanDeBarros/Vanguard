@@ -694,11 +694,39 @@ namespace vg
 		GLuint vertex(GLuint index, GLuint local_vertex) const { return indexes[index].vertex_offset + local_vertex; }
 		GLuint vertex_count() const { return indexes.empty() ? 0 : indexes.back().vertex_offset + indexes.back().vertex_count; }
 		GLuint vertex_count(GLuint index) const { return indexes[index].vertex_count; }
+		GLuint vertex_offset(GLuint index) const { return indexes[index].vertex_offset; }
 		
 		GLuint size() const { return (GLuint)indexes.size(); }
 		void push_back(GLuint vertex_count);
 		void insert(GLuint pos, GLuint vertex_count);
 		void erase(GLuint pos);
 		void swap(GLuint pos1, GLuint pos2);
+	};
+
+	class CompactVBBlockIndexer
+	{
+		struct IndexedVB
+		{
+			GLuint vertex_count = 0;
+			GLuint vertex_offset = 0;
+		};
+
+		std::vector<std::vector<IndexedVB>> indexes;
+
+	public:
+		CompactVBBlockIndexer(GLuint block_count) { indexes.resize(block_count); }
+		CompactVBBlockIndexer(const std::vector<std::vector<GLuint>>& vertex_counts_per_block);
+
+		GLuint block_count() const { return (GLuint)indexes.size(); }
+		GLuint vertex(GLuint block, GLuint index, GLuint local_vertex) const { return indexes[block][index].vertex_offset + local_vertex; }
+		GLuint vertex_count(GLuint block) const { return indexes[block].empty() ? 0 : indexes[block].back().vertex_offset + indexes[block].back().vertex_count; }
+		GLuint vertex_count(GLuint block, GLuint index) const { return indexes[block][index].vertex_count; }
+		GLuint vertex_offset(GLuint block, GLuint index) const { return indexes[block][index].vertex_offset; }
+
+		GLuint size(GLuint block) const { return (GLuint)indexes[block].size(); }
+		void push_back(GLuint block, GLuint vertex_count);
+		void insert(GLuint block, GLuint pos, GLuint vertex_count);
+		void erase(GLuint block, GLuint pos);
+		void swap(GLuint block, GLuint pos1, GLuint pos2);
 	};
 }

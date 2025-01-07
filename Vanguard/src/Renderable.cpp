@@ -897,6 +897,7 @@ void vg::MultiCPUVertexBuffer::subsend_single(GLuint i, GLuint vertex, GLuint at
 
 vg::CompactVBIndexer::CompactVBIndexer(const std::vector<GLuint>& vertex_counts)
 {
+	indexes.reserve(vertex_counts.size());
 	GLuint offset = 0;
 	for (GLuint vc : vertex_counts)
 	{
@@ -946,4 +947,67 @@ void vg::CompactVBIndexer::swap(GLuint pos1, GLuint pos2)
 	std::swap(indexes[pos1].vertex_count, indexes[pos2].vertex_count);
 	for (GLuint i = pos1 + 1; i <= pos2; ++i)
 		indexes[i].vertex_offset += vc_diff;
+}
+
+vg::CompactVBBlockIndexer::CompactVBBlockIndexer(const std::vector<std::vector<GLuint>>& vertex_counts_per_block)
+{
+	indexes.reserve(vertex_counts_per_block.size());
+	for (const auto& vcs : vertex_counts_per_block)
+	{
+		std::vector<IndexedVB> block_indexes;
+		block_indexes.reserve(vcs.size());
+		GLuint offset = 0;
+		for (GLuint vc : vcs)
+		{
+			block_indexes.push_back({ vc, offset });
+			offset += vc;
+		}
+		indexes.push_back(std::move(block_indexes));
+	}
+}
+
+void vg::CompactVBBlockIndexer::push_back(GLuint block, GLuint vc)
+{
+	GLuint offset = vertex_count(block);
+	indexes[block].push_back({ vc, offset });
+}
+
+void vg::CompactVBBlockIndexer::insert(GLuint block, GLuint pos, GLuint vc)
+{
+	auto& block_indexes = indexes[block];
+	if (pos == block_indexes.size() - 1)
+	{
+		GLuint offset = vertex_count(block);
+		block_indexes.push_back({ vc, offset });
+	}
+	else if (pos < block_indexes.size() - 1)
+	{
+		GLuint offset = block_indexes[pos].vertex_offset;
+		block_indexes.insert(block_indexes.begin() + pos, { vc, offset });
+		for (auto iter = block_indexes.begin() + pos + 1; iter != block_indexes.end(); ++iter)
+			iter->vertex_offset += vc;
+	}
+}
+
+void vg::CompactVBBlockIndexer::erase(GLuint block, GLuint pos)
+{
+	auto& block_indexes = indexes[block];
+	GLuint vc = block_indexes[pos].vertex_count;
+	block_indexes.erase(block_indexes.begin() + pos);
+	for (auto iter = block_indexes.begin() + pos; iter != block_indexes.end(); ++iter)
+		iter->vertex_offset -= vc;
+}
+
+void vg::CompactVBBlockIndexer::swap(GLuint block, GLuint pos1, GLuint pos2)
+{
+	if (pos2 < pos1)
+		std::swap(pos1, pos2);
+	else if (pos1 == pos2)
+		return;
+
+	auto& block_indexes = indexes[block];
+	GLint vc_diff = (GLint)block_indexes[pos2].vertex_count - (GLint)block_indexes[pos1].vertex_count;
+	std::swap(block_indexes[pos1].vertex_count, block_indexes[pos2].vertex_count);
+	for (GLuint i = pos1 + 1; i <= pos2; ++i)
+		block_indexes[i].vertex_offset += vc_diff;
 }
