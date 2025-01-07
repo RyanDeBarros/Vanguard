@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 
 #include "Vendor.h"
 
@@ -45,15 +46,18 @@ namespace vg
 
 	struct Transformer2D
 	{
+		Transform2D local;
 		Transformer2D* parent = nullptr;
 		std::vector<Transformer2D*> children;
-		Transform2D local;
 
 	private:
-		glm::mat3 _global;
+		glm::mat3 _global = glm::mat3(1.0f);
 		bool _dirty = true;
 
 	public:
+		Transformer2D() = default;
+		Transformer2D(Transform2D local) : local(local) { sync(); }
+		
 		glm::mat3 global() const { return _global; }
 		// Call after modifying self
 		void mark();
@@ -72,6 +76,8 @@ namespace vg
 		bool _dirty = true;
 
 	public:
+		Transformer3D(Transform3D local = {}) : local(local) {}
+	
 		glm::mat4 global() const { return _global; }
 		// Call after modifying self
 		void mark();
@@ -83,4 +89,12 @@ namespace vg
 	extern void detach_transformer(Transformer2D* parent, Transformer2D* child);
 	extern void attach_transformer(Transformer3D* parent, Transformer3D* child);
 	extern void detach_transformer(Transformer3D* parent, Transformer3D* child);
+
+	extern std::array<glm::vec2, 4> quad_vertex_positions(glm::vec2 size, glm::vec2 pivot);
+	inline std::array<glm::vec2, 4> quad_full_uvs = {
+		glm::vec2{ 0.0f, 0.0f },
+		glm::vec2{ 1.0f, 0.0f },
+		glm::vec2{ 1.0f, 1.0f },
+		glm::vec2{ 0.0f, 1.0f }
+	};
 }

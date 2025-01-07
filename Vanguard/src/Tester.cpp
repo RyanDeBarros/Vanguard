@@ -82,24 +82,14 @@ int main()
 	vg::CPUVertexBufferBlock sprite(vg::VertexBufferBlock(img_layout, { { 0, { 0, 2, 3 } }, { 1, { 1 } }, { 2, { 4, 5, 6 } } }), { 4, 1, 1 }, false);
 	index_buffer.bind_to_vertex_array(sprite.vao());
 
-	sprite.set_attributes(0, 0, 0, std::array<glm::vec2, 4>{
-		window.convert_coordinates({ -1.0f, -1.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
-		window.convert_coordinates({  1.0f, -1.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
-		window.convert_coordinates({  1.0f,  1.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
-		window.convert_coordinates({ -1.0f,  1.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
-	});
-	sprite.set_attributes(0, 2, 0, std::array<glm::vec2, 4>{
-		glm::vec2{ 0.0f, 0.0f },
-		glm::vec2{ 1.0f, 0.0f },
-		glm::vec2{ 1.0f, 1.0f },
-		glm::vec2{ 0.0f, 1.0f }
-	});
+	sprite.set_attributes(0, 0, 0, vg::quad_vertex_positions({ 34, 27 }, { 0.0f, 1.0f }));
+	sprite.set_attributes(0, 2, 0, vg::quad_full_uvs);
 	sprite.set_attribute(0, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 
 	sprite.set_attribute(1, 1, GLint(0));
 
-	vg::Transform2D sprite_transform{ window.convert_coordinates({ 0.5f, 0.25f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN), 0.4f, { 0.25f, 0.25f }};
-	sprite.set_attribute(2, 4, sprite_transform.matrix());
+	vg::Transformer2D sprite_transformer({ window.convert_coordinates({ 0.5f, 0.25f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN), 0.4f, glm::vec2(10) });
+	sprite.set_attribute(2, 4, sprite_transformer.global());
 	
 	sprite.subsend_all_blocks();
 
@@ -108,6 +98,12 @@ int main()
 	vg::image_2d::send_texture(img_einstein, tex_einstein);
 	vg::texture_params::nearest(vg::texture_params::T2D);
 	vg::texture_params::clamp_to_edge(vg::texture_params::T2D);
+
+	vg::Transformer2D sprite_parent({ window.convert_coordinates({ -0.5f, 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN), 0.0f, { 0.5f, 1.0f } });
+	vg::attach_transformer(&sprite_parent, &sprite_transformer);
+
+	vg::Transformer2D sprite_grandparent;
+	vg::attach_transformer(&sprite_grandparent, &sprite_parent);
 
 	// TODO resizing window is not working
 	window.render_frame = [&]() {
@@ -142,8 +138,15 @@ int main()
 		sprite.bind_vao();
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
-		sprite_transform.rotation -= 0.01f;
-		sprite.ref<glm::mat3>(2, 0, 4) = sprite_transform.matrix();
+		sprite_grandparent.local.position.x += 1.0f;
+		sprite_grandparent.mark();
+		sprite_parent.local.rotation += 0.02f;
+		sprite_parent.mark();
+		sprite_transformer.local.rotation -= 0.01f;
+		sprite_transformer.mark();
+
+		sprite_transformer.sync(); // call before sending to vertex buffer
+		sprite.ref<glm::mat3>(2, 0, 4) = sprite_transformer.global();
 		sprite.bind_vb(2);
 		sprite.subsend_single(2, 0, 4, sizeof(glm::mat3));
 		};

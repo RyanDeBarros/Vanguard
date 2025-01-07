@@ -52,9 +52,12 @@ vg::Rotator::operator glm::quat() const
 
 void vg::Transformer2D::mark()
 {
-	_dirty = true;
-	for (Transformer2D* child : children)
-		child->mark();
+	if (!_dirty)
+	{
+		_dirty = true;
+		for (Transformer2D* child : children)
+			child->mark();
+	}
 }
 
 void vg::Transformer2D::sync()
@@ -152,4 +155,14 @@ void vg::detach_transformer(Transformer3D* parent, Transformer3D* child)
 			parent->children.erase(iter);
 		child->mark();
 	}
+}
+
+std::array<glm::vec2, 4> vg::quad_vertex_positions(glm::vec2 size, glm::vec2 pivot)
+{
+	return std::array<glm::vec2, 4>{
+		size * (pivot + glm::vec2{ -1.0f, -1.0f }),
+		size * (pivot + glm::vec2{  0.0f, -1.0f }),
+		size * (pivot + glm::vec2{  0.0f,  0.0f }),
+		size * (pivot + glm::vec2{ -1.0f,  0.0f })
+	};
 }
