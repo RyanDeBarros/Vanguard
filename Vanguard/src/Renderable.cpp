@@ -326,41 +326,39 @@ void vg::VertexBuffer::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_
 	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
-void vg::VertexBufferBlock::init(const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
+void vg::VertexBufferBlock::init(const std::initializer_list<std::initializer_list<GLuint>>& attributes)
 {
 	bind_vao();
 	_offsets.resize(_layout->attributes().size());
 	_strides.resize(_vbs.get_count());
-	for (const auto& subattribs : attributes)
+	for (GLuint i = 0; i < _vbs.get_count(); ++i)
 	{
-		if (subattribs.first < _vbs.get_count())
-		{
-			bind_vb(subattribs.first);
-			const auto& lattrs = _layout->attributes();
-			GLuint stride = 0;
-			for (GLuint attrib : subattribs.second)
-				stride += lattrs[attrib].bytes();
-			_strides[subattribs.first] = stride;
+		const std::initializer_list<GLuint>& subattributes = *(attributes.begin() + i);
+		bind_vb(i);
+		const auto& lattrs = _layout->attributes();
+		GLuint stride = 0;
+		for (GLuint attrib : subattributes)
+			stride += lattrs[attrib].bytes();
+		_strides[i] = stride;
 
-			GLuint offset = 0;
-			for (GLuint attrib : subattribs.second)
-			{
-				lattrs[attrib].attrib_pointer(attrib, stride, offset);
-				_offsets[attrib] = offset;
-				offset += lattrs[attrib].bytes();
-			}
+		GLuint offset = 0;
+		for (GLuint attrib : subattributes)
+		{
+			lattrs[attrib].attrib_pointer(attrib, stride, offset);
+			_offsets[attrib] = offset;
+			offset += lattrs[attrib].bytes();
 		}
 	}
 	unbind_vertex_array();
 }
 
-vg::VertexBufferBlock::VertexBufferBlock(const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
+vg::VertexBufferBlock::VertexBufferBlock(const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::initializer_list<GLuint>>& attributes)
 	: _layout(layout), _vbs((GLuint)attributes.size())
 {
 	init(attributes);
 }
 
-vg::VertexBufferBlock::VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes)
+vg::VertexBufferBlock::VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::initializer_list<GLuint>>& attributes)
 	: _layout(std::move(layout)), _vbs((GLuint)attributes.size())
 {
 	init(attributes);
@@ -487,18 +485,39 @@ void vg::MultiVertexBuffer::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i,
 	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
+// TODO make extern and specify it's for GL_TRIANGLES. Implement for GL_TRIANGLE_STRIP, GL_LINES, etc.
+
+static std::array<GLuint, 6> quad_indexes{ 0, 1, 2, 2, 3, 0 };
+
 template<typename DataType>
 static void fill_quad_indexes(vg::VoidArray& cpubuf, GLuint num_quads)
 {
 	for (GLuint i = 0; i < num_quads; ++i)
-	{
-		cpubuf.ref<DataType>((0 + 6 * i) * sizeof(DataType)) = 0 + 4 * i;
-		cpubuf.ref<DataType>((1 + 6 * i) * sizeof(DataType)) = 1 + 4 * i;
-		cpubuf.ref<DataType>((2 + 6 * i) * sizeof(DataType)) = 2 + 4 * i;
-		cpubuf.ref<DataType>((3 + 6 * i) * sizeof(DataType)) = 2 + 4 * i;
-		cpubuf.ref<DataType>((4 + 6 * i) * sizeof(DataType)) = 3 + 4 * i;
-		cpubuf.ref<DataType>((5 + 6 * i) * sizeof(DataType)) = 0 + 4 * i;
-	}
+		for (GLuint j = 0; j < 6; ++j)
+			cpubuf.ref<DataType>((j + 6 * i) * sizeof(DataType)) = quad_indexes[j] + 4 * i;
+}
+
+static std::array<GLuint, 36> cube_indexes{
+	// Front face
+	0, 1, 2, 2, 3, 0,
+	// Back face
+	4, 5, 6, 6, 7, 4,
+	// Left face
+	4, 0, 3, 3, 7, 4,
+	// Right face
+	1, 5, 6, 6, 2, 1,
+	// Top face
+	3, 2, 6, 6, 7, 3,
+	// Bottom face
+	4, 5, 1, 1, 0, 4
+};
+
+template<typename DataType>
+static void fill_cube_indexes(vg::VoidArray& cpubuf, GLuint num_cubes)
+{
+	for (GLuint i = 0; i < num_cubes; ++i)
+		for (GLuint j = 0; j < 36; ++j)
+			cpubuf.ref<DataType>((j + 36 * i) * sizeof(DataType)) = cube_indexes[j] + 8 * i;
 }
 
 void vg::CPUIndexBuffer::init_immutable_quads(GLuint num_quads)
@@ -525,6 +544,34 @@ void vg::CPUIndexBuffer::init_mutable_quads(GLuint num_quads)
 		fill_quad_indexes<GLushort>(cpubuf, num_quads);
 	else if (idt == IndexDataType::UINT)
 		fill_quad_indexes<GLuint>(cpubuf, num_quads);
+
+	init_mutable();
+}
+
+void vg::CPUIndexBuffer::init_immutable_cubes(GLuint num_cubes)
+{
+	cpubuf.resize(num_cubes * 6 * 6 * index_data_type_size(idt));
+
+	if (idt == IndexDataType::UBYTE)
+		fill_cube_indexes<GLubyte>(cpubuf, num_cubes);
+	else if (idt == IndexDataType::USHORT)
+		fill_cube_indexes<GLushort>(cpubuf, num_cubes);
+	else if (idt == IndexDataType::UINT)
+		fill_cube_indexes<GLuint>(cpubuf, num_cubes);
+
+	init_immutable();
+}
+
+void vg::CPUIndexBuffer::init_mutable_cubes(GLuint num_cubes)
+{
+	cpubuf.resize(num_cubes * 6 * 6 * index_data_type_size(idt));
+
+	if (idt == IndexDataType::UBYTE)
+		fill_cube_indexes<GLubyte>(cpubuf, num_cubes);
+	else if (idt == IndexDataType::USHORT)
+		fill_cube_indexes<GLushort>(cpubuf, num_cubes);
+	else if (idt == IndexDataType::UINT)
+		fill_cube_indexes<GLuint>(cpubuf, num_cubes);
 
 	init_mutable();
 }
@@ -593,6 +640,36 @@ void vg::CPUIndexBufferBlock::init_mutable_quads(GLuint i, GLuint num_quads)
 		fill_quad_indexes<GLushort>(idt_cpubuf.second, num_quads);
 	else if (idt_cpubuf.first == IndexDataType::UINT)
 		fill_quad_indexes<GLuint>(idt_cpubuf.second, num_quads);
+
+	init_mutable(i);
+}
+
+void vg::CPUIndexBufferBlock::init_immutable_cubes(GLuint i, GLuint num_cubes)
+{
+	auto& idt_cpubuf = idt_cpubufs[i];
+	idt_cpubuf.second.resize(num_cubes * 6 * 6 * index_data_type_size(idt_cpubuf.first));
+
+	if (idt_cpubuf.first == IndexDataType::UBYTE)
+		fill_cube_indexes<GLubyte>(idt_cpubuf.second, num_cubes);
+	else if (idt_cpubuf.first == IndexDataType::USHORT)
+		fill_cube_indexes<GLushort>(idt_cpubuf.second, num_cubes);
+	else if (idt_cpubuf.first == IndexDataType::UINT)
+		fill_cube_indexes<GLuint>(idt_cpubuf.second, num_cubes);
+
+	init_immutable(i);
+}
+
+void vg::CPUIndexBufferBlock::init_mutable_cubes(GLuint i, GLuint num_cubes)
+{
+	auto& idt_cpubuf = idt_cpubufs[i];
+	idt_cpubuf.second.resize(num_cubes * 6 * 6 * index_data_type_size(idt_cpubuf.first));
+
+	if (idt_cpubuf.first == IndexDataType::UBYTE)
+		fill_cube_indexes<GLubyte>(idt_cpubuf.second, num_cubes);
+	else if (idt_cpubuf.first == IndexDataType::USHORT)
+		fill_cube_indexes<GLushort>(idt_cpubuf.second, num_cubes);
+	else if (idt_cpubuf.first == IndexDataType::UINT)
+		fill_cube_indexes<GLuint>(idt_cpubuf.second, num_cubes);
 
 	init_mutable(i);
 }

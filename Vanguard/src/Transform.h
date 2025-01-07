@@ -72,11 +72,12 @@ namespace vg
 		Transform3D local;
 
 	private:
-		glm::mat4 _global;
+		glm::mat4 _global = glm::mat4(1.0f);
 		bool _dirty = true;
 
 	public:
-		Transformer3D(Transform3D local = {}) : local(local) {}
+		Transformer3D() = default;
+		Transformer3D(Transform3D local) : local(local) { sync(); }
 	
 		glm::mat4 global() const { return _global; }
 		// Call after modifying self
@@ -97,4 +98,6 @@ namespace vg
 		glm::vec2{ 1.0f, 1.0f },
 		glm::vec2{ 0.0f, 1.0f }
 	};
+	
+	extern std::array<glm::vec3, 8> cube_vertex_positions(glm::vec3 size, glm::vec3 pivot);
 }

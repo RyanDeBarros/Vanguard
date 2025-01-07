@@ -158,11 +158,11 @@ namespace vg
 		raii::VertexArray _vao;
 		raii::GLBufferBlock _vbs;
 
-		void init(const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
+		void init(const std::initializer_list<std::initializer_list<GLuint>>& attributes);
 
 	public:
-		VertexBufferBlock(const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
-		VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::pair<GLuint, std::initializer_list<GLuint>>>& attributes);
+		VertexBufferBlock(const std::shared_ptr<VertexBufferLayout>& layout, const std::initializer_list<std::initializer_list<GLuint>>& attributes);
+		VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& layout, const std::initializer_list<std::initializer_list<GLuint>>& attributes);
 		VertexBufferBlock(const VertexBufferBlock&) = delete;
 		VertexBufferBlock(VertexBufferBlock&&) noexcept = default;
 		VertexBufferBlock& operator=(VertexBufferBlock&&) noexcept = default;
@@ -355,8 +355,11 @@ namespace vg
 		void init_mutable(GLsizei count) { cpubuf.resize(count * index_data_type_size(idt)); init_mutable(); }
 		void init_mutable() { bind(); buffers::init_mutable(BufferTarget::INDEX, cpubuf.size(), cpubuf); }
 
+		// TODO specify that it is for GL_TRIANGLES.
 		void init_immutable_quads(GLuint num_quads);
 		void init_mutable_quads(GLuint num_quads);
+		void init_immutable_cubes(GLuint num_octets);
+		void init_mutable_cubes(GLuint num_octets);
 	};
 
 	class CPUIndexBufferBlock
@@ -382,6 +385,8 @@ namespace vg
 
 		void init_immutable_quads(GLuint i, GLuint num_quads);
 		void init_mutable_quads(GLuint i, GLuint num_quads);
+		void init_immutable_cubes(GLuint i, GLuint num_octets);
+		void init_mutable_cubes(GLuint i, GLuint num_octets);
 	};
 
 	class CPUVertexBuffer

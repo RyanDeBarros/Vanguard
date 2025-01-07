@@ -34,6 +34,7 @@ int main()
 		window.convert_coordinates({  0.8f,  0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 		});
 	colorful_vertex_buffer.set_attribute(1, glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
+	colorful_vertex_buffer.set_attribute(2, glm::mat3(1.0f));
 	colorful_vertex_buffer.bind_vb();
 	colorful_vertex_buffer.subsend_full();
 
@@ -41,7 +42,7 @@ int main()
 	index_buffer.bind_to_vertex_array(colorful_vertex_buffer.vao());
 	index_buffer.init_immutable_quads(1);
 
-	vg::CPUVertexBufferBlock white_square(vg::VertexBufferBlock(vb_color_layout, { { 0, { 0 } }, { 1, { 1 } } }), 4, false);
+	vg::CPUVertexBufferBlock white_square(vg::VertexBufferBlock(vb_color_layout, { { 0, 2, 3, 4 }, { 1 } }), 4, false);
 
 	white_square.set_attributes(0, 0, 0, std::array<glm::vec2, 4>{
 		window.convert_coordinates({ 0.7f, -0.7f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
@@ -50,6 +51,7 @@ int main()
 		window.convert_coordinates({ 0.7f, -0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 	});
 	white_square.set_attribute(1, 1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	white_square.set_attribute(0, 2, glm::mat3(1.0f));
 	white_square.subsend_all_blocks();
 	index_buffer.bind_to_vertex_array(white_square.vao());
 
@@ -68,6 +70,8 @@ int main()
 	});
 	tripair.set_attribute(1, tripair_indexer.vertex(0, 0), tripair_indexer.vertex_count(0), glm::vec4{0.8f, 0.5f, 0.3f, 1.0f});
 	tripair.set_attribute(1, tripair_indexer.vertex(1, 0), tripair_indexer.vertex_count(1), glm::vec4{0.6f, 0.5f, 0.5f, 1.0f});
+	tripair.set_attribute(2, tripair_indexer.vertex(0, 0), tripair_indexer.vertex_count(0), glm::mat3(1.0f));
+	tripair.set_attribute(2, tripair_indexer.vertex(1, 0), tripair_indexer.vertex_count(1), glm::mat3(1.0f));
 	tripair.subsend_full();
 
 	std::string image_vert = vg::io::read_file("shaders/image.vert");
@@ -79,7 +83,7 @@ int main()
 	// It is possible to have a vertex buffer with only one vertex's attribute, but only if setting the divisor. This works even with non-instanced rendering
 	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 1, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 } } });
 
-	vg::CPUVertexBufferBlock sprite(vg::VertexBufferBlock(img_layout, { { 0, { 0, 2, 3 } }, { 1, { 1 } }, { 2, { 4, 5, 6 } } }), { 4, 1, 1 }, false);
+	vg::CPUVertexBufferBlock sprite(vg::VertexBufferBlock(img_layout, { { 0, 2, 3 }, { 1 }, { 4, 5, 6 } }), { 4, 1, 1 }, false);
 	index_buffer.bind_to_vertex_array(sprite.vao());
 
 	sprite.set_attributes(0, 0, 0, vg::quad_vertex_positions({ 34, 27 }, { 0.0f, 1.0f }));
@@ -104,6 +108,23 @@ int main()
 
 	vg::Transformer2D sprite_grandparent;
 	vg::attach_transformer(&sprite_grandparent, &sprite_parent);
+
+	vg::raii::Shader color3d_shader(vg::FilePath("shaders/color3d.vert"), vg::FilePath("shaders/color3d.frag"));
+	vg::bind_shader(color3d_shader);
+	vg::uniforms::send_4x4(color3d_shader, "uVP", window.orthographic_projection(-1200, 1200));
+
+	auto color3d_layout = std::make_shared<vg::VertexBufferLayout>(color3d_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 } } });
+	vg::CPUVertexBufferBlock spinning_cube(vg::VertexBufferBlock(color3d_layout, { { 0, 1 }, { 2, 3, 4, 5 } }), { 8, 1 }, false);
+	spinning_cube.set_attributes(0, 0, 0, vg::cube_vertex_positions({ 100.0f, 100.0f, 100.0f }, { 0.5f, 0.5f, 0.5f }));
+	spinning_cube.set_attribute(0, 1, glm::vec4{ 0.7f, 0.7f, 0.7f, 0.5f });
+
+	vg::Transformer3D spinning_cube_transformer({ { window.width() * 0.5f, window.height() * 0.5f, 0.0f}, { 1.0f, 0.6f, 0.3f, 1.0f }, glm::vec3(2) });
+	spinning_cube.set_attribute(1, 2, spinning_cube_transformer.global());
+	spinning_cube.subsend_all_blocks();
+
+	vg::CPUIndexBuffer index_buffer3d(vg::IndexDataType::UBYTE);
+	index_buffer3d.init_mutable_cubes(1);
+	index_buffer3d.bind_to_vertex_array(spinning_cube.vao());
 
 	// TODO resizing window is not working
 	window.render_frame = [&]() {
@@ -149,6 +170,20 @@ int main()
 		sprite.ref<glm::mat3>(2, 0, 4) = sprite_transformer.global();
 		sprite.bind_vb(2);
 		sprite.subsend_single(2, 0, 4, sizeof(glm::mat3));
+
+		vg::bind_shader(color3d_shader);
+		spinning_cube.bind_vao();
+		vg::draw::index_buffer::full(index_buffer3d, vg::DrawMode::TRIANGLES);
+
+		// TODO abstract setting rotation angle/axis, spinning, etc.
+		spinning_cube_transformer.local.rotation *= glm::angleAxis(0.01f, glm::vec3{ 1.0f, 0.6f, 0.3f });
+		spinning_cube_transformer.local.rotation = glm::normalize(spinning_cube_transformer.local.rotation);
+		spinning_cube_transformer.mark();
+
+		spinning_cube_transformer.sync();
+		spinning_cube.ref<glm::mat4>(1, 0, 2) = spinning_cube_transformer.global();
+		spinning_cube.bind_vb(1);
+		spinning_cube.subsend_single(1, 0, 2, sizeof(glm::mat4));
 		};
 
 	for (;;)

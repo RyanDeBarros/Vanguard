@@ -166,3 +166,19 @@ std::array<glm::vec2, 4> vg::quad_vertex_positions(glm::vec2 size, glm::vec2 piv
 		size * (pivot + glm::vec2{ -1.0f,  0.0f })
 	};
 }
+
+std::array<glm::vec3, 8> vg::cube_vertex_positions(glm::vec3 size, glm::vec3 pivot)
+{
+	return std::array<glm::vec3, 8>{
+		// Front face
+		size * (pivot + glm::vec3{ -1.0f, -1.0f,  0.0f }),
+		size * (pivot + glm::vec3{  0.0f, -1.0f,  0.0f }),
+		size * (pivot + glm::vec3{  0.0f,  0.0f,  0.0f }),
+		size * (pivot + glm::vec3{ -1.0f,  0.0f,  0.0f }),
+		// Back face
+		size * (pivot + glm::vec3{ -1.0f, -1.0f, -1.0f }),
+		size * (pivot + glm::vec3{  0.0f, -1.0f, -1.0f }),
+		size * (pivot + glm::vec3{  0.0f,  0.0f, -1.0f }),
+		size * (pivot + glm::vec3{ -1.0f,  0.0f, -1.0f })
+	};
+}
