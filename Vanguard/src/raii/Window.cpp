@@ -72,7 +72,8 @@ void vg::WindowHint::hint() const
 	glfwWindowHint(GLFW_OPENGL_PROFILE, opengl_profile);
 }
 
-vg::Window::Window(int width, int height, const char* title, const WindowHint& hint, const ContextConfig& config)
+vg::Window::Window(int width, int height, const char* title, const WindowInitialValues& initial_values, const WindowHint& hint, const ContextConfig& config)
+	: initial_w(width), initial_h(height)
 {
 	if (!min_opengl_version_is_at_most(hint.context_version_major, hint.context_version_minor) || min_opengl_version_is_at_most(3, 3))
 		throw Error(ErrorCode::OPENGL_VERSION);
@@ -93,34 +94,22 @@ vg::Window::Window(int width, int height, const char* title, const WindowHint& h
 	glfwSetWindowUserPointer(_w, this);
 	_::assign_window_callbacks(*this);
 
+	desired_aspect_ratio = initial_values.desired_aspect_ratio_override > 0.0f ? initial_values.desired_aspect_ratio_override : (float)initial_w / (float)initial_h;
+
 	root_input_handlers.framebuffer_resize.callback = [this](const input::FramebufferResizeEvent& e) {
-		glViewport(0, 0, e.w, e.h);
-		frame_cycle();
+		sync_resize(e.w, e.h);
 		};
 
 	init_gl_constants();
 
-	vg::enable::standard_blending(config.standard_blending);
-	vg::enable::scissor_test(config.scissor_test);
-	vg::enable::vsync(config.vsync_on);
-}
+	enable::standard_blending(config.standard_blending);
+	enable::scissor_test(config.scissor_test);
+	enable::vsync(config.vsync_on);
 
-vg::Window::Window(Window&& other) noexcept
-	: _w(other._w), root_input_handlers(std::move(other.root_input_handlers))
-{
-	other._w = nullptr;
-	init_gl_constants();
-}
-
-vg::Window& vg::Window::operator=(Window&& other) noexcept
-{
-	if (this != &other)
-	{
-		glfwDestroyWindow(_w);
-		_w = other._w;
-		other._w = nullptr;
-	}
-	return *this;
+	display_mode = initial_values.display_mode;
+	scale_width = initial_values.scale_width;
+	scale_height = initial_values.scale_height;
+	sync_resize();
 }
 
 vg::Window::~Window()
@@ -293,12 +282,28 @@ glm::vec2 vg::Window::convert_coordinates(glm::vec2 coordinates, CoordinateSyste
 
 glm::mat3 vg::Window::orthographic_projection() const
 {
-	return glm::ortho(0.0f, (float)width(), 0.0f, (float)height());
+	if (display_mode == DisplayMode::KEEP_SCALE)
+	{
+		glm::vec2 sz = size();
+		return glm::ortho(0.0f, sz.x * scale_width, 0.0f, sz.y * scale_height);
+	}
+	else
+	{
+		return glm::ortho(0.0f, (float)initial_w, 0.0f, (float)initial_h);
+	}
 }
 
 glm::mat4 vg::Window::orthographic_projection(float z_near, float z_far) const
 {
-	return glm::ortho(0.0f, (float)width(), 0.0f, (float)height(), z_near, z_far);
+	if (display_mode == DisplayMode::KEEP_SCALE)
+	{
+		glm::vec2 sz = size();
+		return glm::ortho(0.0f, sz.x, 0.0f, sz.y, z_near, z_far);
+	}
+	else
+	{
+		return glm::ortho(0.0f, (float)initial_w, 0.0f, (float)initial_h, z_near, z_far);
+	}
 }
 
 bool vg::Window::is_key_pressed(input::Key key) const
@@ -344,4 +349,42 @@ void vg::Window::set_mouse_mode(MouseMode mode) const
 void vg::Window::set_cursor(Cursor& cursor) const
 {
 	glfwSetCursor(_w, cursor);
+}
+
+void vg::Window::sync_resize(int w, int h)
+{
+	if (display_mode == DisplayMode::ASPECT)
+	{
+		float new_aspect_ratio = (float)w / (float)h;
+		if (new_aspect_ratio > desired_aspect_ratio)
+		{
+			viewport.w = (int)(h * desired_aspect_ratio);
+			viewport.h = h;
+		}
+		else
+		{
+			viewport.w = w;
+			viewport.h = (int)(w / desired_aspect_ratio);
+		}
+		viewport.x = (w - viewport.w) / 2;
+		viewport.y = (h - viewport.h) / 2;
+	}
+	else
+	{
+		viewport = { 0, 0, w, h };
+	}
+	vg::set_viewport(viewport);
+	vg::set_scissor(viewport); // LATER only set_scissor if config.scissor_test ?
+	
+	auto ortho_proj = orthographic_projection();
+	for (const auto& update : vp_updates)
+	{
+		vg::bind_shader(*update.shader);
+		if (update.proj_mode == ProjectionMode::ORTHOGRAPHIC_2D)
+			vg::uniforms::send_3x3(*update.shader, "uVP", ortho_proj);
+		else if (update.proj_mode == ProjectionMode::ORTHOGRAPHIC_3D)
+			vg::uniforms::send_4x4(*update.shader, "uVP", orthographic_projection(update.z_near, update.z_far));
+		//else if (update.proj_mode == ProjectionMode::PERSPECTIVE) // TODO
+	}
+	frame_cycle();
 }

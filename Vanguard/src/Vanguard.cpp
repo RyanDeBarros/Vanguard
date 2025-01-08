@@ -135,3 +135,33 @@ void vg::clear_buffer()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
+
+void vg::set_viewport(Rect<int> rect)
+{
+	glViewport(rect.x, rect.y, rect.w, rect.h);
+}
+
+void vg::set_viewport(unsigned int index, Rect<float> rect)
+{
+	glViewportIndexedf(index, rect.x, rect.y, rect.w, rect.h);
+}
+
+void vg::set_viewports(unsigned int first_index, Rect<float>* rects, unsigned int count)
+{
+	glViewportArrayv(first_index, count, &rects->x);
+}
+
+void vg::set_scissor(Rect<int> rect)
+{
+	glScissor(rect.x, rect.y, rect.w, rect.h);
+}
+
+void vg::set_scissor(unsigned int index, Rect<int> rect)
+{
+	glScissorIndexed(index, rect.x, rect.y, rect.w, rect.h);
+}
+
+void vg::set_scissors(unsigned int first_index, Rect<int>* rects, unsigned int count)
+{
+	glScissorArrayv(first_index, count, &rects->x);
+}

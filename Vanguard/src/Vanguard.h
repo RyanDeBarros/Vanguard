@@ -26,6 +26,7 @@
 #define VANGUARD_MIN_OPENGL_VERSION_IS_AT_MOST(major, minor) VANGUARD_MIN_OPENGL_VERSION_MAJOR < major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR <= minor)
 
 #include "Vendor.h"
+#include "VGMath.h"
 
 namespace vg
 {
@@ -56,4 +57,11 @@ namespace vg
 
 	extern void set_clear_color(glm::vec4 rgba);
 	extern void clear_buffer();
+
+	extern void set_viewport(Rect<int> rect);
+	extern void set_viewport(unsigned int index, Rect<float> rect);
+	extern void set_viewports(unsigned int first_index, Rect<float>* rects, unsigned int count);
+	extern void set_scissor(Rect<int> rect);
+	extern void set_scissor(unsigned int index, Rect<int> rect);
+	extern void set_scissors(unsigned int first_index, Rect<int>* rects, unsigned int count);
 }

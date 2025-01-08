@@ -13,7 +13,7 @@ out vec2 tUVs;
 out vec4 tColor;
 
 void main() {
-	gl_Position.xy = (uVP * iModel * vec3(iPosition, 1.0)).xy;
+	gl_Position.xyz = uVP * iModel * vec3(iPosition, 1.0);
 	tTexSlot = iTexSlot;
 	tUVs = iUVs;
 	tColor = iColor;

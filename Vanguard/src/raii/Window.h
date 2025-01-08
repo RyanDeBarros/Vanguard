@@ -6,6 +6,7 @@
 #include "Vanguard.h"
 #include "Vendor.h"
 #include "Input.h"
+#include "Shader.h"
 
 namespace vg
 {
@@ -86,15 +87,29 @@ namespace vg
 		bool vsync_on = true;
 	};
 
+	enum class DisplayMode
+	{
+		STRETCH,
+		KEEP_SCALE,
+		ASPECT
+	};
+
+	struct WindowInitialValues
+	{
+		float desired_aspect_ratio_override = -1;
+		DisplayMode display_mode = DisplayMode::ASPECT;
+		float scale_width = 1.0f;
+		float scale_height = 1.0f;
+	};
+
 	class Window
 	{
 		GLFWwindow* _w = nullptr;
 
 	public:
-		Window(int width, int height, const char* title, const WindowHint& hint = {}, const ContextConfig& config = {});
+		Window(int width, int height, const char* title, const WindowInitialValues& initial_values = {}, const WindowHint& hint = {}, const ContextConfig& config = {});
 		Window(const Window&) = delete;
-		Window(Window&&) noexcept;
-		Window& operator=(Window&&) noexcept;
+		Window(Window&&) noexcept = delete;
 		~Window();
 
 		operator const GLFWwindow* () const { return _w; }
@@ -102,7 +117,7 @@ namespace vg
 
 	private:
 		void init_gl_constants() const;
-	
+
 	public:
 		void focus() const;
 		void focus_context() const;
@@ -136,9 +151,14 @@ namespace vg
 			SCREEN,
 			UI
 		};
-
 		glm::vec2 convert_coordinates(glm::vec2 coordinates, CoordinateSystem from, CoordinateSystem to) const;
 
+		enum class ProjectionMode
+		{
+			ORTHOGRAPHIC_2D,
+			ORTHOGRAPHIC_3D,
+			PERSPECTIVE
+		};
 		glm::mat3 orthographic_projection() const;
 		glm::mat4 orthographic_projection(float z_near, float z_far) const;
 		// TODO perspective projection
@@ -185,5 +205,28 @@ namespace vg
 		const GLConstants& constants() const { return gl_constants; }
 
 		glm::vec4 clear_color{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+		DisplayMode display_mode = DisplayMode::ASPECT;
+
+		int initial_w, initial_h;
+		float scale_width = 1.0f;
+		float scale_height = 1.0f;
+		float desired_aspect_ratio;
+		
+		struct ShaderVPUpdate
+		{
+			raii::Shader* shader;
+			ProjectionMode proj_mode;
+			float z_near, z_far;
+		};
+		std::vector<ShaderVPUpdate> vp_updates;
+
+	private:
+		Rect<int> viewport;
+
+	public:
+
+		void sync_resize(int w, int h);
+		void sync_resize() { auto sz = size(); sync_resize(sz.x, sz.y); }
 	};
 }

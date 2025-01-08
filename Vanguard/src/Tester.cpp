@@ -16,12 +16,18 @@ int main()
 	std::cout << "Welcome to Vanguard!" << std::endl;
 	vg::init();
 
-	vg::Window window(1440, 1080, "Hello World");
+	vg::WindowInitialValues wivs;
+	wivs.desired_aspect_ratio_override = 16.0f / 9.0f;
+	wivs.scale_width = 1.0f / 1.155f;
+	wivs.scale_height = 1.155f;
+	wivs.display_mode = vg::DisplayMode::KEEP_SCALE;
+	vg::Window window(1440, 1080, "Hello World", wivs);
 	window.clear_color = { 0.2f, 0.4f, 0.7f, 1.0f };
-
+	
 	vg::raii::Shader color_shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
 	vg::bind_shader(color_shader);
 	vg::uniforms::send_3x3(color_shader, "uVP", window.orthographic_projection());
+	window.vp_updates.push_back({ &color_shader, vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
 
 	auto vb_color_layout = std::make_shared<vg::VertexBufferLayout>(color_shader);
 
@@ -80,6 +86,7 @@ int main()
 	vg::raii::Shader img_shader(image_vert, image_frag);
 	vg::bind_shader(img_shader);
 	vg::uniforms::send_3x3(img_shader, "uVP", window.orthographic_projection());
+	window.vp_updates.push_back({ &img_shader, vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
 
 	// It is possible to have a vertex buffer with only one vertex's attribute, but only if setting the divisor. This works even with non-instanced rendering
 	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 1, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 } } });
@@ -113,6 +120,7 @@ int main()
 	vg::raii::Shader color3d_shader(vg::FilePath("shaders/color3d.vert"), vg::FilePath("shaders/color3d.frag"));
 	vg::bind_shader(color3d_shader);
 	vg::uniforms::send_4x4(color3d_shader, "uVP", window.orthographic_projection(-1200, 1200));
+	window.vp_updates.push_back({ &color3d_shader, vg::Window::ProjectionMode::ORTHOGRAPHIC_3D, -1200, 1200 });
 
 	auto color3d_layout = std::make_shared<vg::VertexBufferLayout>(color3d_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 } } });
 	vg::CPUVertexBufferBlock spinning_cube(vg::VertexBufferBlock(color3d_layout, { { 0, 1 }, { 2, 3, 4, 5 } }), { 8, 1 }, false);
@@ -127,7 +135,7 @@ int main()
 	index_buffer3d.init_mutable_cubes(1);
 	index_buffer3d.bind_to_vertex_array(spinning_cube.vao());
 
-	// TODO resizing window is not working
+	window.sync_resize();
 	window.render_frame = [&]() {
 		vg::bind_shader(color_shader);
 
