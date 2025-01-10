@@ -13,9 +13,9 @@ namespace vg
 	{
 		using Entity = size_t;
 
-		class EntityTracker
+		class EntityGenerator
 		{
-			Entity next_entity_id = 0;
+			Entity next_entity_id = 1;
 			std::queue<Entity> freed_ids;
 
 		public:
@@ -31,24 +31,35 @@ namespace vg
 
 			void destroy_entity(Entity entity)
 			{
-				freed_ids.push(entity);
+				if (entity != 0)
+					freed_ids.push(entity);
 			}
 		};
 
 		struct IComponent
 		{
 			virtual ~IComponent() = default;
+			virtual std::unique_ptr<IComponent> clone() const = 0;
 		};
+
+#define VANGUARD_ICOMPONENT_CLONE(class_name) std::unique_ptr<IComponent> clone() const override { return std::make_unique<class_name>(*this); }
 
 		class ECSManager
 		{
 			std::unordered_map<Entity, std::unordered_map<std::type_index, std::unique_ptr<IComponent>>> components;
 
 		public:
+			EntityGenerator entity_generator;
+			
 			template<typename Component, typename... Args>
 			void add_component(Entity entity, Args&&... args)
 			{
 				components[entity][typeid(Component)] = std::make_unique<Component>(std::forward<Args>(args)...);
+			}
+
+			void emplace_component(Entity entity, std::unique_ptr<IComponent>&& component, std::type_index type_index)
+			{
+				components[entity][type_index] = std::move(component);
 			}
 
 			template<typename Component>
@@ -64,6 +75,11 @@ namespace vg
 					return nullptr;
 
 				return static_cast<Component*>(cit->second.get());
+			}
+
+			const std::unordered_map<std::type_index, std::unique_ptr<IComponent>>& get_all_components(Entity entity)
+			{
+				return components[entity];
 			}
 
 			template<typename Component>
@@ -130,6 +146,89 @@ namespace vg
 			}
 		};
 
+		class EntityObject
+		{
+			Entity entity;
+			ECSManager* manager;
+
+		public:
+			EntityObject(ECSManager* manager) : entity(manager->entity_generator.create_entity()), manager(manager) {}
+			
+			EntityObject(const EntityObject& other)
+				: entity(other.manager->entity_generator.create_entity()), manager(other.manager)
+			{
+				for (const auto& [type_index, component] : manager->get_all_components(other.entity))
+					manager->emplace_component(entity, component->clone(), type_index);
+			}
+
+			EntityObject(EntityObject&& other) noexcept
+				: entity(other.entity), manager(other.manager)
+			{
+				other.entity = 0;
+				other.manager = nullptr;
+			}
+
+			EntityObject& operator=(const EntityObject& other)
+			{
+				if (this != &other)
+				{
+					destroy_entity();
+					entity = other.manager->entity_generator.create_entity();
+					manager = other.manager;
+					for (const auto& [type_index, component] : manager->get_all_components(other.entity))
+						manager->emplace_component(entity, component->clone(), type_index);
+				}
+				return *this;
+			}
+
+			EntityObject& operator=(EntityObject&& other) noexcept
+			{
+				if (this != &other)
+				{
+					destroy_entity();
+					entity = other.entity;
+					manager = other.manager;
+					other.entity = 0;
+					other.manager = nullptr;
+				}
+				return *this;
+			}
+
+			~EntityObject()
+			{
+				destroy_entity();
+			}
+
+			Entity get_entity() const { return entity; }
+			void destroy_entity()
+			{
+				if (entity != 0)
+				{
+					manager->remove_entity(entity);
+					manager->entity_generator.destroy_entity(entity);
+					entity = 0;
+				}
+			}
+
+			template<typename Component, typename... Args>
+			void add_component(Args&&... args)
+			{
+				manager->add_component<Component>(entity, std::forward<Args>(args)...);
+			}
+
+			template<typename Component>
+			Component* get_component()
+			{
+				return manager->get_component<Component>(entity);
+			}
+
+			template<typename Component>
+			void remove_component()
+			{
+				manager->remove_component<Component>(entity);
+			}
+		};
+
 		struct ISystem
 		{
 			virtual ~ISystem() = default;
@@ -143,16 +242,19 @@ namespace vg
 			struct Position2D : public IComponent
 			{
 				float x, y;
+				VANGUARD_ICOMPONENT_CLONE(Position2D);
 			};
 
 			struct Velocity2D : public IComponent
 			{
 				float x, y;
+				VANGUARD_ICOMPONENT_CLONE(Velocity2D);
 			};
 
 			struct Acceleration2D : public IComponent
 			{
 				float x, y;
+				VANGUARD_ICOMPONENT_CLONE(Acceleration2D);
 			};
 		}
 
