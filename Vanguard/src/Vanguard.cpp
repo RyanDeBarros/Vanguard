@@ -99,13 +99,10 @@ void vg::enable::scissor_test(bool enable)
 		glDisable(GL_SCISSOR_TEST);
 }
 
-void vg::enable::standard_blending(bool enable)
+void vg::enable::blending(bool enable)
 {
 	if (enable)
-	{
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // TODO put in separate function
-	}
 	else
 		glDisable(GL_BLEND);
 }
@@ -164,4 +161,9 @@ void vg::set_scissor(unsigned int index, Rect<int> rect)
 void vg::set_scissors(unsigned int first_index, Rect<int>* rects, unsigned int count)
 {
 	glScissorArrayv(first_index, count, &rects->x);
+}
+
+void vg::set_blend_func(BlendFactor src, BlendFactor dst)
+{
+	glBlendFunc((GLenum)src, (GLenum)dst);
 }

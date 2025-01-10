@@ -296,6 +296,23 @@ namespace vg
 		GLuint vertex_count(GLuint i, const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / _layouts[i]->stride()); }
 	};
 
+	namespace index_buffer
+	{
+		struct IndexTemplate
+		{
+			GLuint(*base)(GLuint index);
+			GLuint(*count)();
+			size_t(*buffer_size)(GLuint num_units, IndexDataType idt);
+			void (*fill)(VoidArray& buf, GLuint num_units, IndexDataType idt);
+		};
+
+		namespace triangles
+		{
+			extern IndexTemplate quad_template;
+			extern IndexTemplate cube_template;
+		}
+	}
+
 	class IndexBuffer
 	{
 		raii::GLBuffer _ib;
@@ -355,11 +372,8 @@ namespace vg
 		void init_mutable(GLsizei count) { cpubuf.resize(count * index_data_type_size(idt)); init_mutable(); }
 		void init_mutable() { bind(); buffers::init_mutable(BufferTarget::INDEX, cpubuf.size(), cpubuf); }
 
-		// TODO specify that it is for GL_TRIANGLES.
-		void init_immutable_quads(GLuint num_quads);
-		void init_mutable_quads(GLuint num_quads);
-		void init_immutable_cubes(GLuint num_octets);
-		void init_mutable_cubes(GLuint num_octets);
+		void init_immutable_units(GLuint num_units, index_buffer::IndexTemplate index_template);
+		void init_mutable_units(GLuint num_units, index_buffer::IndexTemplate index_template);
 	};
 
 	class CPUIndexBufferBlock
@@ -383,10 +397,8 @@ namespace vg
 		void init_mutable(GLuint i, GLsizei count);
 		void init_mutable(GLuint i);
 
-		void init_immutable_quads(GLuint i, GLuint num_quads);
-		void init_mutable_quads(GLuint i, GLuint num_quads);
-		void init_immutable_cubes(GLuint i, GLuint num_octets);
-		void init_mutable_cubes(GLuint i, GLuint num_octets);
+		void init_immutable_units(GLuint i, GLuint num_units, index_buffer::IndexTemplate index_template);
+		void init_mutable_units(GLuint i, GLuint num_units, index_buffer::IndexTemplate index_template);
 	};
 
 	class CPUVertexBuffer

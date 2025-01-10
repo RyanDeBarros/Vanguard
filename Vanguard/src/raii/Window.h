@@ -82,9 +82,12 @@ namespace vg
 
 	struct ContextConfig
 	{
-		bool standard_blending = true;
+		bool blending = true;
 		bool scissor_test = true;
 		bool vsync_on = true;
+
+		BlendFactor blend_src_factor = BlendFactor::SRC_ALPHA;
+		BlendFactor blend_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
 	};
 
 	enum class DisplayMode

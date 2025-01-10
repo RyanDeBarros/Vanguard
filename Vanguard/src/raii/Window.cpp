@@ -102,9 +102,10 @@ vg::Window::Window(int width, int height, const char* title, const WindowInitial
 
 	init_gl_constants();
 
-	enable::standard_blending(config.standard_blending);
+	enable::blending(config.blending);
 	enable::scissor_test(config.scissor_test);
 	enable::vsync(config.vsync_on);
+	set_blend_func(config.blend_src_factor, config.blend_dst_factor);
 
 	display_mode = initial_values.display_mode;
 	scale_width = initial_values.scale_width;

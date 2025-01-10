@@ -485,94 +485,79 @@ void vg::MultiVertexBuffer::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i,
 	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
-// TODO make extern and specify it's for GL_TRIANGLES. Implement for GL_TRIANGLE_STRIP, GL_LINES, etc.
-
-static std::array<GLuint, 6> quad_indexes{ 0, 1, 2, 2, 3, 0 };
-
-template<typename DataType>
-static void fill_quad_indexes(vg::VoidArray& cpubuf, GLuint num_quads)
+namespace vg::index_buffer::triangles
 {
-	for (GLuint i = 0; i < num_quads; ++i)
-		for (GLuint j = 0; j < 6; ++j)
-			cpubuf.ref<DataType>((j + 6 * i) * sizeof(DataType)) = quad_indexes[j] + 4 * i;
+	inline std::array<GLuint, 6> quad_indexes{
+		0, 1, 2, 2, 3, 0
+	};
+	static GLuint quad_base(GLuint index) { return quad_indexes[index]; }
+	static GLuint quad_count() { return (GLuint)quad_indexes.size(); }
+	static size_t quad_buffer_size(GLuint num_units, IndexDataType idt) { return index_data_type_size(idt) * quad_indexes.size() * num_units; }
+	template<typename DataType>
+	static void quad_fill_tmpl(VoidArray& buf, GLuint num_units)
+	{
+		for (GLuint i = 0; i < num_units; ++i)
+			for (GLuint j = 0; j < quad_indexes.size(); ++j)
+				buf.ref<DataType>((j + quad_indexes.size() * i) * sizeof(DataType)) = quad_indexes[j] + 4 * i;
+	}
+	static void quad_fill(VoidArray& buf, GLuint num_units, IndexDataType idt)
+	{
+		if (idt == IndexDataType::UBYTE)
+			quad_fill_tmpl<GLubyte>(buf, num_units);
+		else if (idt == IndexDataType::USHORT)
+			quad_fill_tmpl<GLushort>(buf, num_units);
+		else if (idt == IndexDataType::UINT)
+			quad_fill_tmpl<GLuint>(buf, num_units);
+	}
+	IndexTemplate quad_template = { &quad_base, &quad_count, &quad_buffer_size, &quad_fill };
+
+	inline std::array<GLuint, 36> cube_indexes{
+		// Front face
+		0, 1, 2, 2, 3, 0,
+		// Back face
+		4, 5, 6, 6, 7, 4,
+		// Left face
+		4, 0, 3, 3, 7, 4,
+		// Right face
+		1, 5, 6, 6, 2, 1,
+		// Top face
+		3, 2, 6, 6, 7, 3,
+		// Bottom face
+		4, 5, 1, 1, 0, 4
+	};
+	static GLuint cube_base(GLuint index) { return cube_indexes[index]; }
+	static GLuint cube_count() { return (GLuint)cube_indexes.size(); }
+	static size_t cube_buffer_size(GLuint num_units, IndexDataType idt) { return index_data_type_size(idt) * cube_indexes.size() * num_units; }
+	template<typename DataType>
+	static void cube_fill_tmpl(VoidArray& buf, GLuint num_units)
+	{
+		for (GLuint i = 0; i < num_units; ++i)
+			for (GLuint j = 0; j < cube_count(); ++j)
+				buf.ref<DataType>((j + cube_count() * i) * sizeof(DataType)) = cube_indexes[j] + 8 * i;
+	}
+	static void cube_fill(VoidArray& buf, GLuint num_units, IndexDataType idt)
+	{
+		if (idt == IndexDataType::UBYTE)
+			cube_fill_tmpl<GLubyte>(buf, num_units);
+		else if (idt == IndexDataType::USHORT)
+			cube_fill_tmpl<GLushort>(buf, num_units);
+		else if (idt == IndexDataType::UINT)
+			cube_fill_tmpl<GLuint>(buf, num_units);
+	}
+	IndexTemplate cube_template = { &cube_base, &cube_count, &cube_buffer_size, &cube_fill };
 }
 
-static std::array<GLuint, 36> cube_indexes{
-	// Front face
-	0, 1, 2, 2, 3, 0,
-	// Back face
-	4, 5, 6, 6, 7, 4,
-	// Left face
-	4, 0, 3, 3, 7, 4,
-	// Right face
-	1, 5, 6, 6, 2, 1,
-	// Top face
-	3, 2, 6, 6, 7, 3,
-	// Bottom face
-	4, 5, 1, 1, 0, 4
-};
-
-template<typename DataType>
-static void fill_cube_indexes(vg::VoidArray& cpubuf, GLuint num_cubes)
+void vg::CPUIndexBuffer::init_immutable_units(GLuint num_units, index_buffer::IndexTemplate index_template)
 {
-	for (GLuint i = 0; i < num_cubes; ++i)
-		for (GLuint j = 0; j < 36; ++j)
-			cpubuf.ref<DataType>((j + 36 * i) * sizeof(DataType)) = cube_indexes[j] + 8 * i;
-}
-
-void vg::CPUIndexBuffer::init_immutable_quads(GLuint num_quads)
-{
-	cpubuf.resize(num_quads * 6 * index_data_type_size(idt));
-
-	if (idt == IndexDataType::UBYTE)
-		fill_quad_indexes<GLubyte>(cpubuf, num_quads);
-	else if (idt == IndexDataType::USHORT)
-		fill_quad_indexes<GLushort>(cpubuf, num_quads);
-	else if (idt == IndexDataType::UINT)
-		fill_quad_indexes<GLuint>(cpubuf, num_quads);
-
+	cpubuf.resize(index_template.buffer_size(num_units, idt));
+	index_template.fill(cpubuf, num_units, idt);
 	init_immutable();
 }
 
-void vg::CPUIndexBuffer::init_mutable_quads(GLuint num_quads)
+void vg::CPUIndexBuffer::init_mutable_units(GLuint num_units, index_buffer::IndexTemplate index_template)
 {
-	cpubuf.resize(num_quads * 6 * index_data_type_size(idt));
-
-	if (idt == IndexDataType::UBYTE)
-		fill_quad_indexes<GLubyte>(cpubuf, num_quads);
-	else if (idt == IndexDataType::USHORT)
-		fill_quad_indexes<GLushort>(cpubuf, num_quads);
-	else if (idt == IndexDataType::UINT)
-		fill_quad_indexes<GLuint>(cpubuf, num_quads);
-
-	init_mutable();
-}
-
-void vg::CPUIndexBuffer::init_immutable_cubes(GLuint num_cubes)
-{
-	cpubuf.resize(num_cubes * 6 * 6 * index_data_type_size(idt));
-
-	if (idt == IndexDataType::UBYTE)
-		fill_cube_indexes<GLubyte>(cpubuf, num_cubes);
-	else if (idt == IndexDataType::USHORT)
-		fill_cube_indexes<GLushort>(cpubuf, num_cubes);
-	else if (idt == IndexDataType::UINT)
-		fill_cube_indexes<GLuint>(cpubuf, num_cubes);
-
-	init_immutable();
-}
-
-void vg::CPUIndexBuffer::init_mutable_cubes(GLuint num_cubes)
-{
-	cpubuf.resize(num_cubes * 6 * 6 * index_data_type_size(idt));
-
-	if (idt == IndexDataType::UBYTE)
-		fill_cube_indexes<GLubyte>(cpubuf, num_cubes);
-	else if (idt == IndexDataType::USHORT)
-		fill_cube_indexes<GLushort>(cpubuf, num_cubes);
-	else if (idt == IndexDataType::UINT)
-		fill_cube_indexes<GLuint>(cpubuf, num_cubes);
-
+	cpubuf.resize(index_template.buffer_size(num_units, idt));
+	index_template.fill(cpubuf, num_units, idt);
 	init_mutable();
 }
 
@@ -614,63 +599,19 @@ void vg::CPUIndexBufferBlock::init_mutable(GLuint i)
 	buffers::init_mutable(BufferTarget::INDEX, cpubuf.size(), cpubuf);
 }
 
-void vg::CPUIndexBufferBlock::init_immutable_quads(GLuint i, GLuint num_quads)
+void vg::CPUIndexBufferBlock::init_immutable_units(GLuint i, GLuint num_units, index_buffer::IndexTemplate index_template)
 {
 	auto& idt_cpubuf = idt_cpubufs[i];
-	idt_cpubuf.second.resize(num_quads * 6 * index_data_type_size(idt_cpubuf.first));
-
-	if (idt_cpubuf.first == IndexDataType::UBYTE)
-		fill_quad_indexes<GLubyte>(idt_cpubuf.second, num_quads);
-	else if (idt_cpubuf.first == IndexDataType::USHORT)
-		fill_quad_indexes<GLushort>(idt_cpubuf.second, num_quads);
-	else if (idt_cpubuf.first == IndexDataType::UINT)
-		fill_quad_indexes<GLuint>(idt_cpubuf.second, num_quads);
-
+	idt_cpubuf.second.resize(index_template.buffer_size(num_units, idt_cpubuf.first));
+	index_template.fill(idt_cpubuf.second, num_units, idt_cpubuf.first);
 	init_immutable(i);
 }
 
-void vg::CPUIndexBufferBlock::init_mutable_quads(GLuint i, GLuint num_quads)
+void vg::CPUIndexBufferBlock::init_mutable_units(GLuint i, GLuint num_units, index_buffer::IndexTemplate index_template)
 {
 	auto& idt_cpubuf = idt_cpubufs[i];
-	idt_cpubuf.second.resize(num_quads * 6 * index_data_type_size(idt_cpubuf.first));
-
-	if (idt_cpubuf.first == IndexDataType::UBYTE)
-		fill_quad_indexes<GLubyte>(idt_cpubuf.second, num_quads);
-	else if (idt_cpubuf.first == IndexDataType::USHORT)
-		fill_quad_indexes<GLushort>(idt_cpubuf.second, num_quads);
-	else if (idt_cpubuf.first == IndexDataType::UINT)
-		fill_quad_indexes<GLuint>(idt_cpubuf.second, num_quads);
-
-	init_mutable(i);
-}
-
-void vg::CPUIndexBufferBlock::init_immutable_cubes(GLuint i, GLuint num_cubes)
-{
-	auto& idt_cpubuf = idt_cpubufs[i];
-	idt_cpubuf.second.resize(num_cubes * 6 * 6 * index_data_type_size(idt_cpubuf.first));
-
-	if (idt_cpubuf.first == IndexDataType::UBYTE)
-		fill_cube_indexes<GLubyte>(idt_cpubuf.second, num_cubes);
-	else if (idt_cpubuf.first == IndexDataType::USHORT)
-		fill_cube_indexes<GLushort>(idt_cpubuf.second, num_cubes);
-	else if (idt_cpubuf.first == IndexDataType::UINT)
-		fill_cube_indexes<GLuint>(idt_cpubuf.second, num_cubes);
-
-	init_immutable(i);
-}
-
-void vg::CPUIndexBufferBlock::init_mutable_cubes(GLuint i, GLuint num_cubes)
-{
-	auto& idt_cpubuf = idt_cpubufs[i];
-	idt_cpubuf.second.resize(num_cubes * 6 * 6 * index_data_type_size(idt_cpubuf.first));
-
-	if (idt_cpubuf.first == IndexDataType::UBYTE)
-		fill_cube_indexes<GLubyte>(idt_cpubuf.second, num_cubes);
-	else if (idt_cpubuf.first == IndexDataType::USHORT)
-		fill_cube_indexes<GLushort>(idt_cpubuf.second, num_cubes);
-	else if (idt_cpubuf.first == IndexDataType::UINT)
-		fill_cube_indexes<GLuint>(idt_cpubuf.second, num_cubes);
-
+	idt_cpubuf.second.resize(index_template.buffer_size(num_units, idt_cpubuf.first));
+	index_template.fill(idt_cpubuf.second, num_units, idt_cpubuf.first);
 	init_mutable(i);
 }
 

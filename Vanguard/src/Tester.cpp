@@ -41,7 +41,7 @@ int main()
 
 	vg::CPUIndexBuffer index_buffer(vg::IndexDataType::UBYTE);
 	index_buffer.bind_to_vertex_array(colorful_vertex_buffer.vao());
-	index_buffer.init_immutable_quads(1);
+	index_buffer.init_immutable_units(1, vg::index_buffer::triangles::quad_template);
 
 	vg::CPUVertexBufferBlock white_square(vg::VertexBufferBlock(vb_color_layout, { { 0, 2, 3, 4 }, { 1 } }), 4, false);
 

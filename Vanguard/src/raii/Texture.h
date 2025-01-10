@@ -219,7 +219,7 @@ namespace vg
 	extern GLenum chpp_format(CHPP chpp);
 	extern GLint chpp_internal_format(CHPP chpp);
 
-	// TODO support for GL_DEPTH_COMPONENT format and other formats that aren't computed directly from CHPP.
+	// LATER support for GL_DEPTH_COMPONENT format and other formats that aren't computed directly from CHPP.
 	namespace tex
 	{
 		enum class DataType

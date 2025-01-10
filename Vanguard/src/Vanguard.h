@@ -49,7 +49,7 @@ namespace vg
 
 	namespace enable
 	{
-		extern void standard_blending(bool enable);
+		extern void blending(bool enable);
 		extern void depth_test(bool enable);
 		extern void scissor_test(bool enable);
 		extern void vsync(bool enable);
@@ -64,4 +64,28 @@ namespace vg
 	extern void set_scissor(Rect<int> rect);
 	extern void set_scissor(unsigned int index, Rect<int> rect);
 	extern void set_scissors(unsigned int first_index, Rect<int>* rects, unsigned int count);
+
+	enum class BlendFactor
+	{
+		ZERO = GL_ZERO,
+		ONE = GL_ONE,
+		SRC_COLOR = GL_SRC_COLOR,
+		ONE_MINUS_SRC_COLOR = GL_ONE_MINUS_SRC_COLOR,
+		DST_COLOR = GL_DST_COLOR,
+		ONE_MINUS_DST_COLOR = GL_ONE_MINUS_DST_COLOR,
+		SRC_ALPHA = GL_SRC_ALPHA,
+		ONE_MINUS_SRC_ALPHA = GL_ONE_MINUS_SRC_ALPHA,
+		DST_ALPHA = GL_DST_ALPHA,
+		ONE_MINUS_DST_ALPHA = GL_ONE_MINUS_DST_ALPHA,
+		CONSTANT_COLOR = GL_CONSTANT_COLOR,
+		ONE_MINUS_CONSTANT_COLOR = GL_ONE_MINUS_CONSTANT_COLOR,
+		CONSTANT_ALPHA = GL_CONSTANT_ALPHA,
+		ONE_MINUS_CONSTANT_ALPHA = GL_ONE_MINUS_CONSTANT_ALPHA,
+		SRC_ALPHA_SATURATE = GL_SRC_ALPHA_SATURATE,
+		SRC1_COLOR = GL_SRC1_COLOR,
+		ONE_MINUS_SRC1_COLOR = GL_ONE_MINUS_SRC1_COLOR,
+		SRC1_ALPHA = GL_SRC1_ALPHA,
+		ONE_MINUS_SRC1_ALPHA = GL_ONE_MINUS_SRC1_ALPHA,
+	};
+	extern void set_blend_func(BlendFactor src, BlendFactor dst);
 }
