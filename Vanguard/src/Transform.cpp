@@ -182,3 +182,8 @@ std::array<glm::vec3, 8> vg::cube_vertex_positions(glm::vec3 size, glm::vec3 piv
 		size * (pivot + glm::vec3{ -1.0f,  0.0f, -1.0f })
 	};
 }
+
+void vg::rotate_quaternion(glm::quat& quaternion, float angle, glm::vec3 axis)
+{
+	quaternion = glm::normalize(quaternion * glm::angleAxis(angle, axis));
+}

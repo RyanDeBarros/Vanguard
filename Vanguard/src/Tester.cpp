@@ -16,12 +16,7 @@ int main()
 	std::cout << "Welcome to Vanguard!" << std::endl;
 	vg::init();
 
-	vg::WindowInitialValues wivs;
-	wivs.desired_aspect_ratio_override = 16.0f / 9.0f;
-	wivs.scale_width = 1.0f / 1.155f;
-	wivs.scale_height = 1.155f;
-	wivs.display_mode = vg::DisplayMode::KEEP_SCALE;
-	vg::Window window(1440, 1080, "Hello World", wivs);
+	vg::Window window(1920, 1080, "Hello World");
 	window.clear_color = { 0.2f, 0.4f, 0.7f, 1.0f };
 	
 	vg::raii::Shader color_shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
@@ -117,24 +112,6 @@ int main()
 	vg::Transformer2D sprite_grandparent;
 	vg::attach_transformer(&sprite_grandparent, &sprite_parent);
 
-	vg::raii::Shader color3d_shader(vg::FilePath("shaders/color3d.vert"), vg::FilePath("shaders/color3d.frag"));
-	vg::bind_shader(color3d_shader);
-	vg::uniforms::send_4x4(color3d_shader, "uVP", window.orthographic_projection(-1200, 1200));
-	window.vp_updates.push_back({ &color3d_shader, vg::Window::ProjectionMode::ORTHOGRAPHIC_3D, -1200, 1200 });
-
-	auto color3d_layout = std::make_shared<vg::VertexBufferLayout>(color3d_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 } } });
-	vg::CPUVertexBufferBlock spinning_cube(vg::VertexBufferBlock(color3d_layout, { { 0, 1 }, { 2, 3, 4, 5 } }), { 8, 1 }, false);
-	spinning_cube.set_attributes(0, 0, 0, vg::cube_vertex_positions({ 100.0f, 100.0f, 100.0f }, { 0.5f, 0.5f, 0.5f }));
-	spinning_cube.set_attribute(0, 1, glm::vec4{ 0.7f, 0.7f, 0.7f, 0.5f });
-
-	vg::Transformer3D spinning_cube_transformer({ { window.width() * 0.5f, window.height() * 0.5f, 0.0f}, { 1.0f, 0.6f, 0.3f, 1.0f }, glm::vec3(2) });
-	spinning_cube.set_attribute(1, 2, spinning_cube_transformer.global());
-	spinning_cube.subsend_all_blocks();
-
-	vg::CPUIndexBuffer index_buffer3d(vg::IndexDataType::UBYTE);
-	index_buffer3d.init_mutable_cubes(1);
-	index_buffer3d.bind_to_vertex_array(spinning_cube.vao());
-
 	window.sync_resize();
 	window.render_frame = [&]() {
 		vg::bind_shader(color_shader);
@@ -158,14 +135,7 @@ int main()
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
 		tripair.bind_vao();
-		//vg::draw::arrays(vg::DrawMode::TRIANGLES, 0, tripair_indexer.vertex_count());
-		//vg::draw::instanced::arrays(vg::DrawMode::TRIANGLES, 0, 3, 1, 0);
-		//vg::draw::instanced::arrays(vg::DrawMode::TRIANGLES, 3, 3, 1, 1);
 		vg::draw::instanced::arrays(vg::DrawMode::TRIANGLES, 0, tripair_indexer.vertex_count(0), tripair_indexer.vertex_count(1), 0);
-
-		//tripair.set_attribute(1, 2, 1, 1, glm::mat3{ { glm::cos(glfwGetTime()), glm::sin(glfwGetTime()), 0.0f }, { -glm::sin(glfwGetTime()), glm::cos(glfwGetTime()), 0.0f }, { 0.0f, 0.0f, 1.0f } });
-		//tripair.bind_vb(1);
-		//tripair.subsend_single(1, 1, 2, sizeof(glm::mat3));
 
 		vg::bind_shader(img_shader);
 		
@@ -186,22 +156,6 @@ int main()
 		sprite.ref<glm::mat3>(2, 0, 4) = sprite_transformer.global();
 		sprite.bind_vb(2);
 		sprite.subsend_single(2, 0, 4, sizeof(glm::mat3));
-
-		vg::bind_shader(color3d_shader);
-		spinning_cube.bind_vao();
-		vg::enable::depth_test(true); // only for 3d objects
-		vg::draw::index_buffer::full(index_buffer3d, vg::DrawMode::TRIANGLES);
-		vg::enable::depth_test(false);
-
-		// TODO abstract setting rotation angle/axis, spinning, etc.
-		spinning_cube_transformer.local.rotation *= glm::angleAxis(0.01f, glm::vec3{ 1.0f, 0.6f, 0.3f });
-		spinning_cube_transformer.local.rotation = glm::normalize(spinning_cube_transformer.local.rotation);
-		spinning_cube_transformer.mark();
-
-		spinning_cube_transformer.sync();
-		spinning_cube.ref<glm::mat4>(1, 0, 2) = spinning_cube_transformer.global();
-		spinning_cube.bind_vb(1);
-		spinning_cube.subsend_single(1, 0, 2, sizeof(glm::mat4));
 		};
 
 	for (;;)

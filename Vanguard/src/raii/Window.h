@@ -65,7 +65,7 @@ namespace vg
 		bool mouse_passthrough = false;
 		unsigned int position_x = GLFW_ANY_POSITION;
 		unsigned int position_y = GLFW_ANY_POSITION;
-		
+
 		int refresh_rate = GLFW_DONT_CARE;
 		bool stereo = false;
 		bool srgb_capable = false;
@@ -157,11 +157,12 @@ namespace vg
 		{
 			ORTHOGRAPHIC_2D,
 			ORTHOGRAPHIC_3D,
-			PERSPECTIVE
+			PERSPECTIVE_2D,
+			PERSPECTIVE_3D
 		};
 		glm::mat3 orthographic_projection() const;
 		glm::mat4 orthographic_projection(float z_near, float z_far) const;
-		// TODO perspective projection
+		glm::mat4 perspective_projection(float fov, float z_near, float z_far, glm::vec2 aspect_scale = { 1.0f, 1.0f }) const;
 
 		bool is_key_pressed(input::Key key) const;
 		bool is_shift_pressed() const;
@@ -217,7 +218,8 @@ namespace vg
 		{
 			raii::Shader* shader;
 			ProjectionMode proj_mode;
-			float z_near, z_far;
+			float z_near, z_far, fov;
+			glm::vec2 aspect_scale = { 1.0f, 1.0f };
 		};
 		std::vector<ShaderVPUpdate> vp_updates;
 

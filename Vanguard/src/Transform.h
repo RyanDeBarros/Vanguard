@@ -100,4 +100,6 @@ namespace vg
 	};
 	
 	extern std::array<glm::vec3, 8> cube_vertex_positions(glm::vec3 size, glm::vec3 pivot);
+	
+	extern void rotate_quaternion(glm::quat& quaternion, float angle, glm::vec3 axis);
 }

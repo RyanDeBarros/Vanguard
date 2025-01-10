@@ -306,6 +306,12 @@ glm::mat4 vg::Window::orthographic_projection(float z_near, float z_far) const
 	}
 }
 
+glm::mat4 vg::Window::perspective_projection(float fov, float z_near, float z_far, glm::vec2 aspect_scale) const
+{
+	auto sz = glm::vec2(size());
+	return glm::perspectiveFov(fov, sz.x * aspect_scale.x, sz.y * aspect_scale.y, z_near, z_far);
+}
+
 bool vg::Window::is_key_pressed(input::Key key) const
 {
 	return glfwGetKey(_w, int(key)) == int(input::Action::PRESS);
@@ -384,7 +390,10 @@ void vg::Window::sync_resize(int w, int h)
 			vg::uniforms::send_3x3(*update.shader, "uVP", ortho_proj);
 		else if (update.proj_mode == ProjectionMode::ORTHOGRAPHIC_3D)
 			vg::uniforms::send_4x4(*update.shader, "uVP", orthographic_projection(update.z_near, update.z_far));
-		//else if (update.proj_mode == ProjectionMode::PERSPECTIVE) // TODO
+		else if (update.proj_mode == ProjectionMode::PERSPECTIVE_2D)
+			vg::uniforms::send_3x3(*update.shader, "uVP", perspective_projection(update.fov, update.z_near, update.z_far, update.aspect_scale));
+		else if (update.proj_mode == ProjectionMode::PERSPECTIVE_3D)
+			vg::uniforms::send_4x4(*update.shader, "uVP", perspective_projection(update.fov, update.z_near, update.z_far, update.aspect_scale));
 	}
 	frame_cycle();
 }
