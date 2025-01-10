@@ -88,4 +88,7 @@ namespace vg
 		ONE_MINUS_SRC1_ALPHA = GL_ONE_MINUS_SRC1_ALPHA,
 	};
 	extern void set_blend_func(BlendFactor src, BlendFactor dst);
+
+	extern double time;
+	extern double delta_time;
 }

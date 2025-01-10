@@ -10,6 +10,9 @@
 // LATER use Logger
 #include <iostream>
 
+double vg::time = 0.0f;
+double vg::delta_time = 0.0f;
+
 void vg::init(const vg::InitializationConfiguration& config)
 {
 	if (glfwInit() != GLFW_TRUE)
@@ -29,6 +32,9 @@ void vg::new_frame()
 {
 	glfwPollEvents();
 	update_bound_shader();
+	double new_time = glfwGetTime();
+	delta_time = new_time - time;
+	time = new_time;
 }
 
 bool vg::min_opengl_version_is_at_least(GLuint major, GLuint minor)

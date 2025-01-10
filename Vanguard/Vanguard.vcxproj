@@ -177,6 +177,7 @@
     <ClCompile Include="vendor\Vendor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ECS.h" />
     <ClInclude Include="src\Errors.h" />
     <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\Draw.h" />

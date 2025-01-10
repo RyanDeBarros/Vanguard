@@ -160,7 +160,7 @@ int main()
 
 	for (;;)
 	{
-		glfwPollEvents();
+		vg::new_frame();
 		if (window.should_close())
 			break;
 		window.frame_cycle();
