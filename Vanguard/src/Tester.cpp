@@ -10,6 +10,7 @@
 #include "utils/IO.h"
 #include "raii/Texture.h"
 #include "Transform.h"
+#include "ShaderRegistry.h"
 
 int main()
 {
@@ -18,13 +19,15 @@ int main()
 
 	vg::Window window(1920, 1080, "Hello World");
 	window.clear_color = { 0.2f, 0.4f, 0.7f, 1.0f };
-	
-	vg::raii::Shader color_shader(vg::FilePath("shaders/color.vert"), vg::FilePath("shaders/color.frag"));
-	vg::bind_shader(color_shader);
-	vg::uniforms::send_3x3(color_shader, "uVP", window.orthographic_projection());
-	window.vp_updates.push_back({ &color_shader, vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
 
-	auto vb_color_layout = std::make_shared<vg::VertexBufferLayout>(color_shader);
+	vg::ShaderRegistry shaders;
+	
+	auto color_shader = shaders.load_shader("shaders/color.vert", "shaders/color.frag");
+	vg::bind_shader(color_shader);
+	vg::uniforms::send_3x3(*shaders.ref_shader(color_shader), "uVP", window.orthographic_projection());
+	window.vp_updates.push_back({ shaders.ref_shader(color_shader), vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
+
+	auto vb_color_layout = std::make_shared<vg::VertexBufferLayout>(*shaders.ref_shader(color_shader));
 
 	vg::CPUVertexBuffer colorful_vertex_buffer(vg::VertexBuffer(vb_color_layout), 4, false);
 
@@ -57,7 +60,7 @@ int main()
 	index_buffer.bind_to_vertex_array(white_square.vao());
 
 	vg::CompactVBBlockIndexer tripair_indexer({ { 3, 3 }, { 1, 1 } });
-	auto vb_color_split_layout = std::make_shared<vg::VertexBufferLayout>(color_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 } } });
+	auto vb_color_split_layout = std::make_shared<vg::VertexBufferLayout>(*shaders.ref_shader(color_shader), vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 } } });
 	vg::CPUVertexBufferBlock tripair(vg::VertexBufferBlock(vb_color_split_layout, { { 0, 1 }, { 2, 3, 4 } }), { tripair_indexer.vertex_count(0), tripair_indexer.vertex_count(1) }, false);
 
 	tripair.set_attributes(0, 0, tripair_indexer.vertex(0, 0, 0), std::array<glm::vec2, 3>{
@@ -76,15 +79,13 @@ int main()
 	tripair.set_attribute(1, 2, tripair_indexer.vertex(1, 1, 0), tripair_indexer.vertex_count(1, 1), glm::mat3({ 0.8f, 0.0f, 0.0f }, { 0.0f, 0.8f, 0.0f }, { 0.0f, 0.0f, 1.0f }));
 	tripair.subsend_all_blocks();
 
-	std::string image_vert = vg::io::read_file("shaders/image.vert");
-	std::string image_frag = vg::io::read_template_file("shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units)}});
-	vg::raii::Shader img_shader(image_vert, image_frag);
+	auto img_shader = shaders.load_shader("shaders/image.vert", {}, "shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units) } });
 	vg::bind_shader(img_shader);
-	vg::uniforms::send_3x3(img_shader, "uVP", window.orthographic_projection());
-	window.vp_updates.push_back({ &img_shader, vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
+	vg::uniforms::send_3x3(*shaders.ref_shader(img_shader), "uVP", window.orthographic_projection());
+	window.vp_updates.push_back({ shaders.ref_shader(img_shader), vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
 
 	// It is possible to have a vertex buffer with only one vertex's attribute, but only if setting the divisor. This works even with non-instanced rendering
-	auto img_layout = std::make_shared<vg::VertexBufferLayout>(img_shader, vg::VertexAttributeSpecificationList{ {}, {}, { { 1, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 } } });
+	auto img_layout = std::make_shared<vg::VertexBufferLayout>(*shaders.ref_shader(img_shader), vg::VertexAttributeSpecificationList{ {}, {}, { { 1, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 } } });
 
 	vg::CPUVertexBufferBlock sprite(vg::VertexBufferBlock(img_layout, { { 0, 2, 3 }, { 1 }, { 4, 5, 6 } }), { 4, 1, 1 }, false);
 	index_buffer.bind_to_vertex_array(sprite.vao());
@@ -166,6 +167,7 @@ int main()
 		window.frame_cycle();
 	}
 
+	shaders.unload_all();
 	vg::terminate();
 	return 0;
 }

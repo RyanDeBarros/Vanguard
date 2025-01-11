@@ -163,6 +163,7 @@
     <ClCompile Include="src\raii\FrameBuffer.cpp" />
     <ClCompile Include="src\Renderable.cpp" />
     <ClCompile Include="src\Errors.cpp" />
+    <ClCompile Include="src\ShaderRegistry.cpp" />
     <ClCompile Include="src\Transform.cpp" />
     <ClCompile Include="src\utils\FilePath.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\Draw.h" />
     <ClInclude Include="src\raii\FrameBuffer.h" />
+    <ClInclude Include="src\ShaderRegistry.h" />
     <ClInclude Include="src\Transform.h" />
     <ClInclude Include="src\utils\DynamicArray.h" />
     <ClInclude Include="src\utils\FilePath.h" />

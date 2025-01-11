@@ -84,7 +84,7 @@ namespace vg
 	{
 		bool blending = true;
 		bool scissor_test = true;
-		bool vsync_on = true;
+		unsigned int vsync_frames = 1;
 
 		BlendFactor blend_src_factor = BlendFactor::SRC_ALPHA;
 		BlendFactor blend_dst_factor = BlendFactor::ONE_MINUS_SRC_ALPHA;
@@ -219,7 +219,7 @@ namespace vg
 		
 		struct ShaderVPUpdate
 		{
-			raii::Shader* shader;
+			const raii::Shader* shader;
 			ProjectionMode proj_mode;
 			float z_near, z_far, fov;
 			glm::vec2 aspect_scale = { 1.0f, 1.0f };

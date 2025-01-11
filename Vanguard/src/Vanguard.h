@@ -52,11 +52,11 @@ namespace vg
 		extern void blending(bool enable);
 		extern void depth_test(bool enable);
 		extern void scissor_test(bool enable);
-		extern void vsync(bool enable);
 	}
 
 	extern void set_clear_color(glm::vec4 rgba);
 	extern void clear_buffer();
+	extern void set_vsync(unsigned int frames);
 
 	extern void set_viewport(Rect<int> rect);
 	extern void set_viewport(unsigned int index, Rect<float> rect);
@@ -89,6 +89,9 @@ namespace vg
 	};
 	extern void set_blend_func(BlendFactor src, BlendFactor dst);
 
-	extern double time;
-	extern double delta_time;
+	namespace data
+	{
+		extern double time;
+		extern double delta_time;
+	}
 }

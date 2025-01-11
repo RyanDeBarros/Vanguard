@@ -266,8 +266,8 @@ namespace vg
 				{
 					manager.travel_bi_components<components::Position2D, components::Velocity2D>(
 						[](components::Position2D* position, const components::Velocity2D* velocity, Entity entity) {
-							position->x += velocity->x * vg::delta_time;
-							position->y += velocity->y * vg::delta_time;
+							position->x += velocity->x * vg::data::delta_time;
+							position->y += velocity->y * vg::data::delta_time;
 						});
 				}
 			};
@@ -278,10 +278,10 @@ namespace vg
 				{
 					manager.travel_tri_components<components::Position2D, components::Velocity2D, components::Acceleration2D>(
 						[](components::Position2D* position, components::Velocity2D* velocity, const components::Acceleration2D* acceleration, Entity entity) {
-							position->x += velocity->x * vg::delta_time;
-							position->y += velocity->y * vg::delta_time;
-							velocity->x += acceleration->x * vg::delta_time;
-							velocity->y += acceleration->y * vg::delta_time;
+							position->x += velocity->x * vg::data::delta_time;
+							position->y += velocity->y * vg::data::delta_time;
+							velocity->x += acceleration->x * vg::data::delta_time;
+							velocity->y += acceleration->y * vg::data::delta_time;
 						});
 				}
 			};

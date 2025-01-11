@@ -104,7 +104,7 @@ vg::Window::Window(int width, int height, const char* title, const WindowInitial
 
 	enable::blending(config.blending);
 	enable::scissor_test(config.scissor_test);
-	enable::vsync(config.vsync_on);
+	set_vsync(config.vsync_frames);
 	set_blend_func(config.blend_src_factor, config.blend_dst_factor);
 
 	display_mode = initial_values.display_mode;

@@ -10,8 +10,8 @@
 // LATER use Logger
 #include <iostream>
 
-double vg::time = 0.0f;
-double vg::delta_time = 0.0f;
+double vg::data::time = 0.0f;
+double vg::data::delta_time = 0.0f;
 
 void vg::init(const vg::InitializationConfiguration& config)
 {
@@ -33,8 +33,8 @@ void vg::new_frame()
 	glfwPollEvents();
 	update_bound_shader();
 	double new_time = glfwGetTime();
-	delta_time = new_time - time;
-	time = new_time;
+	data::delta_time = new_time - data::time;
+	data::time = new_time;
 }
 
 bool vg::min_opengl_version_is_at_least(GLuint major, GLuint minor)
@@ -121,14 +121,6 @@ void vg::enable::depth_test(bool enable)
 		glDisable(GL_DEPTH_TEST);
 }
 
-void vg::enable::vsync(bool enable)
-{
-	if (enable)
-		glfwSwapInterval(1);
-	else
-		glfwSwapInterval(0);
-}
-
 void vg::set_clear_color(glm::vec4 rgba)
 {
 	glClearColor(rgba[0], rgba[1], rgba[2], rgba[3]);
@@ -137,6 +129,11 @@ void vg::set_clear_color(glm::vec4 rgba)
 void vg::clear_buffer()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void vg::set_vsync(unsigned int frames)
+{
+	glfwSwapInterval(frames);
 }
 
 void vg::set_viewport(Rect<int> rect)
