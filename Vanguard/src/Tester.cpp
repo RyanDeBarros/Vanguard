@@ -119,14 +119,14 @@ int main()
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
 		colorful_vertex_buffer.bind_vb();
-		colorful_vertex_buffer.ref<glm::vec4>(0, 1).x = glm::sqrt(0.5f * (1.0f + glm::sin((float)glfwGetTime() + 0 * glm::pi<float>() / 3)));
+		colorful_vertex_buffer.ref<glm::vec4>(0, 1).x = glm::sqrt(0.5f * (1.0f + glm::sin(vg::data::elapsed_time() + 0 * glm::pi<float>() / 3)));
 		colorful_vertex_buffer.subsend_single(0, 1);
-		colorful_vertex_buffer.ref<glm::vec4>(1, 1).y = glm::sqrt(0.5f * (1.0f + glm::sin((float)glfwGetTime() + 1 * glm::pi<float>() / 3)));
+		colorful_vertex_buffer.ref<glm::vec4>(1, 1).y = glm::sqrt(0.5f * (1.0f + glm::sin(vg::data::elapsed_time() + 1 * glm::pi<float>() / 3)));
 		colorful_vertex_buffer.subsend_single(1, 1);
-		colorful_vertex_buffer.ref<glm::vec4>(2, 1).z = glm::sqrt(0.5f * (1.0f + glm::sin((float)glfwGetTime() + 2 * glm::pi<float>() / 3)));
+		colorful_vertex_buffer.ref<glm::vec4>(2, 1).z = glm::sqrt(0.5f * (1.0f + glm::sin(vg::data::elapsed_time() + 2 * glm::pi<float>() / 3)));
 		colorful_vertex_buffer.subsend_single(2, 1);
 
-		white_square.ref<glm::vec2>(0, 0, 0).x -= window.convert_coordinates({ 0.5f * glm::sin((float)glfwGetTime() * 20.0f), 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN).x * vg::data::delta_time;
+		white_square.ref<glm::vec2>(0, 0, 0).x -= window.convert_coordinates({ 0.5f * glm::sin(vg::data::elapsed_time() * 20.0f), 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN).x * vg::data::delta_time;
 		white_square.bind_vb(0);
 		white_square.subsend_single(0, 0, 0);
 

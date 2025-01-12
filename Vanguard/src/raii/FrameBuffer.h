@@ -151,32 +151,32 @@ namespace vg
 		extern void select_read_mode(ids::FrameBuffer fb, ReadBuffer mode);
 #endif
 
-		template<tex::DataType DataType = tex::DataType::UBYTE>
+		template<TextureDataType DataType = TextureDataType::UBYTE>
 		inline void read_pixels(GLuint x, GLuint y, raii::Image2D<DataType>& image)
 		{
-			glReadPixels(x, y, image.width(), image.height(), chpp_format(image.chpp()), (GLenum)DataType, image.pixels());
+			glReadPixels(x, y, image.width(), image.height(), (GLenum)texture_format(image.chpp()), (GLenum)DataType, image.pixels());
 		}
 
-		template<tex::DataType DataType = tex::DataType::UBYTE>
+		template<TextureDataType DataType = TextureDataType::UBYTE>
 		inline raii::Image2D<DataType> read_pixels(GLuint x, GLuint y, GLuint width, GLuint height, CHPP chpp)
 		{
 			raii::Image2D<DataType> image(width, height, chpp);
-			glReadPixels(x, y, width, height, chpp_format(chpp), (GLenum)DataType, image.pixels());
+			glReadPixels(x, y, width, height, (GLenum)texture_format(chpp), (GLenum)DataType, image.pixels());
 			return image;
 		}
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-		template<tex::DataType DataType = tex::DataType::UBYTE>
+		template<TextureDataType DataType = TextureDataType::UBYTE>
 		inline void read_n_pixels(GLuint x, GLuint y, raii::Image2D<DataType>& image)
 		{
-			glReadnPixels(x, y, image.width(), image.height(), chpp_format(image.chpp()), (GLenum)DataType, image.bytes(), image.pixels());
+			glReadnPixels(x, y, image.width(), image.height(), (GLenum)texture_format(image.chpp()), (GLenum)DataType, image.bytes(), image.pixels());
 		}
 
-		template<tex::DataType DataType = tex::DataType::UBYTE>
+		template<TextureDataType DataType = TextureDataType::UBYTE>
 		inline raii::Image2D<DataType> read_n_pixels(GLuint x, GLuint y, GLuint width, GLuint height, CHPP chpp)
 		{
 			raii::Image2D<DataType> image(width, height, chpp);
-			glReadnPixels(x, y, width, height, chpp_format(chpp), (GLenum)DataType, image.bytes(), image.pixels());
+			glReadnPixels(x, y, width, height, (GLenum)texture_format(chpp), (GLenum)DataType, image.bytes(), image.pixels());
 			return image;
 		}
 #endif

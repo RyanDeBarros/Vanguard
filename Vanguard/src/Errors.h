@@ -13,6 +13,7 @@ namespace vg
 	enum class ErrorCode
 	{
 		VANGUARD_INIT,
+		UNSUPPORTED_GL_RESPONSE,
 		BLOCK_INDEX_OUT_OF_RANGE,
 		OFFSET_OUT_OF_RANGE,
 		NULL_POINTER,
@@ -24,6 +25,7 @@ namespace vg
 		SUBSHADER_COMPILATION,
 		SHADER_LINKAGE,
 		INVALID_TEXTURE_SLOT,
+		INVALID_CHPP,
 	};
 
 	struct Error : public std::runtime_error

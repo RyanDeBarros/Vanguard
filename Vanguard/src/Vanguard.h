@@ -89,9 +89,15 @@ namespace vg
 	};
 	extern void set_blend_func(BlendFactor src, BlendFactor dst);
 
+	namespace _
+	{
+		extern float initial_time;
+	}
+
 	namespace data
 	{
 		extern float time;
 		extern float delta_time;
+		extern float elapsed_time();
 	}
 }

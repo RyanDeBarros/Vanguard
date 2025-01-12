@@ -23,7 +23,6 @@ Types of textures :
 
 // TODO implement loading:
 
-- 1D
 - 1D array
 - 2D array
 - Cube map
@@ -72,18 +71,41 @@ namespace vg
 		std::unordered_map<ConstructorRect, raii::Texture, ConstructorRectHash> textures_rect;
 		std::unordered_map<ids::Texture, decltype(textures_rect)::const_iterator> lookup_rect;
 
+		ids::Texture load_texture_rect(ConstructorRect&& constructor);
+
+		struct Constructor1D
+		{
+			FilePath image_filepath;
+			std::shared_ptr<const TextureParams> params;
+			int border;
+			int level;
+
+			bool operator==(const Constructor1D&) const = default;
+		};
+
+		struct Constructor1DHash
+		{
+			size_t operator()(const Constructor1D& c) const;
+		};
+
+		std::unordered_map<Constructor1D, raii::Texture, Constructor1DHash> textures_1d;
+		std::unordered_map<ids::Texture, decltype(textures_1d)::const_iterator> lookup_1d;
+
+		ids::Texture load_texture_1d(Constructor1D&& constructor);
+
 		enum class TextureType
 		{
 			T2D,
-			RECTANGLE
+			RECTANGLE,
+			T1D,
+			T1D_ARRAY
 		};
 		std::unordered_map<ids::Texture, TextureType> meta_lookup;
-
-		ids::Texture load_texture_rect(ConstructorRect&& constructor);
 
 	public:
 		ids::Texture load_texture_2d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border = 0, int level = 0);
 		ids::Texture load_texture_rect(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border = 0, int level = 0);
+		ids::Texture load_texture_1d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border = 0, int level = 0);
 		void unload_texture(ids::Texture texture);
 		void unload_all();
 	};

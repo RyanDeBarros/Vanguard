@@ -10,6 +10,7 @@
 // LATER use Logger
 #include <iostream>
 
+float vg::_::initial_time = 0.0f;
 float vg::data::time = 0.0f;
 float vg::data::delta_time = 0.0f;
 
@@ -19,7 +20,7 @@ void vg::init(const vg::InitializationConfiguration& config)
 		throw Error(ErrorCode::GLFW_INIT);
 	_::init_input();
 	_::set_static_texture_params();
-	
+	_::initial_time = (float)glfwGetTime();
 	if (config.stbi_flip_vertically_on_load)
 		stbi_set_flip_vertically_on_load(1);
 }
@@ -170,4 +171,9 @@ void vg::set_scissors(unsigned int first_index, Rect<int>* rects, unsigned int c
 void vg::set_blend_func(BlendFactor src, BlendFactor dst)
 {
 	glBlendFunc((GLenum)src, (GLenum)dst);
+}
+
+float vg::data::elapsed_time()
+{
+	return time - _::initial_time;
 }

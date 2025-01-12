@@ -637,106 +637,59 @@ void vg::bind_textures_to_slots(const ids::Texture* textures, GLuint first_slot,
 	glBindTextures(first_slot, count, (const GLuint*)textures);
 }
 
-GLint vg::chpp_alignment(CHPP chpp)
+void vg::tex::image_1d(int width, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget1D target, TextureDataType data_type, int border, int level)
 {
-	if (chpp == 4)
-		return 4;
-	else if (chpp == 3)
-		return 1;
-	else if (chpp == 2)
-		return 2;
-	else if (chpp == 1)
-		return 1;
-	else
-		return 0;
+	glTexImage1D((GLenum)target, level, (GLenum)internal_format, width, border, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::align_texture_pixels(CHPP chpp)
+void vg::tex::image_2d(int width, int height, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget2D target, TextureDataType data_type, int border, int level)
 {
-	glPixelStorei(GL_UNPACK_ALIGNMENT, chpp_alignment(chpp));
+	glTexImage2D((GLenum)target, level, (GLenum)internal_format, width, height, border, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-GLenum vg::chpp_format(CHPP chpp)
+void vg::tex::image_3d(int width, int height, int depth, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget3D target, TextureDataType data_type, int border, int level)
 {
-	if (chpp == 4)
-		return GL_RGBA;
-	else if (chpp == 3)
-		return GL_RGB;
-	else if (chpp == 2)
-		return GL_RG;
-	else if (chpp == 1)
-		return GL_RED;
-	else
-		return 0;
+	glTexImage3D((GLenum)target, level, (GLenum)internal_format, width, height, depth, border, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-GLint vg::chpp_internal_format(CHPP chpp)
+void vg::tex::multisample_2d(GLsizei samples, int width, int height, TextureInternalFormat internal_format, bool fixed, bool proxy)
 {
-	if (chpp == 4)
-		return GL_RGBA8;
-	else if (chpp == 3)
-		return GL_RGB8;
-	else if (chpp == 2)
-		return GL_RG8;
-	else if (chpp == 1)
-		return GL_R8;
-	else
-		return 0;
+	glTexImage2DMultisample(proxy ? GL_PROXY_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D_MULTISAMPLE, samples, (GLenum)internal_format, width, height, fixed);
 }
 
-void vg::tex::image_1d(int width, CHPP chpp, const void* pixels, Target1D target, DataType data_type, int border, int level)
+void vg::tex::multisample_3d(GLsizei samples, int width, int height, int depth, TextureInternalFormat internal_format, bool fixed, bool proxy)
 {
-	glTexImage1D((GLenum)target, level, chpp_internal_format(chpp), width, border, chpp_format(chpp), (GLenum)data_type, pixels);
+	glTexImage3DMultisample(proxy ? GL_PROXY_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_MULTISAMPLE_ARRAY, samples, (GLenum)internal_format, width, height, depth, fixed);
 }
 
-void vg::tex::image_2d(int width, int height, CHPP chpp, const void* pixels, ImageTarget2D target, DataType data_type, int border, int level)
+void vg::tex::subimage_1d(int xoff, int width, TextureFormat format, const void* pixels, TextureDataType data_type, int level)
 {
-	glTexImage2D((GLenum)target, level, chpp_internal_format(chpp), width, height, border, chpp_format(chpp), (GLenum)data_type, pixels);
+	glTexSubImage1D(GL_TEXTURE_1D, level, xoff, width, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::image_3d(int width, int height, int depth, CHPP chpp, const void* pixels, ImageTarget3D target, DataType data_type, int border, int level)
+void vg::tex::subimage_2d(int xoff, int yoff, int width, int height, TextureFormat format, const void* pixels, SubimageTarget2D target, TextureDataType data_type, int level)
 {
-	glTexImage3D((GLenum)target, level, chpp_internal_format(chpp), width, height, depth, border, chpp_format(chpp), (GLenum)data_type, pixels);
+	glTexSubImage2D((GLenum)target, level, xoff, yoff, width, height, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::multisample_2d(GLsizei samples, int width, int height, CHPP chpp, bool fixed, bool proxy)
+void vg::tex::subimage_3d(int xoff, int yoff, int zoff, int width, int height, int depth, TextureFormat format, const void* pixels, SubimageTarget3D target, TextureDataType data_type, int level)
 {
-	glTexImage2DMultisample(proxy ? GL_PROXY_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D_MULTISAMPLE, samples, chpp_internal_format(chpp), width, height, fixed);
+	glTexSubImage3D((GLenum)target, level, xoff, yoff, zoff, width, height, depth, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::multisample_3d(GLsizei samples, int width, int height, int depth, CHPP chpp, bool fixed, bool proxy)
+void vg::tex::copy_image_1d(int x, int y, int width, TextureInternalFormat internal_format, int border, int level)
 {
-	glTexImage3DMultisample(proxy ? GL_PROXY_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_MULTISAMPLE_ARRAY, samples, chpp_internal_format(chpp), width, height, depth, fixed);
+	glCopyTexImage1D(GL_TEXTURE_1D, level, (GLenum)internal_format, x, y, width, border);
 }
 
-void vg::tex::subimage_1d(int xoff, int width, CHPP chpp, const void* pixels, DataType data_type, int level)
+void vg::tex::copy_image_2d(int x, int y, int width, int height, TextureInternalFormat internal_format, int border, int level)
 {
-	glTexSubImage1D(GL_TEXTURE_1D, level, xoff, width, chpp_format(chpp), (GLenum)data_type, pixels);
+	glCopyTexImage2D(GL_TEXTURE_2D, level, (GLenum)internal_format, x, y, width, height, border);
 }
 
-void vg::tex::subimage_2d(int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, SubimageTarget2D target, DataType data_type, int level)
+void vg::tex::copy_image_cube_map(int x, int y, int width, int height, TextureInternalFormat internal_format, CubeMapFaceTarget target, int border, int level)
 {
-	glTexSubImage2D((GLenum)target, level, xoff, yoff, width, height, chpp_format(chpp), (GLenum)data_type, pixels);
-}
-
-void vg::tex::subimage_3d(int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, SubimageTarget3D target, DataType data_type, int level)
-{
-	glTexSubImage3D((GLenum)target, level, xoff, yoff, zoff, width, height, depth, chpp_format(chpp), (GLenum)data_type, pixels);
-}
-
-void vg::tex::copy_image_1d(int x, int y, int width, CHPP chpp, int border, int level)
-{
-	glCopyTexImage1D(GL_TEXTURE_1D, level, chpp_internal_format(chpp), x, y, width, border);
-}
-
-void vg::tex::copy_image_2d(int x, int y, int width, int height, CHPP chpp, int border, int level)
-{
-	glCopyTexImage2D(GL_TEXTURE_2D, level, chpp_internal_format(chpp), x, y, width, height, border);
-}
-
-void vg::tex::copy_image_cube_map(int x, int y, int width, int height, CHPP chpp, CubeMapFaceTarget target, int border, int level)
-{
-	glCopyTexImage2D((GLenum)target, level, chpp_internal_format(chpp), x, y, width, height, border);
+	glCopyTexImage2D((GLenum)target, level, (GLenum)internal_format, x, y, width, height, border);
 }
 
 void vg::tex::copy_subimage_1d(int xoff, int x, int y, int width, int level)
@@ -761,19 +714,19 @@ void vg::tex::copy_subimage_cube_map(int xoff, int yoff, int x, int y, int width
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 
-void vg::tex::subimage_1d(ids::Texture texture, int xoff, int width, CHPP chpp, const void* pixels, DataType data_type, int level)
+void vg::tex::subimage_1d(ids::Texture texture, int xoff, int width, TextureFormat format, const void* pixels, TextureDataType data_type, int level)
 {
-	glTextureSubImage1D(texture, level, xoff, width, chpp_format(chpp), (GLenum)data_type, pixels);
+	glTextureSubImage1D(texture, level, xoff, width, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, CHPP chpp, const void* pixels, DataType data_type, int level)
+void vg::tex::subimage_2d(ids::Texture texture, int xoff, int yoff, int width, int height, TextureFormat format, const void* pixels, TextureDataType data_type, int level)
 {
-	glTextureSubImage2D(texture, level, xoff, yoff, width, height, chpp_format(chpp), (GLenum)data_type, pixels);
+	glTextureSubImage2D(texture, level, xoff, yoff, width, height, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, CHPP chpp, const void* pixels, DataType data_type, int level)
+void vg::tex::subimage_3d(ids::Texture texture, int xoff, int yoff, int zoff, int width, int height, int depth, TextureFormat format, const void* pixels, TextureDataType data_type, int level)
 {
-	glTextureSubImage3D(texture, level, xoff, yoff, zoff, width, height, depth, chpp_format(chpp), (GLenum)data_type, pixels);
+	glTextureSubImage3D(texture, level, xoff, yoff, zoff, width, height, depth, (GLenum)format, (GLenum)data_type, pixels);
 }
 
 void vg::tex::copy_subimage_1d(ids::Texture texture, int xoff, int x, int y, int width, int level)
@@ -800,28 +753,28 @@ void vg::tex::copy_image_subdata(ids::Texture src, ImageSubDataTarget src_target
 }
 #endif
 
-void vg::tex::buffer(ids::GLBuffer buffer, CHPP chpp)
+void vg::tex::buffer(ids::GLBuffer buffer, TextureInternalFormat internal_format)
 {
-	glTexBuffer(GL_TEXTURE_BUFFER, chpp_internal_format(chpp), buffer);
+	glTexBuffer(GL_TEXTURE_BUFFER, (GLenum)internal_format, buffer);
 }
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 3)
-void vg::tex::buffer_range(ids::GLBuffer buffer, GLintptr offset, GLsizeiptr size, CHPP chpp)
+void vg::tex::buffer_range(ids::GLBuffer buffer, GLintptr offset, GLsizeiptr size, TextureInternalFormat internal_format)
 {
-	glTexBufferRange(GL_TEXTURE_BUFFER, chpp_internal_format(chpp), buffer, offset, size);
+	glTexBufferRange(GL_TEXTURE_BUFFER, (GLenum)internal_format, buffer, offset, size);
 }
 #endif
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 
-void vg::tex::buffer(ids::Texture texture, ids::GLBuffer buffer, CHPP chpp)
+void vg::tex::buffer(ids::Texture texture, ids::GLBuffer buffer, TextureInternalFormat internal_format)
 {
-	glTextureBuffer(texture, chpp_internal_format(chpp), buffer);
+	glTextureBuffer(texture, (GLenum)internal_format, buffer);
 }
 
-void vg::tex::buffer_range(ids::Texture texture, ids::GLBuffer buffer, GLintptr offset, GLsizeiptr size, CHPP chpp)
+void vg::tex::buffer_range(ids::Texture texture, ids::GLBuffer buffer, GLintptr offset, GLsizeiptr size, TextureInternalFormat internal_format)
 {
-	glTextureBufferRange(texture, chpp_internal_format(chpp), buffer, offset, size);
+	glTextureBufferRange(texture, (GLenum)internal_format, buffer, offset, size);
 }
 
 void vg::tex::barrier()
@@ -830,6 +783,182 @@ void vg::tex::barrier()
 }
 
 #endif
+
+GLint vg::chpp_alignment(CHPP chpp)
+{
+	if (chpp == 4)
+		return 4;
+	else if (chpp == 3)
+		return 1;
+	else if (chpp == 2)
+		return 2;
+	else if (chpp == 1)
+		return 1;
+	else
+		return 0;
+}
+
+void vg::align_texture_pixels(CHPP chpp)
+{
+	glPixelStorei(GL_UNPACK_ALIGNMENT, chpp_alignment(chpp));
+}
+
+vg::TextureFormat vg::texture_format(CHPP chpp)
+{
+	if (chpp == 4)
+		return TextureFormat::RGBA;
+	else if (chpp == 3)
+		return TextureFormat::RGB;
+	else if (chpp == 2)
+		return TextureFormat::RG;
+	else if (chpp == 1)
+		return TextureFormat::R;
+	else
+		throw Error(ErrorCode::INVALID_CHPP);
+}
+
+vg::TextureInternalFormat vg::texture_internal_format(CHPP chpp, TextureDataType data_type)
+{
+	switch (data_type)
+	{
+	case TextureDataType::UBYTE:
+		if (chpp == 4)
+			return TextureInternalFormat::UBYTE4;
+		else if (chpp == 3)
+			return TextureInternalFormat::UBYTE3;
+		else if (chpp == 2)
+			return TextureInternalFormat::UBYTE2;
+		else if (chpp == 1)
+			return TextureInternalFormat::UBYTE1;
+		break;
+	case TextureDataType::BYTE:
+		if (chpp == 4)
+			return TextureInternalFormat::BYTE4;
+		else if (chpp == 3)
+			return TextureInternalFormat::BYTE3;
+		else if (chpp == 2)
+			return TextureInternalFormat::BYTE2;
+		else if (chpp == 1)
+			return TextureInternalFormat::BYTE1;
+		break;
+	case TextureDataType::USHORT:
+		if (chpp == 4)
+			return TextureInternalFormat::USHORT4;
+		else if (chpp == 3)
+			return TextureInternalFormat::USHORT3;
+		else if (chpp == 2)
+			return TextureInternalFormat::USHORT2;
+		else if (chpp == 1)
+			return TextureInternalFormat::USHORT1;
+		break;
+	case TextureDataType::SHORT:
+		if (chpp == 4)
+			return TextureInternalFormat::SHORT4;
+		else if (chpp == 3)
+			return TextureInternalFormat::SHORT3;
+		else if (chpp == 2)
+			return TextureInternalFormat::SHORT2;
+		else if (chpp == 1)
+			return TextureInternalFormat::SHORT1;
+		break;
+	case TextureDataType::UINT:
+		if (chpp == 4)
+			return TextureInternalFormat::UINT4;
+		else if (chpp == 3)
+			return TextureInternalFormat::UINT3;
+		else if (chpp == 2)
+			return TextureInternalFormat::UINT2;
+		else if (chpp == 1)
+			return TextureInternalFormat::UINT1;
+		break;
+	case TextureDataType::INT:
+		if (chpp == 4)
+			return TextureInternalFormat::INT4;
+		else if (chpp == 3)
+			return TextureInternalFormat::INT3;
+		else if (chpp == 2)
+			return TextureInternalFormat::INT2;
+		else if (chpp == 1)
+			return TextureInternalFormat::INT1;
+		break;
+	case TextureDataType::FLOAT:
+		if (chpp == 4)
+			return TextureInternalFormat::FLOAT4;
+		else if (chpp == 3)
+			return TextureInternalFormat::FLOAT3;
+		else if (chpp == 2)
+			return TextureInternalFormat::FLOAT2;
+		else if (chpp == 1)
+			return TextureInternalFormat::FLOAT1;
+		break;
+	}
+	return (TextureInternalFormat)0;
+}
+
+std::pair<vg::CHPP, vg::TextureDataType> vg::extract_texture_internal_format(TextureInternalFormat internal_format)
+{
+	switch (internal_format)
+	{
+	case TextureInternalFormat::UBYTE4:
+		return { 4, TextureDataType::UBYTE };
+	case TextureInternalFormat::UBYTE3:
+		return { 3, TextureDataType::UBYTE };
+	case TextureInternalFormat::UBYTE2:
+		return { 2, TextureDataType::UBYTE };
+	case TextureInternalFormat::UBYTE1:
+		return { 1, TextureDataType::UBYTE };
+	case TextureInternalFormat::BYTE4:
+		return { 4, TextureDataType::BYTE };
+	case TextureInternalFormat::BYTE3:
+		return { 3, TextureDataType::BYTE };
+	case TextureInternalFormat::BYTE2:
+		return { 2, TextureDataType::BYTE };
+	case TextureInternalFormat::BYTE1:
+		return { 1, TextureDataType::BYTE };
+	case TextureInternalFormat::USHORT4:
+		return { 4, TextureDataType::USHORT };
+	case TextureInternalFormat::USHORT3:
+		return { 3, TextureDataType::USHORT };
+	case TextureInternalFormat::USHORT2:
+		return { 2, TextureDataType::USHORT };
+	case TextureInternalFormat::USHORT1:
+		return { 1, TextureDataType::USHORT };
+	case TextureInternalFormat::SHORT4:
+		return { 4, TextureDataType::SHORT };
+	case TextureInternalFormat::SHORT3:
+		return { 3, TextureDataType::SHORT };
+	case TextureInternalFormat::SHORT2:
+		return { 2, TextureDataType::SHORT };
+	case TextureInternalFormat::SHORT1:
+		return { 1, TextureDataType::SHORT };
+	case TextureInternalFormat::UINT4:
+		return { 4, TextureDataType::UINT };
+	case TextureInternalFormat::UINT3:
+		return { 3, TextureDataType::UINT };
+	case TextureInternalFormat::UINT2:
+		return { 2, TextureDataType::UINT };
+	case TextureInternalFormat::UINT1:
+		return { 1, TextureDataType::UINT };
+	case TextureInternalFormat::INT4:
+		return { 4, TextureDataType::INT };
+	case TextureInternalFormat::INT3:
+		return { 3, TextureDataType::INT };
+	case TextureInternalFormat::INT2:
+		return { 2, TextureDataType::INT };
+	case TextureInternalFormat::INT1:
+		return { 1, TextureDataType::INT };
+	case TextureInternalFormat::FLOAT4:
+		return { 4, TextureDataType::FLOAT };
+	case TextureInternalFormat::FLOAT3:
+		return { 3, TextureDataType::FLOAT };
+	case TextureInternalFormat::FLOAT2:
+		return { 2, TextureDataType::FLOAT };
+	case TextureInternalFormat::FLOAT1:
+		return { 1, TextureDataType::FLOAT };
+	default:
+		throw Error(ErrorCode::UNSUPPORTED_GL_RESPONSE);
+	}
+}
 
 vg::Image vg::load_image(const FilePath& filepath)
 {
@@ -884,23 +1013,23 @@ void vg::image_2d::send_texture(int width, int height, CHPP chpp, ids::Texture t
 {
 	bind_texture(texture, TextureTarget::T2D);
 	align_texture_pixels(chpp);
-	tex::image_2d(width, height, chpp, nullptr, tex::ImageTarget2D::T2D, tex::DataType::UBYTE, border, level);
+	tex::image_2d(width, height, texture_internal_format(chpp, TextureDataType::UBYTE), texture_format(chpp), nullptr, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, border, level);
 }
 
 void vg::image_2d::send_texture(const Image& image, ids::Texture texture, int border, int level)
 {
 	bind_texture(texture, TextureTarget::T2D);
 	align_texture_pixels(image.chpp);
-	tex::image_2d(image.width, image.height, image.chpp, image.pixels, tex::ImageTarget2D::T2D, tex::DataType::UBYTE, border, level);
+	tex::image_2d(image.width, image.height, texture_internal_format(image.chpp, TextureDataType::UBYTE), texture_format(image.chpp), image.pixels, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, border, level);
 }
 
 void vg::image_2d::update_full_texture(const Image& image, ids::Texture texture, int level)
 {
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
-	tex::subimage_2d(texture, 0, 0, image.width, image.height, image.chpp, image.pixels);
+	tex::subimage_2d(texture, 0, 0, image.width, image.height, texture_format(image.chpp), image.pixels);
 #else
 	bind_texture(texture, TextureTarget::T2D);
-	tex::subimage_2d(0, 0, image.width, image.height, image.chpp, image.pixels, tex::SubimageTarget2D::T2D, tex::DataType::UBYTE, level);
+	tex::subimage_2d(0, 0, image.width, image.height, texture_format(image.chpp), image.pixels, tex::SubimageTarget2D::T2D, TextureDataType::UBYTE, level);
 #endif
 }
 
@@ -915,26 +1044,73 @@ void vg::image_2d::update_sub_texture(const Image& image, ids::Texture texture, 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 		if (x == 0 && w == image.width)
 		{
-			tex::subimage_2d(texture, x, y, w, h, image.chpp, image.pos(x, y), tex::DataType::UBYTE, level);
+			tex::subimage_2d(texture, x, y, w, h, texture_format(image.chpp), image.pos(x, y), TextureDataType::UBYTE, level);
 		}
 		else
 		{
 			int end = y + h;
 			for (int r = y; r < end; ++r)
-				tex::subimage_2d(texture, x, r, w, 1, image.chpp, image.pos(x, r), tex::DataType::UBYTE, level);
+				tex::subimage_2d(texture, x, r, w, 1, texture_format(image.chpp), image.pos(x, r), TextureDataType::UBYTE, level);
 		}
 #else
 		bind_texture(texture, TextureTarget::T2D);
 		if (x == 0 && w == image.width)
 		{
-			tex::subimage_2d(x, y, w, h, image.chpp, image.pos(x, y), tex::SubimageTarget2D::T2D, tex::DataType::UBYTE, level);
+			tex::subimage_2d(x, y, w, h, texture_format(image.chpp), image.pos(x, y), tex::SubimageTarget2D::T2D, TextureDataType::UBYTE, level);
 		}
 		else
 		{
 			int end = y + h;
 			for (int r = y; r < end; ++r)
-				tex::subimage_2d(x, r, w, 1, image.chpp, image.pos(x, r), tex::SubimageTarget2D::T2D, tex::DataType::UBYTE, level);
+				tex::subimage_2d(x, r, w, 1, texture_format(image.chpp), image.pos(x, r), tex::SubimageTarget2D::T2D, TextureDataType::UBYTE, level);
 		}
 #endif
 	}
+}
+
+int vg::query::texture_iproperty(TextureTarget target, TextureIProperty property, int level)
+{
+	int value;
+	glGetTexLevelParameteriv((GLenum)target, level, (GLenum)property, &value);
+	return value;
+}
+
+vg::raii::Texture vg::cube_map::generate_from_existing(ids::Texture x_pos, ids::Texture x_neg, ids::Texture y_pos, ids::Texture y_neg, ids::Texture z_pos, ids::Texture z_neg,
+	std::array<int, 6> borders, std::array<int, 6> levels)
+{
+	raii::Texture texture;
+	bind_texture(texture, TextureTarget::CUBE_MAP);
+
+	static const tex::ImageTarget2D faces[6] = {
+		tex::ImageTarget2D::CUBE_MAP_X_POS,
+		tex::ImageTarget2D::CUBE_MAP_X_NEG,
+		tex::ImageTarget2D::CUBE_MAP_Y_POS,
+		tex::ImageTarget2D::CUBE_MAP_Y_NEG,
+		tex::ImageTarget2D::CUBE_MAP_Z_POS,
+		tex::ImageTarget2D::CUBE_MAP_Z_NEG
+	};
+
+	static const auto gen_face = [](tex::ImageTarget2D face, int border, int level) {
+		TextureInternalFormat internal_format = (TextureInternalFormat)query::texture_iproperty(TextureTarget::T2D, query::TextureIProperty::INTERNAL_FORMAT);
+		auto cdt = extract_texture_internal_format(internal_format);
+		int width = query::texture_iproperty(TextureTarget::T2D, query::TextureIProperty::WIDTH, level);
+		int height = query::texture_iproperty(TextureTarget::T2D, query::TextureIProperty::HEIGHT, level);
+		tex::image_2d(width, height, internal_format, texture_format(cdt.first), nullptr, face, TextureDataType::UBYTE, border, level);
+		tex::copy_image_2d(0, 0, width, height, internal_format, border, level);
+		};
+
+	bind_texture(x_pos, TextureTarget::T2D);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_X_POS, borders[0], levels[0]);
+	bind_texture(x_neg, TextureTarget::T2D);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_X_NEG, borders[1], levels[1]);
+	bind_texture(y_pos, TextureTarget::T2D);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Y_POS, borders[2], levels[2]);
+	bind_texture(y_neg, TextureTarget::T2D);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Y_NEG, borders[3], levels[3]);
+	bind_texture(z_pos, TextureTarget::T2D);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Z_POS, borders[4], levels[4]);
+	bind_texture(z_neg, TextureTarget::T2D);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Z_NEG, borders[5], levels[5]);
+
+	return texture;
 }
