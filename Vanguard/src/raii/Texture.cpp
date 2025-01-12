@@ -5,6 +5,74 @@
 
 #include "Errors.h"
 
+vg::raii::Texture::Texture()
+{
+	glGenTextures(1, (GLuint*)&_t);
+}
+
+vg::raii::Texture::Texture(Texture&& other) noexcept
+	: _t(other._t)
+{
+	other._t = T(0);
+}
+
+vg::raii::Texture& vg::raii::Texture::operator=(Texture&& other) noexcept
+{
+	if (this != &other)
+	{
+		glDeleteTextures(1, (GLuint*)&_t);
+		_t = other._t;
+		other._t = T(0);
+	}
+	return *this;
+}
+
+vg::raii::Texture::~Texture()
+{
+	glDeleteTextures(1, (GLuint*)&_t);
+}
+
+vg::raii::TextureBlock::TextureBlock(GLuint count)
+	: count(count)
+{
+	_ts = new ids::Texture[count];
+	glGenTextures(count, reinterpret_cast<GLuint*>(_ts));
+}
+
+vg::raii::TextureBlock::TextureBlock(TextureBlock&& other) noexcept
+	: _ts(other._ts), count(other.count)
+{
+	other._ts = nullptr;
+	other.count = 0;
+}
+
+vg::raii::TextureBlock& vg::raii::TextureBlock::operator=(TextureBlock&& other) noexcept
+{
+	if (this != &other)
+	{
+		glDeleteTextures(count, (GLuint*)_ts);
+		delete[] _ts;
+		_ts = other._ts;
+		other._ts = nullptr;
+		count = other.count;
+		other.count = 0;
+	}
+	return *this;
+}
+
+vg::raii::TextureBlock::~TextureBlock()
+{
+	glDeleteTextures(count, (GLuint*)_ts);
+	delete[] _ts;
+}
+
+vg::ids::Texture vg::raii::TextureBlock::operator[](GLuint i) const
+{
+	if (i >= count)
+		throw block_index_out_of_range(count, i);
+	return _ts[i];
+}
+
 void vg::texture_params::min_filter(Target target, MinFilter filter)
 {
 	glTexParameteri((GLenum)target, GL_TEXTURE_MIN_FILTER, (GLenum)filter);
@@ -254,86 +322,291 @@ void vg::texture_params::border_color(ids::Texture texture, glm::vec4 rgba)
 	glTextureParameterfv(texture, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(rgba));
 }
 
-void vg::texture_params::linear(ids::Texture texture)
-{
-	min_filter(texture, MinFilter::LINEAR);
-	mag_filter(texture, MagFilter::LINEAR);
-}
-
-void vg::texture_params::nearest(ids::Texture texture)
-{
-	min_filter(texture, MinFilter::NEAREST);
-	mag_filter(texture, MagFilter::NEAREST);
-}
-
 #endif
 
-vg::raii::Texture::Texture()
+void vg::TextureParams::set_min_filter(MinFilter mf)
 {
-	glGenTextures(1, (GLuint*)&_t);
+	min_filter = mf;
+	flags.set(Index::MIN_FILTER);
 }
 
-vg::raii::Texture::Texture(Texture&& other) noexcept
-	: _t(other._t)
+void vg::TextureParams::set_mag_filter(MagFilter mf)
 {
-	other._t = T(0);
+	mag_filter = mf;
+	flags.set(Index::MAG_FILTER);
 }
 
-vg::raii::Texture& vg::raii::Texture::operator=(Texture&& other) noexcept
+void vg::TextureParams::set_wrap_s(TextureWrap w)
 {
-	if (this != &other)
+	wrap_s = w;
+	flags.set(Index::WRAP_S);
+}
+
+void vg::TextureParams::set_wrap_t(TextureWrap w)
+{
+	wrap_t = w;
+	flags.set(Index::WRAP_T);
+}
+
+void vg::TextureParams::set_wrap_r(TextureWrap w)
+{
+	wrap_r = w;
+	flags.set(Index::WRAP_R);
+}
+
+void vg::TextureParams::set_swizzle_r(TextureSwizzle s)
+{
+	swizzle_r = s;
+	flags.set(Index::SWIZZLE_R);
+}
+
+void vg::TextureParams::set_swizzle_g(TextureSwizzle s)
+{
+	swizzle_g = s;
+	flags.set(Index::SWIZZLE_G);
+}
+
+void vg::TextureParams::set_swizzle_b(TextureSwizzle s)
+{
+	swizzle_b = s;
+	flags.set(Index::SWIZZLE_B);
+}
+
+void vg::TextureParams::set_swizzle_a(TextureSwizzle s)
+{
+	swizzle_a = s;
+	flags.set(Index::SWIZZLE_A);
+}
+
+void vg::TextureParams::set_swizzle(TextureSwizzle sr, TextureSwizzle sg, TextureSwizzle sb, TextureSwizzle sa)
+{
+	swizzle_r = sr;
+	flags.set(Index::SWIZZLE_R);
+	swizzle_g = sg;
+	flags.set(Index::SWIZZLE_G);
+	swizzle_b = sb;
+	flags.set(Index::SWIZZLE_B);
+	swizzle_a = sa;
+	flags.set(Index::SWIZZLE_A);
+}
+
+void vg::TextureParams::set_depth_stencil_mode(DepthStencilMode d)
+{
+	depth_stencil_mode = d;
+	flags.set(Index::DEPTH_STENCIL_MODE);
+}
+
+void vg::TextureParams::set_base_level(int l)
+{
+	base_level = l;
+	flags.set(Index::BASE_LEVEL);
+}
+
+void vg::TextureParams::set_max_level(int l)
+{
+	max_level = l;
+	flags.set(Index::MAX_LEVEL);
+}
+
+void vg::TextureParams::set_lod_bias(float lod)
+{
+	lod_bias = lod;
+	flags.set(Index::LOD_BIAS);
+}
+
+void vg::TextureParams::set_min_lod(float lod)
+{
+	min_lod = lod;
+	flags.set(Index::MIN_LOD);
+}
+
+void vg::TextureParams::set_max_lod(float lod)
+{
+	max_lod = lod;
+	flags.set(Index::MAX_LOD);
+}
+
+void vg::TextureParams::set_compare_func(TextureCompareFunc c)
+{
+	compare_func = c;
+	flags.set(Index::COMPARE_FUNC);
+}
+
+void vg::TextureParams::set_compare_mode(TextureCompareMode c)
+{
+	compare_mode = c;
+	flags.set(Index::COMPARE_MODE);
+}
+
+void vg::TextureParams::set_border_color(glm::ivec4 bc)
+{
+	border_color = bc;
+	flags.set(Index::BORDER_COLOR);
+}
+
+void vg::TextureParams::set_border_color(glm::vec4 bc)
+{
+	border_color = bc;
+	flags.set(Index::BORDER_COLOR);
+}
+
+void vg::TextureParams::apply(texture_params::Target target) const
+{
+	if (flags.test(Index::MIN_FILTER))
+		texture_params::min_filter(target, min_filter);
+	if (flags.test(Index::MAG_FILTER))
+		texture_params::mag_filter(target, mag_filter);
+	if (flags.test(Index::WRAP_S))
+		texture_params::wrap_s(target, wrap_s);
+	if (flags.test(Index::WRAP_T))
+		texture_params::wrap_t(target, wrap_t);
+	if (flags.test(Index::WRAP_R))
+		texture_params::wrap_r(target, wrap_r);
+	if (flags.test(Index::SWIZZLE_R) && flags.test(Index::SWIZZLE_G) && flags.test(Index::SWIZZLE_B) && flags.test(Index::SWIZZLE_A))
+		texture_params::swizzle_rgba(target, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
+	else
 	{
-		glDeleteTextures(1, (GLuint*)&_t);
-		_t = other._t;
-		other._t = T(0);
+		if (flags.test(Index::SWIZZLE_R))
+			texture_params::swizzle_r(target, swizzle_r);
+		if (flags.test(Index::SWIZZLE_G))
+			texture_params::swizzle_g(target, swizzle_g);
+		if (flags.test(Index::SWIZZLE_B))
+			texture_params::swizzle_b(target, swizzle_b);
+		if (flags.test(Index::SWIZZLE_A))
+			texture_params::swizzle_a(target, swizzle_a);
 	}
-	return *this;
-}
-
-vg::raii::Texture::~Texture()
-{
-	glDeleteTextures(1, (GLuint*)&_t);
-}
-
-vg::raii::TextureBlock::TextureBlock(GLuint count)
-	: count(count)
-{
-	_ts = new ids::Texture[count];
-	glGenTextures(count, reinterpret_cast<GLuint*>(_ts));
-}
-
-vg::raii::TextureBlock::TextureBlock(TextureBlock&& other) noexcept
-	: _ts(other._ts), count(other.count)
-{
-	other._ts = nullptr;
-	other.count = 0;
-}
-
-vg::raii::TextureBlock& vg::raii::TextureBlock::operator=(TextureBlock&& other) noexcept
-{
-	if (this != &other)
+	if (flags.test(Index::DEPTH_STENCIL_MODE))
+		texture_params::depth_stencil_mode(target, depth_stencil_mode);
+	if (flags.test(Index::BASE_LEVEL))
+		texture_params::base_level(target, base_level);
+	if (flags.test(Index::MAX_LEVEL))
+		texture_params::max_level(target, max_level);
+	if (flags.test(Index::LOD_BIAS))
+		texture_params::lod_bias(target, lod_bias);
+	if (flags.test(Index::MIN_LOD))
+		texture_params::min_lod(target, min_lod);
+	if (flags.test(Index::MAX_LOD))
+		texture_params::max_lod(target, max_lod);
+	if (flags.test(Index::COMPARE_FUNC))
+		texture_params::compare_func(target, compare_func);
+	if (flags.test(Index::COMPARE_MODE))
+		texture_params::compare_mode(target, compare_mode);
+	if (flags.test(Index::BORDER_COLOR))
 	{
-		glDeleteTextures(count, (GLuint*)_ts);
-		delete[] _ts;
-		_ts = other._ts;
-		other._ts = nullptr;
-		count = other.count;
-		other.count = 0;
+		if (border_color.index() == 0)
+			texture_params::border_color(target, std::get<0>(border_color));
+		else
+			texture_params::border_color(target, std::get<1>(border_color));
 	}
-	return *this;
 }
 
-vg::raii::TextureBlock::~TextureBlock()
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+void vg::TextureParams::apply(ids::Texture texture) const
 {
-	glDeleteTextures(count, (GLuint*)_ts);
-	delete[] _ts;
+	if (flags.test(Index::MIN_FILTER))
+		texture_params::min_filter(texture, min_filter);
+	if (flags.test(Index::MAG_FILTER))
+		texture_params::mag_filter(texture, mag_filter);
+	if (flags.test(Index::WRAP_S))
+		texture_params::wrap_s(texture, wrap_s);
+	if (flags.test(Index::WRAP_T))
+		texture_params::wrap_t(texture, wrap_t);
+	if (flags.test(Index::WRAP_R))
+		texture_params::wrap_r(texture, wrap_r);
+	if (flags.test(Index::SWIZZLE_R) && flags.test(Index::SWIZZLE_G) && flags.test(Index::SWIZZLE_B) && flags.test(Index::SWIZZLE_A))
+		texture_params::swizzle_rgba(texture, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
+	else
+	{
+		if (flags.test(Index::SWIZZLE_R))
+			texture_params::swizzle_r(texture, swizzle_r);
+		if (flags.test(Index::SWIZZLE_G))
+			texture_params::swizzle_g(texture, swizzle_g);
+		if (flags.test(Index::SWIZZLE_B))
+			texture_params::swizzle_b(texture, swizzle_b);
+		if (flags.test(Index::SWIZZLE_A))
+			texture_params::swizzle_a(texture, swizzle_a);
+	}
+	if (flags.test(Index::DEPTH_STENCIL_MODE))
+		texture_params::depth_stencil_mode(texture, depth_stencil_mode);
+	if (flags.test(Index::BASE_LEVEL))
+		texture_params::base_level(texture, base_level);
+	if (flags.test(Index::MAX_LEVEL))
+		texture_params::max_level(texture, max_level);
+	if (flags.test(Index::LOD_BIAS))
+		texture_params::lod_bias(texture, lod_bias);
+	if (flags.test(Index::MIN_LOD))
+		texture_params::min_lod(texture, min_lod);
+	if (flags.test(Index::MAX_LOD))
+		texture_params::max_lod(texture, max_lod);
+	if (flags.test(Index::COMPARE_FUNC))
+		texture_params::compare_func(texture, compare_func);
+	if (flags.test(Index::COMPARE_MODE))
+		texture_params::compare_mode(texture, compare_mode);
+	if (flags.test(Index::BORDER_COLOR))
+	{
+		if (border_color.index() == 0)
+			texture_params::border_color(texture, std::get<0>(border_color));
+		else
+			texture_params::border_color(texture, std::get<1>(border_color));
+	}
+}
+#endif
+
+size_t vg::TextureParams::hash() const
+{
+	auto combine_hash = [](size_t seed, size_t value) {
+		return seed ^ (value + 0x9e3779b9 + (seed << 6) + (seed >> 2)); // This comes from boost
+	};
+
+	size_t hashed = std::hash<std::bitset<Index::__COUNT>>{}(flags);
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)min_filter));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)mag_filter));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)wrap_s));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)wrap_t));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)wrap_r));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)swizzle_r));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)swizzle_g));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)swizzle_b));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)swizzle_a));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)depth_stencil_mode));
+	hashed = combine_hash(hashed, std::hash<int>{}(base_level));
+	hashed = combine_hash(hashed, std::hash<int>{}(max_level));
+	hashed = combine_hash(hashed, std::hash<int>{}(reinterpret_cast<const int&>(lod_bias)));
+	hashed = combine_hash(hashed, std::hash<int>{}(reinterpret_cast<const int&>(min_lod)));
+	hashed = combine_hash(hashed, std::hash<int>{}(reinterpret_cast<const int&>(max_lod)));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)compare_func));
+	hashed = combine_hash(hashed, std::hash<GLenum>{}((GLenum)compare_mode));
+	hashed = combine_hash(hashed, std::hash<std::variant<glm::ivec4, glm::vec4>>{}(border_color));
+	return hashed;
 }
 
-vg::ids::Texture vg::raii::TextureBlock::operator[](GLuint i) const
+void vg::_::set_static_texture_params()
 {
-	if (i >= count)
-		throw block_index_out_of_range(count, i);
-	return _ts[i];
+	TextureParams& standard_linear_2d = *const_cast<TextureParams*>(TextureParams::STANDARD_LINEAR_2D.get());
+	standard_linear_2d.set_min_filter(MinFilter::LINEAR);
+	standard_linear_2d.set_mag_filter(MagFilter::LINEAR);
+	standard_linear_2d.set_wrap_s(TextureWrap::CLAMP_TO_BORDER);
+	standard_linear_2d.set_wrap_t(TextureWrap::CLAMP_TO_BORDER);
+
+	TextureParams& standard_linear_3d = *const_cast<TextureParams*>(TextureParams::STANDARD_LINEAR_3D.get());
+	standard_linear_3d.set_min_filter(MinFilter::LINEAR);
+	standard_linear_3d.set_mag_filter(MagFilter::LINEAR);
+	standard_linear_3d.set_wrap_s(TextureWrap::CLAMP_TO_BORDER);
+	standard_linear_3d.set_wrap_t(TextureWrap::CLAMP_TO_BORDER);
+	standard_linear_3d.set_wrap_r(TextureWrap::CLAMP_TO_BORDER);
+
+	TextureParams& standard_nearest_2d = *const_cast<TextureParams*>(TextureParams::STANDARD_NEAREST_2D.get());
+	standard_nearest_2d.set_min_filter(MinFilter::NEAREST);
+	standard_nearest_2d.set_mag_filter(MagFilter::NEAREST);
+	standard_nearest_2d.set_wrap_s(TextureWrap::CLAMP_TO_BORDER);
+	standard_nearest_2d.set_wrap_t(TextureWrap::CLAMP_TO_BORDER);
+
+	TextureParams& standard_nearest_3d = *const_cast<TextureParams*>(TextureParams::STANDARD_NEAREST_3D.get());
+	standard_nearest_3d.set_min_filter(MinFilter::NEAREST);
+	standard_nearest_3d.set_mag_filter(MagFilter::NEAREST);
+	standard_nearest_3d.set_wrap_s(TextureWrap::CLAMP_TO_BORDER);
+	standard_nearest_3d.set_wrap_t(TextureWrap::CLAMP_TO_BORDER);
+	standard_nearest_3d.set_wrap_r(TextureWrap::CLAMP_TO_BORDER);
 }
 
 void vg::select_texture_slot(GLuint slot)

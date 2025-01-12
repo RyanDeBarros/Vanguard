@@ -91,7 +91,7 @@ namespace vg
 
 	namespace data
 	{
-		extern double time;
-		extern double delta_time;
+		extern float time;
+		extern float delta_time;
 	}
 }

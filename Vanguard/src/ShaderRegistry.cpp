@@ -25,19 +25,18 @@ size_t vg::ShaderRegistry::TemplateConstructorHash::operator()(const TemplateCon
 		^ TemplateConstructor::tmpl_hash(c.vtmpl) ^ TemplateConstructor::tmpl_hash(c.ftmpl) ^ TemplateConstructor::tmpl_hash(c.gtmpl);
 }
 
-vg::ids::Shader vg::ShaderRegistry::load_shader(const Constructor& constructor)
+vg::ids::Shader vg::ShaderRegistry::load_shader(Constructor&& constructor)
 {
 	auto iter = shaders.find(constructor);
 	if (iter != shaders.end())
 		return iter->second;
 	raii::Shader shader(constructor.vertex, constructor.fragment, constructor.geometry);
 	ids::Shader sid = shader;
-	shaders.insert({ constructor, std::move(shader) });
-	lookup[sid] = constructor;
+	lookup[sid] = shaders.insert({ std::move(constructor), std::move(shader) }).first;
 	return sid;
 }
 
-vg::ids::Shader vg::ShaderRegistry::load_shader(const TemplateConstructor& constructor)
+vg::ids::Shader vg::ShaderRegistry::load_shader(TemplateConstructor&& constructor)
 {
 	auto iter = template_shaders.find(constructor);
 	if (iter != template_shaders.end())
@@ -48,8 +47,7 @@ vg::ids::Shader vg::ShaderRegistry::load_shader(const TemplateConstructor& const
 		constructor.geometry == "" ? "" : io::read_template_file(constructor.geometry, constructor.gtmpl)
 	);
 	ids::Shader sid = shader;
-	template_shaders.insert({ constructor, std::move(shader) });
-	template_lookup[sid] = constructor;
+	template_lookup[sid] = template_shaders.insert({ std::move(constructor), std::move(shader) }).first;
 	return sid;
 }
 
@@ -95,12 +93,12 @@ const vg::raii::Shader* vg::ShaderRegistry::ref_shader(ids::Shader shader) const
 {
 	auto iter = lookup.find(shader);
 	if (iter != lookup.end())
-		return &shaders.find(iter->second)->second;
+		return &iter->second->second;
 	else
 	{
 		auto it = template_lookup.find(shader);
 		if (it != template_lookup.end())
-			return &template_shaders.find(it->second)->second;
+			return &it->second->second;
 	}
 	return nullptr;
 }

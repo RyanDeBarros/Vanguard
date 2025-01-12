@@ -42,12 +42,12 @@ namespace vg
 		};
 
 		std::unordered_map<Constructor, raii::Shader, ConstructorHash> shaders;
-		std::unordered_map<ids::Shader, Constructor> lookup;
+		std::unordered_map<ids::Shader, decltype(shaders)::const_iterator> lookup;
 		std::unordered_map<TemplateConstructor, raii::Shader, TemplateConstructorHash> template_shaders;
-		std::unordered_map<ids::Shader, TemplateConstructor> template_lookup;
+		std::unordered_map<ids::Shader, decltype(template_shaders)::const_iterator> template_lookup;
 
-		ids::Shader load_shader(const Constructor& constructor);
-		ids::Shader load_shader(const TemplateConstructor& constructor);
+		ids::Shader load_shader(Constructor&& constructor);
+		ids::Shader load_shader(TemplateConstructor&& constructor);
 
 	public:
 		ids::Shader load_shader(const FilePath& vertex, const FilePath& fragment, const FilePath& geometry = "");

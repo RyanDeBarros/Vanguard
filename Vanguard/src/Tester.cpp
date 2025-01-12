@@ -11,6 +11,7 @@
 #include "raii/Texture.h"
 #include "Transform.h"
 #include "ShaderRegistry.h"
+#include "TextureRegistry.h"
 
 int main()
 {
@@ -21,6 +22,7 @@ int main()
 	window.clear_color = { 0.2f, 0.4f, 0.7f, 1.0f };
 
 	vg::ShaderRegistry shaders;
+	vg::TransientTextureRegistry textures;
 	
 	auto color_shader = shaders.load_shader("shaders/color.vert", "shaders/color.frag");
 	vg::bind_shader(color_shader);
@@ -101,11 +103,7 @@ int main()
 	
 	sprite.subsend_all_blocks();
 
-	vg::raii::Image2D img_einstein = vg::load_image_2d("ex/flag.png");
-	vg::raii::Texture tex_einstein;
-	vg::image_2d::send_texture(img_einstein, tex_einstein);
-	vg::texture_params::nearest(vg::texture_params::T2D);
-	vg::texture_params::clamp_to_edge(vg::texture_params::T2D);
+	auto tex_einstein = textures.load_texture_2d("ex/flag.png", vg::TextureParams::STANDARD_NEAREST_2D);
 
 	vg::Transformer2D sprite_parent({ window.convert_coordinates({ -0.5f, 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN), 0.0f, { 0.5f, 1.0f } });
 	vg::attach_transformer(&sprite_parent, &sprite_transformer);
@@ -128,7 +126,7 @@ int main()
 		colorful_vertex_buffer.ref<glm::vec4>(2, 1).z = glm::sqrt(0.5f * (1.0f + glm::sin((float)glfwGetTime() + 2 * glm::pi<float>() / 3)));
 		colorful_vertex_buffer.subsend_single(2, 1);
 
-		white_square.ref<glm::vec2>(0, 0, 0).x -= window.convert_coordinates({ 0.008f * glm::sin((float)glfwGetTime() * 20.0f), 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN).x;
+		white_square.ref<glm::vec2>(0, 0, 0).x -= window.convert_coordinates({ 0.5f * glm::sin((float)glfwGetTime() * 20.0f), 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN).x * vg::data::delta_time;
 		white_square.bind_vb(0);
 		white_square.subsend_single(0, 0, 0);
 
@@ -146,11 +144,11 @@ int main()
 		sprite.bind_vao();
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 
-		sprite_grandparent.local.position.x += 1.0f;
+		sprite_grandparent.local.position.x += 60.0f * vg::data::delta_time;
 		sprite_grandparent.mark();
-		sprite_parent.local.rotation += 0.02f;
+		sprite_parent.local.rotation += 1.2f * vg::data::delta_time;
 		sprite_parent.mark();
-		sprite_transformer.local.rotation -= 0.01f;
+		sprite_transformer.local.rotation -= 0.6f * vg::data::delta_time;
 		sprite_transformer.mark();
 
 		sprite_transformer.sync(); // call before sending to vertex buffer
@@ -168,6 +166,7 @@ int main()
 	}
 
 	shaders.unload_all();
+	textures.unload_all();
 	vg::terminate();
 	return 0;
 }

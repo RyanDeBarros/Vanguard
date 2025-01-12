@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <variant>
+#include <bitset>
 
 #include "Vanguard.h"
 #include "utils/FilePath.h"
@@ -8,6 +10,8 @@
 #include "utils/Meta.h"
 #include "GLBuffer.h"
 #include "VGMath.h"
+
+// LATER mipmaps
 
 namespace vg
 {
@@ -167,8 +171,8 @@ namespace vg
 		extern void max_lod(Target target, float lod = 1000);
 		extern void compare_func(Target target, TextureCompareFunc func = TextureCompareFunc::LESS);
 		extern void compare_mode(Target target, TextureCompareMode mode = TextureCompareMode::REF_TO_TEXTURE);
-		extern void border_color(Target target, glm::ivec4 rgba);
-		extern void border_color(Target target, glm::vec4 rgba);
+		extern void border_color(Target target, glm::ivec4 rgba = { 0, 0, 0, 0 });
+		extern void border_color(Target target, glm::vec4 rgba = { 0, 0, 0, 0 });
 
 		extern void linear(Target target);
 		extern void nearest(Target target);
@@ -198,12 +202,98 @@ namespace vg
 		extern void max_lod(ids::Texture texture, float lod = 1000);
 		extern void compare_func(ids::Texture texture, TextureCompareFunc func = TextureCompareFunc::LESS);
 		extern void compare_mode(ids::Texture texture, TextureCompareMode mode = TextureCompareMode::REF_TO_TEXTURE);
-		extern void border_color(ids::Texture texture, glm::ivec4 rgba);
-		extern void border_color(ids::Texture texture, glm::vec4 rgba);
-
-		extern void linear(ids::Texture texture);
-		extern void nearest(ids::Texture texture);
+		extern void border_color(ids::Texture texture, glm::ivec4 rgba = { 0, 0, 0, 0 });
+		extern void border_color(ids::Texture texture, glm::vec4 rgba = { 0, 0, 0, 0 });
 #endif
+	}
+
+	class TextureParams {
+		enum Index
+		{
+			MIN_FILTER,
+			MAG_FILTER,
+			WRAP_S,
+			WRAP_T,
+			WRAP_R,
+			SWIZZLE_R,
+			SWIZZLE_G,
+			SWIZZLE_B,
+			SWIZZLE_A,
+			DEPTH_STENCIL_MODE,
+			BASE_LEVEL,
+			MAX_LEVEL,
+			LOD_BIAS,
+			MIN_LOD,
+			MAX_LOD,
+			COMPARE_FUNC,
+			COMPARE_MODE,
+			BORDER_COLOR,
+			__COUNT
+		};
+
+		std::bitset<Index::__COUNT> flags;
+
+		MinFilter min_filter = MinFilter::NEAREST_MIPMAP_LINEAR;
+		MagFilter mag_filter = MagFilter::LINEAR;
+		TextureWrap wrap_s = TextureWrap::REPEAT;
+		TextureWrap wrap_t = TextureWrap::REPEAT;
+		TextureWrap wrap_r = TextureWrap::REPEAT;
+		TextureSwizzle swizzle_r = TextureSwizzle::RED;
+		TextureSwizzle swizzle_g = TextureSwizzle::GREEN;
+		TextureSwizzle swizzle_b = TextureSwizzle::BLUE;
+		TextureSwizzle swizzle_a = TextureSwizzle::ALPHA;
+		DepthStencilMode depth_stencil_mode = DepthStencilMode::DEPTH_COMPONENT;
+		int base_level = 0;
+		int max_level = 1000;
+		float lod_bias = 0.0f;
+		float min_lod = -1000.0f;
+		float max_lod = 1000.0f;
+		TextureCompareFunc compare_func = TextureCompareFunc::LESS;
+		TextureCompareMode compare_mode = TextureCompareMode::REF_TO_TEXTURE;
+		std::variant<glm::ivec4, glm::vec4> border_color = glm::vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+	public:
+		void set_min_filter(MinFilter min_filter);
+		void set_mag_filter(MagFilter mag_filter);
+		void set_wrap_s(TextureWrap wrap_s);
+		void set_wrap_t(TextureWrap wrap_t);
+		void set_wrap_r(TextureWrap wrap_r);
+		void set_swizzle_r(TextureSwizzle swizzle_r);
+		void set_swizzle_g(TextureSwizzle swizzle_g);
+		void set_swizzle_b(TextureSwizzle swizzle_b);
+		void set_swizzle_a(TextureSwizzle swizzle_a);
+		void set_swizzle(TextureSwizzle swizzle_r, TextureSwizzle swizzle_g, TextureSwizzle swizzle_b, TextureSwizzle swizzle_a);
+		void set_depth_stencil_mode(DepthStencilMode depth_stencil_mode);
+		void set_base_level(int base_level);
+		void set_max_level(int max_level);
+		void set_lod_bias(float lod_bias);
+		void set_min_lod(float min_lod);
+		void set_max_lod(float max_lod);
+		void set_compare_func(TextureCompareFunc compare_func);
+		void set_compare_mode(TextureCompareMode compare_mode);
+		void set_border_color(glm::ivec4 border_color);
+		void set_border_color(glm::vec4 border_color);
+
+		void apply(texture_params::Target target) const;
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+		void apply(ids::Texture texture) const;
+#endif
+		size_t hash() const;
+
+		static const std::shared_ptr<const TextureParams> STANDARD_LINEAR_2D;
+		static const std::shared_ptr<const TextureParams> STANDARD_LINEAR_3D;
+		static const std::shared_ptr<const TextureParams> STANDARD_NEAREST_2D;
+		static const std::shared_ptr<const TextureParams> STANDARD_NEAREST_3D;
+	};
+
+	inline const std::shared_ptr<const TextureParams> TextureParams::STANDARD_LINEAR_2D = std::make_shared<const TextureParams>();
+	inline const std::shared_ptr<const TextureParams> TextureParams::STANDARD_LINEAR_3D = std::make_shared<const TextureParams>();
+	inline const std::shared_ptr<const TextureParams> TextureParams::STANDARD_NEAREST_2D = std::make_shared<const TextureParams>();
+	inline const std::shared_ptr<const TextureParams> TextureParams::STANDARD_NEAREST_3D = std::make_shared<const TextureParams>();
+
+	namespace _
+	{
+		extern void set_static_texture_params();
 	}
 
 	extern void select_texture_slot(GLuint slot);
@@ -281,7 +371,7 @@ namespace vg
 			CUBE_MAP_Y_POS = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
 			CUBE_MAP_Y_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 			CUBE_MAP_Z_POS = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-			CUBE_MAP_Z_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+			CUBE_MAP_Z_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 		};
 
 		enum class SubimageTarget3D
@@ -312,7 +402,7 @@ namespace vg
 		{
 			T2D = GL_TEXTURE_2D,
 			T1D_ARRAY = GL_TEXTURE_1D_ARRAY,
-			RECTANGLE = GL_TEXTURE_RECTANGLE,
+			RECTANGLE = GL_TEXTURE_RECTANGLE
 		};
 
 		extern void copy_subimage_1d(int xoff, int fbx, int fby, int width, int level = 0);

@@ -94,6 +94,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src;vendor;$(SolutionDir)Dependencies\glew-2.1.0\include;$(SolutionDir)Dependencies\glfw-3.4.bin.WIN32\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/std:c++20 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -112,6 +113,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src;vendor;$(SolutionDir)Dependencies\glew-2.1.0\include;$(SolutionDir)Dependencies\glfw-3.4.bin.WIN32\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/std:c++20 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,6 +132,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src;vendor;$(SolutionDir)Dependencies\glew-2.1.0\include;$(SolutionDir)Dependencies\glfw-3.4.bin.WIN64\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/std:c++20 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,6 +151,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>src;vendor;$(SolutionDir)Dependencies\glew-2.1.0\include;$(SolutionDir)Dependencies\glfw-3.4.bin.WIN64\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/std:c++20 /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -164,6 +168,7 @@
     <ClCompile Include="src\Renderable.cpp" />
     <ClCompile Include="src\Errors.cpp" />
     <ClCompile Include="src\ShaderRegistry.cpp" />
+    <ClCompile Include="src\TextureRegistry.cpp" />
     <ClCompile Include="src\Transform.cpp" />
     <ClCompile Include="src\utils\FilePath.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -184,6 +189,7 @@
     <ClInclude Include="src\Draw.h" />
     <ClInclude Include="src\raii\FrameBuffer.h" />
     <ClInclude Include="src\ShaderRegistry.h" />
+    <ClInclude Include="src\TextureRegistry.h" />
     <ClInclude Include="src\Transform.h" />
     <ClInclude Include="src\utils\DynamicArray.h" />
     <ClInclude Include="src\utils\FilePath.h" />

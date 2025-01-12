@@ -10,14 +10,15 @@
 // LATER use Logger
 #include <iostream>
 
-double vg::data::time = 0.0f;
-double vg::data::delta_time = 0.0f;
+float vg::data::time = 0.0f;
+float vg::data::delta_time = 0.0f;
 
 void vg::init(const vg::InitializationConfiguration& config)
 {
 	if (glfwInit() != GLFW_TRUE)
 		throw Error(ErrorCode::GLFW_INIT);
 	_::init_input();
+	_::set_static_texture_params();
 	
 	if (config.stbi_flip_vertically_on_load)
 		stbi_set_flip_vertically_on_load(1);
@@ -32,7 +33,7 @@ void vg::new_frame()
 {
 	glfwPollEvents();
 	update_bound_shader();
-	double new_time = glfwGetTime();
+	float new_time = (float)glfwGetTime();
 	data::delta_time = new_time - data::time;
 	data::time = new_time;
 }
