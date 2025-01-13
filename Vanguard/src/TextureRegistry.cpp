@@ -1,8 +1,13 @@
 #include "TextureRegistry.h"
 
+bool vg::TransientTextureRegistry::Constructor2D::operator==(const Constructor2D& other) const
+{
+	return image_filepath == other.image_filepath && *params == *other.params && level == other.level;
+}
+
 size_t vg::TransientTextureRegistry::Constructor2DHash::operator()(const Constructor2D& c) const
 {
-	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.border) ^ std::hash<int>{}(c.level);
+	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.level);
 }
 
 vg::ids::Texture vg::TransientTextureRegistry::load_texture_2d(Constructor2D&& constructor)
@@ -16,7 +21,8 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_2d(Constructor2D&& c
 	bind_texture(texture, TextureTarget::T2D);
 	align_texture_pixels(image.chpp);
 	tex::image_2d(image.width, image.height, texture_internal_format(image.chpp, vg::TextureDataType::UBYTE), texture_format(image.chpp),
-		image.pixels, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, constructor.border, constructor.level);
+		image.pixels, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, constructor.level);
+	delete_image(image);
 			
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 	constructor.params->apply(texture);
@@ -30,9 +36,14 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_2d(Constructor2D&& c
 	return tid;
 }
 
+bool vg::TransientTextureRegistry::ConstructorRect::operator==(const ConstructorRect& other) const
+{
+	return image_filepath == other.image_filepath && *params == *other.params && level == other.level;
+}
+
 size_t vg::TransientTextureRegistry::ConstructorRectHash::operator()(const ConstructorRect& c) const
 {
-	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.border) ^ std::hash<int>{}(c.level);
+	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.level);
 }
 
 vg::ids::Texture vg::TransientTextureRegistry::load_texture_rect(ConstructorRect&& constructor)
@@ -46,7 +57,8 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_rect(ConstructorRect
 	bind_texture(texture, TextureTarget::RECTANGLE);
 	align_texture_pixels(image.chpp);
 	tex::image_2d(image.width, image.height, texture_internal_format(image.chpp, vg::TextureDataType::UBYTE), texture_format(image.chpp),
-		image.pixels, tex::ImageTarget2D::RECTANGLE, TextureDataType::UBYTE, constructor.border, constructor.level);
+		image.pixels, tex::ImageTarget2D::RECTANGLE, TextureDataType::UBYTE, constructor.level);
+	delete_image(image);
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 	constructor.params->apply(texture);
@@ -60,9 +72,14 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_rect(ConstructorRect
 	return tid;
 }
 
+bool vg::TransientTextureRegistry::Constructor1D::operator==(const Constructor1D& other) const
+{
+	return image_filepath == other.image_filepath && *params == *other.params && level == other.level;
+}
+
 size_t vg::TransientTextureRegistry::Constructor1DHash::operator()(const Constructor1D& c) const
 {
-	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.border) ^ std::hash<int>{}(c.level);
+	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.level);
 }
 
 vg::ids::Texture vg::TransientTextureRegistry::load_texture_1d(Constructor1D&& constructor)
@@ -76,7 +93,8 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_1d(Constructor1D&& c
 	bind_texture(texture, TextureTarget::T1D);
 	align_texture_pixels(image.chpp);
 	tex::image_1d(image.width * image.height, texture_internal_format(image.chpp, vg::TextureDataType::UBYTE), texture_format(image.chpp),
-		image.pixels, tex::ImageTarget1D::T1D, TextureDataType::UBYTE, constructor.border, constructor.level);
+		image.pixels, tex::ImageTarget1D::T1D, TextureDataType::UBYTE, constructor.level);
+	delete_image(image);
 
 #if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
 	constructor.params->apply(texture);
@@ -90,19 +108,115 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_1d(Constructor1D&& c
 	return tid;
 }
 
-vg::ids::Texture vg::TransientTextureRegistry::load_texture_2d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border, int level)
+bool vg::TransientTextureRegistry::ConstructorGIF::operator==(const ConstructorGIF& other) const
 {
-	return load_texture_2d(Constructor2D{ filepath, params, border, level });
+	return image_filepath == other.image_filepath && *params == *other.params && level == other.level;
 }
 
-vg::ids::Texture vg::TransientTextureRegistry::load_texture_rect(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border, int level)
+size_t vg::TransientTextureRegistry::ConstructorGIFHash::operator()(const ConstructorGIF& c) const
 {
-	return load_texture_rect(ConstructorRect{ filepath, params, border, level });
+	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.level);
 }
 
-vg::ids::Texture vg::TransientTextureRegistry::load_texture_1d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border, int level)
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_gif(ConstructorGIF&& constructor)
 {
-	return load_texture_1d(Constructor1D{ filepath, params, border, level });
+	auto iter = textures_gif.find(constructor);
+	if (iter != textures_gif.end())
+		return iter->second;
+
+	raii::Texture texture;
+	GIFData gif = load_raw_gif(constructor.image_filepath);
+	bind_texture(texture, TextureTarget::T2D_ARRAY);
+	align_texture_pixels(gif.raw_image.chpp);
+	tex::image_3d(gif.raw_image.width, gif.raw_image.height, gif.num_frames, texture_internal_format(gif.raw_image.chpp, TextureDataType::UBYTE),
+		texture_format(gif.raw_image.chpp), gif.raw_image.pixels, tex::ImageTarget3D::T2D_ARRAY, TextureDataType::UBYTE, constructor.level);
+	delete_image(gif.raw_image);
+	delete[] gif.delay_cs;
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+	constructor.params->apply(texture);
+#else
+	constructor.params->apply(texture_params::Target::T2D_ARRAY);
+#endif
+
+	ids::Texture tid = texture;
+	lookup_gif[tid] = textures_gif.insert({ std::move(constructor), std::move(texture) }).first;
+	meta_lookup[tid] = TextureType::GIF_2D_ARRAY;
+	return tid;
+}
+
+bool vg::TransientTextureRegistry::ConstructorSpritesheet::operator==(const ConstructorSpritesheet& other) const
+{
+	return image_filepath == other.image_filepath && *params == *other.params && cell_width == other.cell_width && cell_height == other.cell_height && level == other.level;
+}
+
+size_t vg::TransientTextureRegistry::ConstructorSpritesheetHash::operator()(const ConstructorSpritesheet& c) const
+{
+	return std::hash<FilePath>{}(c.image_filepath) ^ c.params->hash() ^ std::hash<int>{}(c.cell_width) ^ std::hash<int>{}(c.cell_height) ^ std::hash<int>{}(c.level);
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_spritesheet(ConstructorSpritesheet&& constructor)
+{
+	auto iter = textures_spritesheet.find(constructor);
+	if (iter != textures_spritesheet.end())
+		return iter->second;
+
+	raii::Texture texture;
+	Image image = load_image(constructor.image_filepath);
+	int cols = image.width / constructor.cell_width;
+	if (cols * constructor.cell_width != image.width)
+	{
+		delete_image(image);
+		throw Error(ErrorCode::INVALID_SPRITE_SHEET_DIMENSIONS);
+	}
+	int rows = image.height / constructor.cell_height;
+	if (rows * constructor.cell_height!= image.height)
+	{
+		delete_image(image);
+		throw Error(ErrorCode::INVALID_SPRITE_SHEET_DIMENSIONS);
+	}
+
+	bind_texture(texture, TextureTarget::T2D_ARRAY);
+	align_texture_pixels(image.chpp);
+	tex::image_3d(constructor.cell_width, constructor.cell_height, rows * cols, texture_internal_format(image.chpp, TextureDataType::UBYTE),
+		texture_format(image.chpp), image.pixels, tex::ImageTarget3D::T2D_ARRAY, TextureDataType::UBYTE, constructor.level);
+	delete_image(image);
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+	constructor.params->apply(texture);
+#else
+	constructor.params->apply(texture_params::Target::T2D_ARRAY);
+#endif
+
+	ids::Texture tid = texture;
+	lookup_spritesheet[tid] = textures_spritesheet.insert({ std::move(constructor), std::move(texture) }).first;
+	meta_lookup[tid] = TextureType::SPRITESHEET_2D_ARRAY;
+	return tid;
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_2d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level)
+{
+	return load_texture_2d(Constructor2D{ filepath, params, level });
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_rect(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level)
+{
+	return load_texture_rect(ConstructorRect{ filepath, params, level });
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_1d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level)
+{
+	return load_texture_1d(Constructor1D{ filepath, params, level });
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_gif(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level)
+{
+	return load_texture_gif(ConstructorGIF{ filepath, params, level });
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_spritesheet(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int cell_width, int cell_height, int level)
+{
+	return load_texture_spritesheet(ConstructorSpritesheet{ filepath, params, cell_width, cell_height, level });
 }
 
 void vg::TransientTextureRegistry::unload_texture(ids::Texture texture)
@@ -146,6 +260,26 @@ void vg::TransientTextureRegistry::unload_texture(ids::Texture texture)
 		}
 		break;
 	}
+	case TextureType::GIF_2D_ARRAY:
+	{
+		auto it = lookup_gif.find(texture);
+		if (it != lookup_gif.end())
+		{
+			textures_gif.erase(it->second);
+			lookup_gif.erase(it);
+		}
+		break;
+	}
+	case TextureType::SPRITESHEET_2D_ARRAY:
+	{
+		auto it = lookup_spritesheet.find(texture);
+		if (it != lookup_spritesheet.end())
+		{
+			textures_spritesheet.erase(it->second);
+			lookup_spritesheet.erase(it);
+		}
+		break;
+	}
 	}
 }
 
@@ -157,5 +291,9 @@ void vg::TransientTextureRegistry::unload_all()
 	lookup_rect.clear();
 	textures_1d.clear();
 	lookup_1d.clear();
+	textures_gif.clear();
+	lookup_gif.clear();
+	textures_spritesheet.clear();
+	lookup_spritesheet.clear();
 	meta_lookup.clear();
 }

@@ -4,6 +4,7 @@
 #include <stb/stb_image_write.h>
 
 #include "Errors.h"
+#include "utils/IO.h"
 
 vg::raii::Texture::Texture()
 {
@@ -637,19 +638,19 @@ void vg::bind_textures_to_slots(const ids::Texture* textures, GLuint first_slot,
 	glBindTextures(first_slot, count, (const GLuint*)textures);
 }
 
-void vg::tex::image_1d(int width, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget1D target, TextureDataType data_type, int border, int level)
+void vg::tex::image_1d(int width, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget1D target, TextureDataType data_type, int level)
 {
-	glTexImage1D((GLenum)target, level, (GLenum)internal_format, width, border, (GLenum)format, (GLenum)data_type, pixels);
+	glTexImage1D((GLenum)target, level, (GLenum)internal_format, width, 0, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::image_2d(int width, int height, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget2D target, TextureDataType data_type, int border, int level)
+void vg::tex::image_2d(int width, int height, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget2D target, TextureDataType data_type, int level)
 {
-	glTexImage2D((GLenum)target, level, (GLenum)internal_format, width, height, border, (GLenum)format, (GLenum)data_type, pixels);
+	glTexImage2D((GLenum)target, level, (GLenum)internal_format, width, height, 0, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::image_3d(int width, int height, int depth, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget3D target, TextureDataType data_type, int border, int level)
+void vg::tex::image_3d(int width, int height, int depth, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget3D target, TextureDataType data_type, int level)
 {
-	glTexImage3D((GLenum)target, level, (GLenum)internal_format, width, height, depth, border, (GLenum)format, (GLenum)data_type, pixels);
+	glTexImage3D((GLenum)target, level, (GLenum)internal_format, width, height, depth, 0, (GLenum)format, (GLenum)data_type, pixels);
 }
 
 void vg::tex::multisample_2d(GLsizei samples, int width, int height, TextureInternalFormat internal_format, bool fixed, bool proxy)
@@ -677,19 +678,19 @@ void vg::tex::subimage_3d(int xoff, int yoff, int zoff, int width, int height, i
 	glTexSubImage3D((GLenum)target, level, xoff, yoff, zoff, width, height, depth, (GLenum)format, (GLenum)data_type, pixels);
 }
 
-void vg::tex::copy_image_1d(int x, int y, int width, TextureInternalFormat internal_format, int border, int level)
+void vg::tex::copy_image_1d(int x, int y, int width, TextureInternalFormat internal_format, int level)
 {
-	glCopyTexImage1D(GL_TEXTURE_1D, level, (GLenum)internal_format, x, y, width, border);
+	glCopyTexImage1D(GL_TEXTURE_1D, level, (GLenum)internal_format, x, y, width, 0);
 }
 
-void vg::tex::copy_image_2d(int x, int y, int width, int height, TextureInternalFormat internal_format, int border, int level)
+void vg::tex::copy_image_2d(int x, int y, int width, int height, TextureInternalFormat internal_format, int level)
 {
-	glCopyTexImage2D(GL_TEXTURE_2D, level, (GLenum)internal_format, x, y, width, height, border);
+	glCopyTexImage2D(GL_TEXTURE_2D, level, (GLenum)internal_format, x, y, width, height, 0);
 }
 
-void vg::tex::copy_image_cube_map(int x, int y, int width, int height, TextureInternalFormat internal_format, CubeMapFaceTarget target, int border, int level)
+void vg::tex::copy_image_cube_map(int x, int y, int width, int height, TextureInternalFormat internal_format, CubeMapFaceTarget target, int level)
 {
-	glCopyTexImage2D((GLenum)target, level, (GLenum)internal_format, x, y, width, height, border);
+	glCopyTexImage2D((GLenum)target, level, (GLenum)internal_format, x, y, width, height, 0);
 }
 
 void vg::tex::copy_subimage_1d(int xoff, int x, int y, int width, int level)
@@ -1004,23 +1005,83 @@ bool vg::save_image(const Image& image, const FilePath& filepath, ImageFormat fo
 	return false;
 }
 
-void vg::delete_image(const Image& image)
+void vg::delete_image(Image& image)
 {
 	delete[] image.pixels;
+	image.pixels = nullptr;
 }
 
-void vg::image_2d::send_texture(int width, int height, CHPP chpp, ids::Texture texture, int border, int level)
+std::vector<vg::GIFImageFrame> vg::load_gif(const FilePath& filepath)
+{
+	std::vector<vg::GIFImageFrame> frames;
+
+	std::ifstream file(filepath.c_str(), std::ios::binary | std::ios::ate);
+	std::streamsize size = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	unsigned char* full_buffer = new unsigned char[size];
+	if (!file.read(reinterpret_cast<char*>(full_buffer), size))
+	{
+		delete[] full_buffer;
+		throw Error(ErrorCode::INVALID_GIF);
+	}
+
+	//std::string buffer = io::read_file(filepath);
+	int width, height, num_frames, chpp;
+	int* delays;
+	//unsigned char* stbi_gif_buffer = stbi_load_gif_from_memory(reinterpret_cast<const unsigned char*>(buffer.c_str()), (int)buffer.size(), &delays, &width, &height, &num_frames, &chpp, 0);
+	unsigned char* stbi_gif_buffer = stbi_load_gif_from_memory(full_buffer, (int)size, &delays, &width, &height, &num_frames, &chpp, 0);
+	if (!stbi_gif_buffer || !delays || num_frames <= 0)
+	{
+		delete[] full_buffer;
+		throw Error(ErrorCode::INVALID_GIF);
+	}
+	frames.resize(num_frames);
+	auto img_buf_size = width * height * chpp;
+	for (size_t i = 0; i < num_frames; ++i)
+	{
+		frames[i].image.width = width;
+		frames[i].image.height = height;
+		frames[i].image.chpp = chpp;
+		frames[i].image.pxnew();
+		memcpy(frames[i].image.pixels, stbi_gif_buffer + i * img_buf_size, img_buf_size);
+		frames[i].delay_ms = delays[i] * 10; // delays is in centi-seconds
+	}
+	stbi_image_free(stbi_gif_buffer);
+
+	delete[] full_buffer;
+
+	return frames;
+}
+
+vg::GIFData vg::load_raw_gif(const FilePath& filepath)
+{
+	GIFData gif;
+	std::string buffer = io::read_file(filepath);
+	gif.raw_image.pixels = stbi_load_gif_from_memory(reinterpret_cast<const unsigned char*>(buffer.c_str()), (int)buffer.size(),
+		&gif.delay_cs, &gif.raw_image.width, &gif.raw_image.height, &gif.num_frames, &gif.raw_image.chpp, 0);
+	return gif;
+}
+
+void vg::delete_images(std::vector<GIFImageFrame>& frames)
+{
+	for (auto& frame : frames)
+		delete[] frame.image.pixels;
+	frames.clear();
+}
+
+void vg::image_2d::send_texture(int width, int height, CHPP chpp, ids::Texture texture, int level)
 {
 	bind_texture(texture, TextureTarget::T2D);
 	align_texture_pixels(chpp);
-	tex::image_2d(width, height, texture_internal_format(chpp, TextureDataType::UBYTE), texture_format(chpp), nullptr, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, border, level);
+	tex::image_2d(width, height, texture_internal_format(chpp, TextureDataType::UBYTE), texture_format(chpp), nullptr, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, level);
 }
 
-void vg::image_2d::send_texture(const Image& image, ids::Texture texture, int border, int level)
+void vg::image_2d::send_texture(const Image& image, ids::Texture texture, int level)
 {
 	bind_texture(texture, TextureTarget::T2D);
 	align_texture_pixels(image.chpp);
-	tex::image_2d(image.width, image.height, texture_internal_format(image.chpp, TextureDataType::UBYTE), texture_format(image.chpp), image.pixels, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, border, level);
+	tex::image_2d(image.width, image.height, texture_internal_format(image.chpp, TextureDataType::UBYTE), texture_format(image.chpp), image.pixels, tex::ImageTarget2D::T2D, TextureDataType::UBYTE, level);
 }
 
 void vg::image_2d::update_full_texture(const Image& image, ids::Texture texture, int level)
@@ -1075,8 +1136,7 @@ int vg::query::texture_iproperty(TextureTarget target, TextureIProperty property
 	return value;
 }
 
-vg::raii::Texture vg::cube_map::generate_from_existing(ids::Texture x_pos, ids::Texture x_neg, ids::Texture y_pos, ids::Texture y_neg, ids::Texture z_pos, ids::Texture z_neg,
-	std::array<int, 6> borders, std::array<int, 6> levels)
+vg::raii::Texture vg::cube_map::generate_from_existing(ids::Texture x_pos, ids::Texture x_neg, ids::Texture y_pos, ids::Texture y_neg, ids::Texture z_pos, ids::Texture z_neg, std::array<int, 6> levels)
 {
 	raii::Texture texture;
 	bind_texture(texture, TextureTarget::CUBE_MAP);
@@ -1090,27 +1150,27 @@ vg::raii::Texture vg::cube_map::generate_from_existing(ids::Texture x_pos, ids::
 		tex::ImageTarget2D::CUBE_MAP_Z_NEG
 	};
 
-	static const auto gen_face = [](tex::ImageTarget2D face, int border, int level) {
+	static const auto gen_face = [](tex::ImageTarget2D face, int level) {
 		TextureInternalFormat internal_format = (TextureInternalFormat)query::texture_iproperty(TextureTarget::T2D, query::TextureIProperty::INTERNAL_FORMAT);
 		auto cdt = extract_texture_internal_format(internal_format);
 		int width = query::texture_iproperty(TextureTarget::T2D, query::TextureIProperty::WIDTH, level);
 		int height = query::texture_iproperty(TextureTarget::T2D, query::TextureIProperty::HEIGHT, level);
-		tex::image_2d(width, height, internal_format, texture_format(cdt.first), nullptr, face, TextureDataType::UBYTE, border, level);
-		tex::copy_image_2d(0, 0, width, height, internal_format, border, level);
+		tex::image_2d(width, height, internal_format, texture_format(cdt.first), nullptr, face, TextureDataType::UBYTE, level);
+		tex::copy_image_2d(0, 0, width, height, internal_format, level);
 		};
 
 	bind_texture(x_pos, TextureTarget::T2D);
-	gen_face(tex::ImageTarget2D::CUBE_MAP_X_POS, borders[0], levels[0]);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_X_POS, levels[0]);
 	bind_texture(x_neg, TextureTarget::T2D);
-	gen_face(tex::ImageTarget2D::CUBE_MAP_X_NEG, borders[1], levels[1]);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_X_NEG, levels[1]);
 	bind_texture(y_pos, TextureTarget::T2D);
-	gen_face(tex::ImageTarget2D::CUBE_MAP_Y_POS, borders[2], levels[2]);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Y_POS, levels[2]);
 	bind_texture(y_neg, TextureTarget::T2D);
-	gen_face(tex::ImageTarget2D::CUBE_MAP_Y_NEG, borders[3], levels[3]);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Y_NEG, levels[3]);
 	bind_texture(z_pos, TextureTarget::T2D);
-	gen_face(tex::ImageTarget2D::CUBE_MAP_Z_POS, borders[4], levels[4]);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Z_POS, levels[4]);
 	bind_texture(z_neg, TextureTarget::T2D);
-	gen_face(tex::ImageTarget2D::CUBE_MAP_Z_NEG, borders[5], levels[5]);
+	gen_face(tex::ImageTarget2D::CUBE_MAP_Z_NEG, levels[5]);
 
 	return texture;
 }

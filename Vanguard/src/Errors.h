@@ -26,6 +26,8 @@ namespace vg
 		SHADER_LINKAGE,
 		INVALID_TEXTURE_SLOT,
 		INVALID_CHPP,
+		INVALID_GIF,
+		INVALID_SPRITE_SHEET_DIMENSIONS,
 	};
 
 	struct Error : public std::runtime_error

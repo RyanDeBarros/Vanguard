@@ -24,7 +24,7 @@ Types of textures :
 // TODO implement loading:
 
 - 1D array
-- 2D array
+- 2D array (from spritesheets)
 - Cube map
 
 */
@@ -37,10 +37,9 @@ namespace vg
 		{
 			FilePath image_filepath;
 			std::shared_ptr<const TextureParams> params;
-			int border;
 			int level;
 
-			bool operator==(const Constructor2D&) const = default;
+			bool operator==(const Constructor2D&) const;
 		};
 
 		struct Constructor2DHash
@@ -57,10 +56,9 @@ namespace vg
 		{
 			FilePath image_filepath;
 			std::shared_ptr<const TextureParams> params;
-			int border;
 			int level;
 
-			bool operator==(const ConstructorRect&) const = default;
+			bool operator==(const ConstructorRect&) const;
 		};
 
 		struct ConstructorRectHash
@@ -77,10 +75,9 @@ namespace vg
 		{
 			FilePath image_filepath;
 			std::shared_ptr<const TextureParams> params;
-			int border;
 			int level;
 
-			bool operator==(const Constructor1D&) const = default;
+			bool operator==(const Constructor1D&) const;
 		};
 
 		struct Constructor1DHash
@@ -93,19 +90,64 @@ namespace vg
 
 		ids::Texture load_texture_1d(Constructor1D&& constructor);
 
+		struct ConstructorGIF
+		{
+			FilePath image_filepath;
+			std::shared_ptr<const TextureParams> params;
+			int level;
+
+			bool operator==(const ConstructorGIF&) const;
+		};
+
+		struct ConstructorGIFHash
+		{
+			size_t operator()(const ConstructorGIF& c) const;
+		};
+
+		std::unordered_map<ConstructorGIF, raii::Texture, ConstructorGIFHash> textures_gif;
+		std::unordered_map<ids::Texture, decltype(textures_gif)::const_iterator> lookup_gif;
+
+		ids::Texture load_texture_gif(ConstructorGIF&& constructor);
+		ids::Texture load_texture_gif(ConstructorGIF&& constructor, std::vector<int>& delay_ms);
+
+		struct ConstructorSpritesheet
+		{
+			FilePath image_filepath;
+			std::shared_ptr<const TextureParams> params;
+			int cell_width, cell_height;
+			int level;
+
+			bool operator==(const ConstructorSpritesheet&) const;
+		};
+
+		struct ConstructorSpritesheetHash
+		{
+			size_t operator()(const ConstructorSpritesheet& c) const;
+		};
+
+		std::unordered_map<ConstructorSpritesheet, raii::Texture, ConstructorSpritesheetHash> textures_spritesheet;
+		std::unordered_map<ids::Texture, decltype(textures_spritesheet)::const_iterator> lookup_spritesheet;
+
+		ids::Texture load_texture_spritesheet(ConstructorSpritesheet&& constructor);
+
 		enum class TextureType
 		{
 			T2D,
 			RECTANGLE,
 			T1D,
-			T1D_ARRAY
+			GIF_2D_ARRAY,
+			SPRITESHEET_2D_ARRAY,
 		};
 		std::unordered_map<ids::Texture, TextureType> meta_lookup;
 
 	public:
-		ids::Texture load_texture_2d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border = 0, int level = 0);
-		ids::Texture load_texture_rect(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border = 0, int level = 0);
-		ids::Texture load_texture_1d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int border = 0, int level = 0);
+		ids::Texture load_texture_2d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
+		ids::Texture load_texture_rect(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
+		ids::Texture load_texture_1d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
+		ids::Texture load_texture_gif(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
+		ids::Texture load_texture_gif_and_ms(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, std::vector<int>& delay_ms, int level = 0); // TODO
+		ids::Texture load_texture_spritesheet(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int cell_width, int cell_height, int level = 0); // TODO test spritesheet and gif
+		// TODO load texture spritesheet with padding between cells? Send each layer individually to the Texture 2D array
 		void unload_texture(ids::Texture texture);
 		void unload_all();
 	};

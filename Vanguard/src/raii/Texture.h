@@ -280,6 +280,7 @@ namespace vg
 		void apply(ids::Texture texture) const;
 #endif
 		size_t hash() const;
+		bool operator==(const TextureParams&) const = default;
 
 		static const std::shared_ptr<const TextureParams> STANDARD_LINEAR_2D;
 		static const std::shared_ptr<const TextureParams> STANDARD_LINEAR_3D;
@@ -399,10 +400,10 @@ namespace vg
 			T2D_ARRAY_PROXY = GL_PROXY_TEXTURE_2D_ARRAY,
 		};
 
-		extern void image_1d(int width, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget1D target, TextureDataType data_type = TextureDataType::UBYTE, int border = 0, int level = 0);
+		extern void image_1d(int width, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget1D target, TextureDataType data_type = TextureDataType::UBYTE, int level = 0);
 		/// If target is a RECTANGLE or RECTANGLE_PROXY, level must be 0.
-		extern void image_2d(int width, int height, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget2D target, TextureDataType data_type = TextureDataType::UBYTE, int border = 0, int level = 0);
-		extern void image_3d(int width, int height, int depth, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget3D target, TextureDataType data_type = TextureDataType::UBYTE, int border = 0, int level = 0);
+		extern void image_2d(int width, int height, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget2D target, TextureDataType data_type = TextureDataType::UBYTE, int level = 0);
+		extern void image_3d(int width, int height, int depth, TextureInternalFormat internal_format, TextureFormat format, const void* pixels, ImageTarget3D target, TextureDataType data_type = TextureDataType::UBYTE, int level = 0);
 		
 		extern void multisample_2d(GLsizei samples, int width, int height, TextureInternalFormat internal_format, bool fixed, bool proxy);
 		extern void multisample_3d(GLsizei samples, int width, int height, int depth, TextureInternalFormat internal_format, bool fixed, bool proxy);
@@ -429,8 +430,8 @@ namespace vg
 		extern void subimage_2d(int xoff, int yoff, int width, int height, TextureFormat format, const void* pixels, SubimageTarget2D target, TextureDataType data_type = TextureDataType::UBYTE, int level = 0);
 		extern void subimage_3d(int xoff, int yoff, int zoff, int width, int height, int depth, TextureFormat format, const void* pixels, SubimageTarget3D target, TextureDataType data_type = TextureDataType::UBYTE, int level = 0);
 
-		extern void copy_image_1d(int fbx, int fby, int width, TextureInternalFormat internal_format, int border = 0, int level = 0);
-		extern void copy_image_2d(int fbx, int fby, int width, int height, TextureInternalFormat internal_format, int border = 0, int level = 0);
+		extern void copy_image_1d(int fbx, int fby, int width, TextureInternalFormat internal_format, int level = 0);
+		extern void copy_image_2d(int fbx, int fby, int width, int height, TextureInternalFormat internal_format, int level = 0);
 		
 		enum class CubeMapFaceTarget
 		{
@@ -441,7 +442,7 @@ namespace vg
 			Z_POS = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 			Z_NEG = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 		};
-		extern void copy_image_cube_map(int fbx, int fby, int width, int height, TextureInternalFormat internal_format, CubeMapFaceTarget target, int border = 0, int level = 0);
+		extern void copy_image_cube_map(int fbx, int fby, int width, int height, TextureInternalFormat internal_format, CubeMapFaceTarget target, int level = 0);
 
 		enum class CopySubimageTarget2D
 		{
@@ -597,19 +598,36 @@ namespace vg
 	inline raii::Image2D<DataType> load_image_2d(const FilePath& filepath) { return raii::Image2D<DataType>(std::move(load_image(filepath))); }
 	extern void load_image(Image& image, const FilePath& filepath);
 	extern bool save_image(const Image& image, const FilePath& filepath, ImageFormat format, JPGQuality jpg_quality = JPGQuality::HIGHEST);
-	extern void delete_image(const Image& image);
+	extern void delete_image(Image& image);
+
+	struct GIFImageFrame
+	{
+		Image image;
+		int delay_ms = 0;
+	};
+	extern std::vector<GIFImageFrame> load_gif(const FilePath& filepath);
+
+	struct GIFData
+	{
+		Image raw_image;
+		int* delay_cs = nullptr;
+		int num_frames;
+	};
+	extern GIFData load_raw_gif(const FilePath& filepath);
+	//extern bool save_gif(const std::vector<GIFImageFrame>& frames, const FilePath& filepath); // LATER use 3rd-party library to properly write to gifs.
+	extern void delete_images(std::vector<GIFImageFrame>& frames);
 
 	namespace image_2d
 	{
-		extern void send_texture(int width, int height, CHPP chpp, ids::Texture texture, int border = 0, int level = 0);
-		extern void send_texture(const Image& image, ids::Texture texture, int border = 0, int level = 0);
+		extern void send_texture(int width, int height, CHPP chpp, ids::Texture texture, int level = 0);
+		extern void send_texture(const Image& image, ids::Texture texture, int level = 0);
 		
 		template<TextureDataType DataType = vg::TextureDataType::UBYTE>
-		inline void send_texture(const raii::Image2D<DataType>& image, ids::Texture texture, int border = 0, int level = 0)
+		inline void send_texture(const raii::Image2D<DataType>& image, ids::Texture texture, int level = 0)
 		{
 			bind_texture(texture, TextureTarget::T2D);
 			align_texture_pixels(image.chpp());
-			tex::image_2d(image.width(), image.height(), texture_internal_format(image.chpp(), DataType), texture_format(image.chpp()), image.pixels(), tex::ImageTarget2D::T2D, DataType, border, level);
+			tex::image_2d(image.width(), image.height(), texture_internal_format(image.chpp(), DataType), texture_format(image.chpp()), image.pixels(), tex::ImageTarget2D::T2D, DataType, level);
 		}
 
 		extern void update_full_texture(const Image& image, ids::Texture texture, int level = 0);
@@ -706,6 +724,6 @@ namespace vg
 	namespace cube_map
 	{
 		extern raii::Texture generate_from_existing(ids::Texture x_pos, ids::Texture x_neg, ids::Texture y_pos, ids::Texture y_neg, ids::Texture z_pos, ids::Texture z_neg,
-			std::array<int, 6> borders = { 0, 0, 0, 0, 0, 0 }, std::array<int, 6> levels = { 0, 0, 0, 0, 0, 0 });
+			std::array<int, 6> levels = { 0, 0, 0, 0, 0, 0 });
 	}
 }
