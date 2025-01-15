@@ -952,3 +952,30 @@ void vg::CompactVBBlockIndexer::swap(GLuint block, GLuint pos1, GLuint pos2)
 	for (GLuint i = pos1 + 1; i <= pos2; ++i)
 		block_indexes[i].vertex_offset += vc_diff;
 }
+
+vg::SeparatedFramesArray::SeparatedFramesArray(const FilePath& gif_filepath, const TextureParams& params)
+{
+	std::vector<vg::GIFImageFrame> gif_data = vg::load_gif(gif_filepath);
+	frames.reserve(gif_data.size());
+	for (int i = 0; i < gif_data.size(); ++i)
+	{
+		vg::raii::Texture frame;
+		vg::image_2d::send_texture(gif_data[i].image, frame);
+		params.apply(frame);
+		frames.push_back({ std::move(frame), gif_data[i].delay_ms});
+	}
+	vg::delete_images(gif_data);
+}
+
+void vg::SeparatedFramesArray::bind(GLuint i) const
+{
+	vg::bind_texture(texture(i), vg::TextureTarget::T2D);
+}
+
+float vg::SeparatedFramesArray::increment_frame_index(float frame_index, float speed) const
+{
+	frame_index += speed * 60.0f * vg::data::delta_time * 0.001f * delay_ms((int)frame_index);
+	if (frame_index >= size())
+		frame_index = fmod(frame_index, size());
+	return frame_index;
+}

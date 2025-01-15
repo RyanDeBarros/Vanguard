@@ -4,6 +4,7 @@
 
 #include "raii/GLBuffer.h"
 #include "raii/Shader.h"
+#include "raii/Texture.h"
 
 namespace vg
 {
@@ -740,5 +741,24 @@ namespace vg
 		void insert(GLuint block, GLuint pos, GLuint vertex_count);
 		void erase(GLuint block, GLuint pos);
 		void swap(GLuint block, GLuint pos1, GLuint pos2);
+	};
+
+	class SeparatedFramesArray
+	{
+		struct Frame
+		{
+			raii::Texture texture;
+			int delay_ms;
+		};
+		std::vector<Frame> frames;
+
+	public:
+		SeparatedFramesArray(const FilePath& gif_filepath, const TextureParams& params);
+		
+		ids::Texture texture(GLuint i) const { return frames[i].texture; }
+		int delay_ms(GLuint i) const { return frames[i].delay_ms; }
+		size_t size() const { return frames.size(); }
+		void bind(GLuint i) const;
+		float increment_frame_index(float frame_index, float speed = 1.0f) const;
 	};
 }

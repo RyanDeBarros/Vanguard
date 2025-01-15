@@ -108,7 +108,7 @@ namespace vg
 		std::unordered_map<ids::Texture, decltype(textures_gif)::const_iterator> lookup_gif;
 
 		ids::Texture load_texture_gif(ConstructorGIF&& constructor);
-		ids::Texture load_texture_gif(ConstructorGIF&& constructor, std::vector<int>& delay_ms);
+		ids::Texture load_texture_gif_and_ms(ConstructorGIF&& constructor, std::vector<int>& delay_ms);
 
 		struct ConstructorSpritesheet
 		{
@@ -145,8 +145,8 @@ namespace vg
 		ids::Texture load_texture_rect(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
 		ids::Texture load_texture_1d(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
 		ids::Texture load_texture_gif(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level = 0);
-		ids::Texture load_texture_gif_and_ms(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, std::vector<int>& delay_ms, int level = 0); // TODO
-		ids::Texture load_texture_spritesheet(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int cell_width, int cell_height, int level = 0); // TODO test spritesheet and gif
+		ids::Texture load_texture_gif_and_ms(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, std::vector<int>& delay_ms, int level = 0);
+		ids::Texture load_texture_spritesheet(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int cell_width, int cell_height, int level = 0); // TODO test spritesheet
 		// TODO load texture spritesheet with padding between cells? Send each layer individually to the Texture 2D array
 		void unload_texture(ids::Texture texture);
 		void unload_all();

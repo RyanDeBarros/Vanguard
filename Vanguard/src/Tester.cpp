@@ -104,21 +104,8 @@ int main()
 	sprite.subsend_all_blocks();
 
 	auto tex_einstein = textures.load_texture_2d("ex/flag.png", vg::TextureParams::STANDARD_NEAREST_2D);
-	// TODO test gif using T2D_ARRAY. Will require a custom shader for that though. Also, abstract the following process (store vector of raii::Texture and delay_ms, but interface only allows for querying the ids::Textures and delays).
-	std::vector<std::pair<vg::raii::Texture, int>> serotonin_frames;
-	{
-		std::vector<vg::GIFImageFrame> serotonin_gif_data = vg::load_gif("ex/serotonin.gif");
-		serotonin_frames.reserve(serotonin_gif_data.size());
-		for (int i = 0; i < serotonin_gif_data.size(); ++i)
-		{
-			vg::raii::Texture frame;
-			const auto& gif_frame = serotonin_gif_data[i];
-			vg::image_2d::send_texture(gif_frame.image, frame);
-			vg::TextureParams::STANDARD_LINEAR_2D->apply(frame);
-			serotonin_frames.push_back({ std::move(frame), gif_frame.delay_ms });
-		}
-		vg::delete_images(serotonin_gif_data);
-	}
+	// TODO test gif using T2D_ARRAY. Will require a custom shader for that though.
+	auto serotonin_frames = new vg::SeparatedFramesArray("ex/serotonin.gif", *vg::TextureParams::STANDARD_LINEAR_2D);
 
 	vg::Transformer2D sprite_parent({ window.convert_coordinates({ -0.5f, 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN), 0.0f, { 0.5f, 1.0f } });
 	vg::attach_transformer(&sprite_parent, &sprite_transformer);
@@ -157,9 +144,8 @@ int main()
 		
 		vg::select_texture_slot(0);
 		//vg::bind_texture(tex_einstein, vg::TextureTarget::T2D);
-		int frame_i = (int)frame_index % serotonin_frames.size();
-		vg::bind_texture(serotonin_frames[frame_i].first, vg::TextureTarget::T2D);
-		frame_index += 60 * vg::data::delta_time * 0.001f * serotonin_frames[frame_i].second;
+		serotonin_frames->bind((int)frame_index);
+		frame_index = serotonin_frames->increment_frame_index(frame_index);
 		
 		sprite.bind_vao();
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
@@ -187,7 +173,7 @@ int main()
 	}
 	VANGUARD_ASSERT_GL_OKAY;
 
-	serotonin_frames.clear();
+	VANGUARD_INVALIDATE_POINTER(serotonin_frames);
 	shaders.unload_all();
 	textures.unload_all();
 	vg::terminate();

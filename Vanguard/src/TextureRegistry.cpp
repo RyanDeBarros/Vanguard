@@ -145,6 +145,36 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_gif(ConstructorGIF&&
 	return tid;
 }
 
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_gif_and_ms(ConstructorGIF&& constructor, std::vector<int>& delay_ms)
+{
+	auto iter = textures_gif.find(constructor);
+	if (iter != textures_gif.end())
+		return iter->second;
+
+	raii::Texture texture;
+	GIFData gif = load_raw_gif(constructor.image_filepath);
+	bind_texture(texture, TextureTarget::T2D_ARRAY);
+	align_texture_pixels(gif.raw_image.chpp);
+	tex::image_3d(gif.raw_image.width, gif.raw_image.height, gif.num_frames, texture_internal_format(gif.raw_image.chpp, TextureDataType::UBYTE),
+		texture_format(gif.raw_image.chpp), gif.raw_image.pixels, tex::ImageTarget3D::T2D_ARRAY, TextureDataType::UBYTE, constructor.level);
+	delete_image(gif.raw_image);
+	delay_ms.clear();
+	for (int i = 0; i < gif.num_frames; ++i)
+		delay_ms.push_back(10 * gif.delay_cs[i]);
+	delete[] gif.delay_cs;
+
+#if VANGUARD_MIN_OPENGL_VERSION_IS_AT_LEAST(4, 5)
+	constructor.params->apply(texture);
+#else
+	constructor.params->apply(texture_params::Target::T2D_ARRAY);
+#endif
+
+	ids::Texture tid = texture;
+	lookup_gif[tid] = textures_gif.insert({ std::move(constructor), std::move(texture) }).first;
+	meta_lookup[tid] = TextureType::GIF_2D_ARRAY;
+	return tid;
+}
+
 bool vg::TransientTextureRegistry::ConstructorSpritesheet::operator==(const ConstructorSpritesheet& other) const
 {
 	return image_filepath == other.image_filepath && *params == *other.params && cell_width == other.cell_width && cell_height == other.cell_height && level == other.level;
@@ -212,6 +242,11 @@ vg::ids::Texture vg::TransientTextureRegistry::load_texture_1d(const FilePath& f
 vg::ids::Texture vg::TransientTextureRegistry::load_texture_gif(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int level)
 {
 	return load_texture_gif(ConstructorGIF{ filepath, params, level });
+}
+
+vg::ids::Texture vg::TransientTextureRegistry::load_texture_gif_and_ms(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, std::vector<int>& delay_ms, int level)
+{
+	return load_texture_gif_and_ms(ConstructorGIF{ filepath, params, level }, delay_ms);
 }
 
 vg::ids::Texture vg::TransientTextureRegistry::load_texture_spritesheet(const FilePath& filepath, const std::shared_ptr<const TextureParams>& params, int cell_width, int cell_height, int level)

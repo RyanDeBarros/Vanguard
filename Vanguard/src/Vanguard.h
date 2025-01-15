@@ -16,6 +16,9 @@
 #define VANGUARD_ASSERT_GL_OKAY ;
 #endif
 
+#define VANGUARD_INVALIDATE_POINTER(ptr) delete ptr; ptr = nullptr;
+#define VANGUARD_INVALIDATE_ARRAY(ptr) delete[] ptr; ptr = nullptr;
+
 #ifndef VANGUARD_MIN_OPENGL_VERSION_MAJOR
 #define VANGUARD_MIN_OPENGL_VERSION_MAJOR 4
 #endif
