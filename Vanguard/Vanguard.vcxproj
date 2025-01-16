@@ -163,7 +163,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\render\Actors.cpp" />
+    <ClCompile Include="src\render\Codex.cpp" />
     <ClCompile Include="src\render\Draw.cpp" />
     <ClCompile Include="src\raii\FrameBuffer.cpp" />
     <ClCompile Include="src\render\Renderable.cpp" />
@@ -187,7 +187,8 @@
     <ClInclude Include="src\engine\ECS.h" />
     <ClInclude Include="src\engine\Errors.h" />
     <ClInclude Include="src\engine\Events.h" />
-    <ClInclude Include="src\render\Actors.h" />
+    <ClInclude Include="src\Macros.h" />
+    <ClInclude Include="src\render\Codex.h" />
     <ClInclude Include="src\render\Draw.h" />
     <ClInclude Include="src\raii\FrameBuffer.h" />
     <ClInclude Include="src\render\ShaderRegistry.h" />

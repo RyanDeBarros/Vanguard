@@ -4,10 +4,7 @@
 
 #include "Vanguard.h"
 
-#include "raii/Window.h"
-#include "render/ShaderRegistry.h"
-#include "render/TextureRegistry.h"
-#include "render/Actors.h"
+#include "render/Codex.h"
 
 int main()
 {
@@ -46,14 +43,16 @@ int main()
 
 	vg::CPUVertexBufferBlock white_square(vg::VertexBufferBlock(vb_color_layout, { { 0, 2, 3, 4 }, { 1 } }), 4, false);
 
-	white_square.set_attributes(0, 0, 0, std::array<glm::vec2, 4>{
+	white_square.block_index() = 0;
+	white_square.set_attributes(0, 0, std::array<glm::vec2, 4>{
 		window.convert_coordinates({ 0.7f, -0.7f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ 0.9f, -0.7f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ 0.9f, -0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ 0.7f, -0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 	});
-	white_square.set_attribute(1, 1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-	white_square.set_attribute(0, 2, glm::mat3(1.0f));
+	white_square.set_attribute(2, glm::mat3(1.0f));
+	white_square.block_index() = 1;
+	white_square.set_attribute(1, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 	white_square.subsend_all_blocks();
 	index_buffer.bind_to_vertex_array(white_square.vao());
 
@@ -61,20 +60,22 @@ int main()
 	auto vb_color_split_layout = std::make_shared<vg::VertexBufferLayout>(*shaders.ref_shader(color_shader), vg::VertexAttributeSpecificationList{ {}, {}, { { 2, 1 }, { 3, 1 }, { 4, 1 } } });
 	vg::CPUVertexBufferBlock tripair(vg::VertexBufferBlock(vb_color_split_layout, { { 0, 1 }, { 2, 3, 4 } }), { tripair_indexer.vertex_count(0), tripair_indexer.vertex_count(1) }, false);
 
-	tripair.set_attributes(0, 0, tripair_indexer.vertex(0, 0, 0), std::array<glm::vec2, 3>{
+	tripair.block_index() = 0;
+	tripair.set_attributes(0, tripair_indexer.vertex(0, 0, 0), std::array<glm::vec2, 3>{
 		window.convert_coordinates({ -0.9f, 0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.8f, 0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.9f, 0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 	});
-	tripair.set_attributes(0, 0, tripair_indexer.vertex(0, 1, 0), std::array<glm::vec2, 3>{
+	tripair.set_attributes(0, tripair_indexer.vertex(0, 1, 0), std::array<glm::vec2, 3>{
 		window.convert_coordinates({ -0.7f, 0.9f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.7f, 0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN),
 		window.convert_coordinates({ -0.8f, 0.8f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN)
 	});
-	tripair.set_attribute(0, 1, tripair_indexer.vertex(0, 0, 0), tripair_indexer.vertex_count(0, 0), glm::vec4{ 0.8f, 0.5f, 0.3f, 1.0f });
-	tripair.set_attribute(0, 1, tripair_indexer.vertex(0, 1, 0), tripair_indexer.vertex_count(0, 1), glm::vec4{ 0.6f, 0.5f, 0.5f, 1.0f });
-	tripair.set_attribute(1, 2, tripair_indexer.vertex(1, 0, 0), tripair_indexer.vertex_count(1, 0), glm::mat3(1.0f));
-	tripair.set_attribute(1, 2, tripair_indexer.vertex(1, 1, 0), tripair_indexer.vertex_count(1, 1), glm::mat3({ 0.8f, 0.0f, 0.0f }, { 0.0f, 0.8f, 0.0f }, { 0.0f, 0.0f, 1.0f }));
+	tripair.set_attribute(1, tripair_indexer.vertex(0, 0, 0), tripair_indexer.vertex_count(0, 0), glm::vec4{ 0.8f, 0.5f, 0.3f, 1.0f });
+	tripair.set_attribute(1, tripair_indexer.vertex(0, 1, 0), tripair_indexer.vertex_count(0, 1), glm::vec4{ 0.6f, 0.5f, 0.5f, 1.0f });
+	tripair.block_index() = 1;
+	tripair.set_attribute(2, tripair_indexer.vertex(1, 0, 0), tripair_indexer.vertex_count(1, 0), glm::mat3(1.0f));
+	tripair.set_attribute(2, tripair_indexer.vertex(1, 1, 0), tripair_indexer.vertex_count(1, 1), glm::mat3({ 0.8f, 0.0f, 0.0f }, { 0.0f, 0.8f, 0.0f }, { 0.0f, 0.0f, 1.0f }));
 	tripair.subsend_all_blocks();
 
 	auto img_shader = shaders.load_shader("shaders/image.vert", {}, "shaders/image.frag.tmpl", vg::file_templates::num_texture_slots(window));
@@ -88,14 +89,17 @@ int main()
 	vg::CPUVertexBufferBlock sprite(vg::VertexBufferBlock(img_layout, { { 0, 2, 3 }, { 1 }, { 4, 5, 6 } }), { 4, 1, 1 }, false);
 	index_buffer.bind_to_vertex_array(sprite.vao());
 
-	sprite.set_attributes(0, 0, 0, vg::quad_vertex_positions({ 34, 27 }, { 0.0f, 1.0f }));
-	sprite.set_attributes(0, 2, 0, vg::quad_full_uvs);
-	sprite.set_attribute(0, 3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+	sprite.block_index() = 0;
+	sprite.set_attributes(0, 0, vg::quad_vertex_positions({ 34, 27 }, { 0.0f, 1.0f }));
+	sprite.set_attributes(2, 0, vg::quad_full_uvs);
+	sprite.set_attribute(3, glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 
-	sprite.set_attribute(1, 1, GLint(0));
+	sprite.block_index() = 1;
+	sprite.set_attribute(1, GLint(0));
 
 	vg::Transformer2D sprite_transformer({ window.convert_coordinates({ 0.5f, 0.25f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN), 0.4f, glm::vec2(10) });
-	sprite.set_attribute(2, 4, sprite_transformer.global());
+	sprite.block_index() = 2;
+	sprite.set_attribute(4, sprite_transformer.global());
 	
 	sprite.subsend_all_blocks();
 
@@ -111,9 +115,18 @@ int main()
 
 	float frame_index = 0;
 
-	vg::ids::Shader sprite_2d_shader = shaders.load_shader("vg/shaders/sprite2d.vert", {}, "vg/shaders/sprite2d.frag.tmpl", vg::file_templates::num_texture_slots(window));
-	vg::actors::Sprite2D flag;
-	flag.size = { 34, 27 };
+	auto sprite_2d_shader = vg::codex::Sprite2D::load_shader(window, shaders);
+	vg::bind_shader(sprite_2d_shader);
+	vg::uniforms::send_3x3(*shaders.ref_shader(sprite_2d_shader), "uVP", window.orthographic_projection());
+	window.vp_updates.push_back({ shaders.ref_shader(sprite_2d_shader), vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
+	auto sprite_2d_layout = std::make_shared<vg::VertexBufferLayout>(*shaders.ref_shader(sprite_2d_shader)); // LATER VertexBufferLayout registry
+	vg::codex::Sprite2D flag_codex;
+	flag_codex.size = { 34, 27 };
+	flag_codex.transformer.local.scale = glm::vec2(20);
+	vg::CPUVertexBuffer flag_cvb(vg::VertexBuffer(sprite_2d_layout), vg::codex::Sprite2D::natural_vertex_count(), false);
+	flag_codex.transmit_full_data(vg::DrawMode::TRIANGLES, flag_cvb.cpubuf());
+	flag_cvb.subsend_full();
+	index_buffer.bind_to_vertex_array(flag_cvb.vao());
 
 	window.sync_resize();
 	window.render_frame = [&]() {
@@ -130,9 +143,10 @@ int main()
 		colorful_vertex_buffer.ref<glm::vec4>(2, 1).z = glm::sqrt(0.5f * (1.0f + glm::sin(vg::data::elapsed_time() + 2 * glm::pi<float>() / 3)));
 		colorful_vertex_buffer.subsend_single(2, 1);
 
-		white_square.ref<glm::vec2>(0, 0, 0).x -= window.convert_coordinates({ 0.5f * glm::sin(vg::data::elapsed_time() * 20.0f), 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN).x * vg::data::delta_time;
-		white_square.bind_vb(0);
-		white_square.subsend_single(0, 0, 0);
+		white_square.block_index() = 0;
+		white_square.ref<glm::vec2>(0, 0).x -= window.convert_coordinates({ 0.5f * glm::sin(vg::data::elapsed_time() * 20.0f), 0.0f }, vg::Window::CoordinateSystem::CLIP, vg::Window::CoordinateSystem::SCREEN).x * vg::data::delta_time;
+		white_square.bind_vb();
+		white_square.subsend_single(0, 0);
 
 		white_square.bind_vao();
 		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
@@ -143,7 +157,6 @@ int main()
 		vg::bind_shader(img_shader);
 		
 		vg::select_texture_slot(0);
-		//vg::bind_texture(tex_einstein, vg::TextureTarget::T2D);
 		serotonin_frames->bind((int)frame_index);
 		frame_index = serotonin_frames->increment_frame_index(frame_index);
 		
@@ -158,9 +171,17 @@ int main()
 		sprite_transformer.mark();
 
 		sprite_transformer.sync(); // call before sending to vertex buffer
-		sprite.ref<glm::mat3>(2, 0, 4) = sprite_transformer.global();
-		sprite.bind_vb(2);
-		sprite.subsend_single(2, 0, 4, sizeof(glm::mat3));
+		sprite.block_index() = 2;
+		sprite.ref<glm::mat3>(0, 4) = sprite_transformer.global();
+		sprite.bind_vb();
+		sprite.subsend_single(0, 4, sizeof(glm::mat3));
+
+		vg::bind_shader(sprite_2d_shader);
+
+		vg::select_texture_slot(flag_codex.texture_slot);
+		vg::bind_texture(tex_einstein, vg::TextureTarget::T2D);
+		flag_cvb.bind_vao();
+		vg::draw::index_buffer::full(index_buffer, vg::DrawMode::TRIANGLES);
 		};
 
 	VANGUARD_ASSERT_GL_OKAY;

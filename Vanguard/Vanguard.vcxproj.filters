@@ -69,7 +69,7 @@
     <ClCompile Include="src\render\TextureRegistry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\render\Actors.cpp">
+    <ClCompile Include="src\render\Codex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -140,7 +140,10 @@
     <ClInclude Include="src\render\TextureRegistry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\render\Actors.h">
+    <ClInclude Include="src\render\Codex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Macros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

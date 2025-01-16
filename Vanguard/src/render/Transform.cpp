@@ -60,7 +60,7 @@ void vg::Transformer2D::mark()
 	}
 }
 
-void vg::Transformer2D::sync()
+bool vg::Transformer2D::sync()
 {
 	if (_dirty)
 	{
@@ -74,7 +74,9 @@ void vg::Transformer2D::sync()
 		{
 			_global = local.matrix();
 		}
+		return true;
 	}
+	return false;
 }
 
 void vg::Transformer3D::mark()
@@ -84,7 +86,7 @@ void vg::Transformer3D::mark()
 		child->mark();
 }
 
-void vg::Transformer3D::sync()
+bool vg::Transformer3D::sync()
 {
 	if (_dirty)
 	{
@@ -98,7 +100,9 @@ void vg::Transformer3D::sync()
 		{
 			_global = local.matrix();
 		}
+		return true;
 	}
+	return false;
 }
 
 void vg::attach_transformer(Transformer2D* parent, Transformer2D* child)

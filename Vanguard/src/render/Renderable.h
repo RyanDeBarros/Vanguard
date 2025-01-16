@@ -157,6 +157,11 @@ namespace vg
 		std::vector<GLuint> _strides;
 		std::vector<GLuint> _offsets;
 		raii::VertexArray _vao;
+
+	public:
+		GLuint block_index = 0;
+	
+	private:
 		raii::GLBufferBlock _vbs;
 
 		void init(const std::initializer_list<std::initializer_list<GLuint>>& attributes);
@@ -170,58 +175,58 @@ namespace vg
 
 		const std::shared_ptr<VertexBufferLayout>& layout() const { return _layout; }
 		ids::VertexArray vao() const { return _vao; }
-		ids::GLBuffer vb(GLuint i) const { return _vbs[i]; }
-		GLuint vb_stride(GLuint i) const { return _strides[i]; }
-		void bind_vb(GLuint i) const;
+		ids::GLBuffer vb() const { return _vbs[block_index]; }
+		GLuint vb_stride() const { return _strides[block_index]; }
+		void bind_vb() const;
 		void bind_vao() const;
 		GLuint block_count() const { return _vbs.get_count(); }
-		GLintptr buffer_offset(GLuint i, GLuint vertex, GLuint attrib) const;
+		GLintptr buffer_offset(GLuint vertex, GLuint attrib) const;
 
 		template<typename Type>
-		const Type& ref(const VoidArray& cpubuf, GLuint i, GLuint vertex, GLuint attrib) const
+		const Type& ref(const VoidArray& cpubuf, GLuint vertex, GLuint attrib) const
 		{
-			return cpubuf.ref<Type>(buffer_offset(i, vertex, attrib));
+			return cpubuf.ref<Type>(buffer_offset(vertex, attrib));
 		}
 
 		template<typename Type>
-		Type& ref(VoidArray& cpubuf, GLuint i, GLuint vertex, GLuint attrib) const
+		Type& ref(VoidArray& cpubuf, GLuint vertex, GLuint attrib) const
 		{
-			return cpubuf.ref<Type>(buffer_offset(i, vertex, attrib));
+			return cpubuf.ref<Type>(buffer_offset(vertex, attrib));
 		}
 
 		template<typename Type>
-		Type val(const VoidArray& cpubuf, GLuint i, GLuint vertex, GLuint attrib) const
+		Type val(const VoidArray& cpubuf, GLuint vertex, GLuint attrib) const
 		{
-			return cpubuf.val<Type>(buffer_offset(i, vertex, attrib));
+			return cpubuf.val<Type>(buffer_offset(vertex, attrib));
 		}
 
 		template<typename Type>
-		void set_attribute(VoidArray& cpubuf, GLuint i, GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
+		void set_attribute(VoidArray& cpubuf, GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
 		{
 			for (GLuint v = 0; v < count; ++v)
-				cpubuf.ref<Type>(buffer_offset(i, starting_vertex + v, attrib)) = obj;
+				cpubuf.ref<Type>(buffer_offset(starting_vertex + v, attrib)) = obj;
 		}
 
 		template<typename Type>
-		void set_attribute(VoidArray& cpubuf, GLuint i, GLuint attrib, const Type& obj)
+		void set_attribute(VoidArray& cpubuf, GLuint attrib, const Type& obj)
 		{
-			GLuint vcount = vertex_count(i, cpubuf);
+			GLuint vcount = vertex_count(cpubuf);
 			for (GLuint v = 0; v < vcount; ++v)
-				cpubuf.ref<Type>(buffer_offset(i, v, attrib)) = obj;
+				cpubuf.ref<Type>(buffer_offset(v, attrib)) = obj;
 		}
 
 		template<typename Type, size_t N>
-		void set_attributes(VoidArray& cpubuf, GLuint i, GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
+		void set_attributes(VoidArray& cpubuf, GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
 		{
 			for (GLuint v = 0; v < N; ++v)
-				cpubuf.ref<Type>(buffer_offset(i, starting_vertex + v, attrib)) = objs[v];
+				cpubuf.ref<Type>(buffer_offset(starting_vertex + v, attrib)) = objs[v];
 		}
 
-		VoidArray init_immutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
-		void init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const;
-		VoidArray init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const;
-		void init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const;
-		GLuint vertex_count(GLuint i, const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / vb_stride(i)); }
+		VoidArray init_immutable_cpu_buffer(GLuint vertex_count) const;
+		void init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const;
+		VoidArray init_mutable_cpu_buffer(GLuint vertex_count) const;
+		void init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const;
+		GLuint vertex_count(const VoidArray& cpubuf) const { return GLuint(cpubuf.size() / vb_stride()); }
 	};
 
 	// Use MultiVertexBuffer for a group of sole attachments to a group of VAOs. In other words, a MultiVertexBuffer is just a fixed-size vector of VertexBuffer-VertexArray pairs that are stored optimally in GPU/CPU memory.
@@ -416,6 +421,8 @@ namespace vg
 		ids::GLBuffer vb() const { return _vb.vb(); }
 		void bind_vao() const { _vb.bind_vao(); }
 		void bind_vb() const { _vb.bind_vb(); }
+		VoidArray& cpubuf() { return _cpubuf; }
+		const VoidArray& cpubuf() const { return _cpubuf; }
 
 		GLintptr buffer_offset(GLuint vertex, GLuint attrib) const { return _vb.buffer_offset(vertex, attrib); }
 
@@ -506,89 +513,94 @@ namespace vg
 		CPUVertexBufferBlock(VertexBufferBlock&& vbb, const std::vector<GLuint>& vertex_counts, bool is_mutable);
 		CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint vertex_count, bool is_mutable);
 
+		GLuint& block_index() { return _vbb.block_index; }
+		GLuint block_index() const { return _vbb.block_index; }
+		
 		const std::shared_ptr<VertexBufferLayout>& layout() const { return _vbb.layout(); }
 		ids::VertexArray vao() const { return _vbb.vao(); }
-		ids::GLBuffer vb(GLuint i) const { return _vbb.vb(i); }
+		ids::GLBuffer vb() const { return _vbb.vb(); }
 		void bind_vao() const { _vbb.bind_vao(); }
-		void bind_vb(GLuint i) const { _vbb.bind_vb(i); }
+		void bind_vb() const { _vbb.bind_vb(); }
+		VoidArray& cpubuf() { return _cpubuf_and_vcs[block_index()].first; }
+		const VoidArray& cpubuf() const { return _cpubuf_and_vcs[block_index()].first; }
 
-		GLintptr buffer_offset(GLuint i, GLuint vertex, GLuint attrib) const { return _vbb.buffer_offset(i, vertex, attrib); }
+		GLintptr buffer_offset(GLuint vertex, GLuint attrib) const { return _vbb.buffer_offset(vertex, attrib); }
 
-		GLuint vertex_count(GLuint i) const { return _cpubuf_and_vcs[i].second; }
+		GLuint vertex_count() const { return _cpubuf_and_vcs[block_index()].second; }
 		GLuint block_count() const { return _vbb.block_count(); }
 
-		void subsend_full(GLuint i) const;
-		void subsend_all_blocks() const;
-		void subsend(GLuint i, size_t offset, size_t bytes) const;
-		void subsend_single(GLuint i, GLuint vertex, GLuint attrib) const;
-		void subsend_single(GLuint i, GLuint vertex, GLuint attrib, GLuint size) const;
+		void subsend_full() const;
+		void subsend_all_blocks();
+		void subsend(size_t offset, size_t bytes) const;
+		void subsend_single(GLuint vertex, GLuint attrib) const;
+		void subsend_single(GLuint vertex, GLuint attrib, GLuint size) const;
 
 		template<typename Type>
-		const Type& ref(GLuint i, GLuint vertex, GLuint attrib) const
+		const Type& ref(GLuint vertex, GLuint attrib) const
 		{
-			return _cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, vertex, attrib));
-		}
-
-		template<typename Type>
-		Type& ref(GLuint i, GLuint vertex, GLuint attrib)
-		{
-			return _cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, vertex, attrib));
+			return _cpubuf_and_vcs[block_index()].first.ref<Type>(buffer_offset(vertex, attrib));
 		}
 
 		template<typename Type>
-		const Type& ref(GLuint i, size_t offset_bytes) const
+		Type& ref(GLuint vertex, GLuint attrib)
 		{
-			return _cpubuf_and_vcs[i].first.ref<Type>(offset_bytes);
+			return _cpubuf_and_vcs[block_index()].first.ref<Type>(buffer_offset(vertex, attrib));
 		}
 
 		template<typename Type>
-		Type& ref(GLuint i, size_t offset_bytes)
+		const Type& ref(size_t offset_bytes) const
 		{
-			return _cpubuf_and_vcs[i].first.ref<Type>(offset_bytes);
+			return _cpubuf_and_vcs[block_index()].first.ref<Type>(offset_bytes);
 		}
 
 		template<typename Type>
-		Type val(GLuint i, GLuint vertex, GLuint attrib) const
+		Type& ref(size_t offset_bytes)
 		{
-			return _cpubuf_and_vcs[i].first.val<Type>(buffer_offset(i, vertex, attrib));
+			return _cpubuf_and_vcs[block_index()].first.ref<Type>(offset_bytes);
 		}
 
 		template<typename Type>
-		Type val(GLuint i, size_t offset_bytes) const
+		Type val(GLuint vertex, GLuint attrib) const
 		{
-			return _cpubuf_and_vcs[i].first.val<Type>(offset_bytes);
-		}
-
-		const void* at(GLuint i, size_t offset_bytes) const
-		{
-			return _cpubuf_and_vcs[i].first.at(offset_bytes);
-		}
-
-		void* at(GLuint i, size_t offset_bytes)
-		{
-			return _cpubuf_and_vcs[i].first.at(offset_bytes);
+			return _cpubuf_and_vcs[block_index()].first.val<Type>(buffer_offset(vertex, attrib));
 		}
 
 		template<typename Type>
-		void set_attribute(GLuint i, GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
+		Type val(size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[block_index()].first.val<Type>(offset_bytes);
+		}
+
+		const void* at(size_t offset_bytes) const
+		{
+			return _cpubuf_and_vcs[block_index()].first.at(offset_bytes);
+		}
+
+		void* at(size_t offset_bytes)
+		{
+			return _cpubuf_and_vcs[block_index()].first.at(offset_bytes);
+		}
+
+		template<typename Type>
+		void set_attribute(GLuint attrib, GLuint starting_vertex, GLuint count, const Type& obj)
 		{
 			for (GLuint n = 0; n < count; ++n)
-				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = obj;
+				_cpubuf_and_vcs[block_index()].first.ref<Type>(buffer_offset(starting_vertex + n, attrib)) = obj;
 		}
 
 		template<typename Type>
-		void set_attribute(GLuint i, GLuint attrib, const Type& obj)
+		void set_attribute(GLuint attrib, const Type& obj)
 		{
-			GLuint vertex_count = _cpubuf_and_vcs[i].second;
+			GLuint vertex_count = _cpubuf_and_vcs[block_index()].second;
 			for (GLuint n = 0; n < vertex_count; ++n)
-				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, n, attrib)) = obj;
+				_cpubuf_and_vcs[block_index()].first.ref<Type>(buffer_offset(n, attrib)) = obj;
 		}
 
 		template<typename Type, size_t N>
-		void set_attributes(GLuint i, GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
+		void set_attributes(GLuint attrib, GLuint starting_vertex, const std::array<Type, N>& objs)
 		{
 			for (GLuint n = 0; n < N; ++n)
-				_cpubuf_and_vcs[i].first.ref<Type>(buffer_offset(i, starting_vertex + n, attrib)) = objs[n];
+				_cpubuf_and_vcs[block_index()].first.ref<Type>(buffer_offset(starting_vertex + n, attrib)) = objs[n];
 		}
 	};
 
@@ -608,6 +620,8 @@ namespace vg
 		ids::GLBuffer vb(GLuint i) const { return _vbs.vb(i); }
 		void bind_vao(GLuint i) const { _vbs.bind_vao(i); }
 		void bind_vb(GLuint i) const { _vbs.bind_vb(i); }
+		VoidArray& cpubuf(GLuint i) { return _cpubuf_and_vcs[i].first; }
+		const VoidArray& cpubuf(GLuint i) const { return _cpubuf_and_vcs[i].first; }
 
 		GLintptr buffer_offset(GLuint i, GLuint vertex, GLuint attrib) const { return _vbs.buffer_offset(i, vertex, attrib); }
 

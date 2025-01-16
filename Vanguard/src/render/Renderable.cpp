@@ -334,7 +334,8 @@ void vg::VertexBufferBlock::init(const std::initializer_list<std::initializer_li
 	for (GLuint i = 0; i < _vbs.get_count(); ++i)
 	{
 		const std::initializer_list<GLuint>& subattributes = *(attributes.begin() + i);
-		bind_vb(i);
+		block_index = i;
+		bind_vb();
 		const auto& lattrs = _layout->attributes();
 		GLuint stride = 0;
 		for (GLuint attrib : subattributes)
@@ -364,9 +365,9 @@ vg::VertexBufferBlock::VertexBufferBlock(std::shared_ptr<VertexBufferLayout>&& l
 	init(attributes);
 }
 
-void vg::VertexBufferBlock::bind_vb(GLuint i) const
+void vg::VertexBufferBlock::bind_vb() const
 {
-	buffers::bind(_vbs[i], BufferTarget::VERTEX);
+	buffers::bind(vb(), BufferTarget::VERTEX);
 }
 
 void vg::VertexBufferBlock::bind_vao() const
@@ -374,38 +375,38 @@ void vg::VertexBufferBlock::bind_vao() const
 	_vao.bind();
 }
 
-GLintptr vg::VertexBufferBlock::buffer_offset(GLuint i, GLuint vertex, GLuint attrib) const
+GLintptr vg::VertexBufferBlock::buffer_offset(GLuint vertex, GLuint attrib) const
 {
-	return vertex * vb_stride(i) + _offsets[attrib];
+	return vertex * vb_stride() + _offsets[attrib];
 }
 
-vg::VoidArray vg::VertexBufferBlock::init_immutable_cpu_buffer(GLuint i, GLuint vertex_count) const
+vg::VoidArray vg::VertexBufferBlock::init_immutable_cpu_buffer(GLuint vertex_count) const
 {
-	VoidArray v(vb_stride(i) * vertex_count);
-	bind_vb(i);
+	VoidArray v(vb_stride() * vertex_count);
+	bind_vb();
 	buffers::init_immutable(BufferTarget::VERTEX, v.size());
 	return v;
 }
 
-void vg::VertexBufferBlock::init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const
+void vg::VertexBufferBlock::init_immutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const
 {
-	cpubuf.resize(vb_stride(i) * vertex_count);
-	bind_vb(i);
+	cpubuf.resize(vb_stride() * vertex_count);
+	bind_vb();
 	buffers::init_immutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
-vg::VoidArray vg::VertexBufferBlock::init_mutable_cpu_buffer(GLuint i, GLuint vertex_count) const
+vg::VoidArray vg::VertexBufferBlock::init_mutable_cpu_buffer(GLuint vertex_count) const
 {
-	VoidArray v(vb_stride(i) * vertex_count);
-	bind_vb(i);
+	VoidArray v(vb_stride() * vertex_count);
+	bind_vb();
 	buffers::init_mutable(BufferTarget::VERTEX, v.size());
 	return v;
 }
 
-void vg::VertexBufferBlock::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint i, GLuint vertex_count) const
+void vg::VertexBufferBlock::init_mutable_cpu_buffer(VoidArray& cpubuf, GLuint vertex_count) const
 {
-	cpubuf.resize(vb_stride(i) * vertex_count);
-	bind_vb(i);
+	cpubuf.resize(vb_stride() * vertex_count);
+	bind_vb();
 	buffers::init_mutable(BufferTarget::VERTEX, cpubuf.size());
 }
 
@@ -660,10 +661,11 @@ vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const st
 	VANGUARD_ASSERT(_vbb.block_count() == vertex_counts.size() && _vbb.block_count() == is_mutables.size());
 	for (GLuint i = 0; i < _vbb.block_count(); ++i)
 	{
+		_vbb.block_index = i;
 		if (is_mutables[i])
-			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(vertex_counts[i]), vertex_counts[i] });
 		else
-			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(vertex_counts[i]), vertex_counts[i] });
 	}
 }
 
@@ -673,10 +675,11 @@ vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint v
 	VANGUARD_ASSERT(_vbb.block_count() == is_mutables.size());
 	for (GLuint i = 0; i < _vbb.block_count(); ++i)
 	{
+		_vbb.block_index = i;
 		if (is_mutables[i])
-			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_count), vertex_count });
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(vertex_count), vertex_count });
 		else
-			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_count), vertex_count });
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(vertex_count), vertex_count });
 	}
 }
 
@@ -687,12 +690,18 @@ vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, const st
 	if (is_mutable)
 	{
 		for (GLuint i = 0; i < _vbb.block_count(); ++i)
-			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+		{
+			_vbb.block_index = i;
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(vertex_counts[i]), vertex_counts[i] });
+		}
 	}
 	else
 	{
 		for (GLuint i = 0; i < _vbb.block_count(); ++i)
-			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_counts[i]), vertex_counts[i] });
+		{
+			_vbb.block_index = i;
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(vertex_counts[i]), vertex_counts[i] });
+		}
 	}
 }
 
@@ -702,45 +711,54 @@ vg::CPUVertexBufferBlock::CPUVertexBufferBlock(VertexBufferBlock&& vbb, GLuint v
 	if (is_mutable)
 	{
 		for (GLuint i = 0; i < _vbb.block_count(); ++i)
-			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(i, vertex_count), vertex_count });
+		{
+			_vbb.block_index = i;
+			_cpubuf_and_vcs.push_back({ _vbb.init_mutable_cpu_buffer(vertex_count), vertex_count });
+		}
 	}
 	else
 	{
 		for (GLuint i = 0; i < _vbb.block_count(); ++i)
-			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(i, vertex_count), vertex_count });
+		{
+			_vbb.block_index = i;
+			_cpubuf_and_vcs.push_back({ _vbb.init_immutable_cpu_buffer(vertex_count), vertex_count });
+		}
 	}
 }
 
-void vg::CPUVertexBufferBlock::subsend_full(GLuint i) const
+void vg::CPUVertexBufferBlock::subsend_full() const
 {
-	buffers::subsend(BufferTarget::VERTEX, 0, _cpubuf_and_vcs[i].first.size(), _cpubuf_and_vcs[i].first);
+	buffers::subsend(BufferTarget::VERTEX, 0, _cpubuf_and_vcs[block_index()].first.size(), _cpubuf_and_vcs[block_index()].first);
 }
 
-void vg::CPUVertexBufferBlock::subsend_all_blocks() const
+void vg::CPUVertexBufferBlock::subsend_all_blocks()
 {
+	GLuint initial_block_index = block_index();
 	for (GLuint i = 0; i < block_count(); ++i)
 	{
-		bind_vb(i);
-		subsend_full(i);
+		block_index() = i;
+		bind_vb();
+		subsend_full();
 	}
+	block_index() = initial_block_index;
 }
 
-void vg::CPUVertexBufferBlock::subsend(GLuint i, size_t offset, size_t bytes) const
+void vg::CPUVertexBufferBlock::subsend(size_t offset, size_t bytes) const
 {
-	buffers::subsend(BufferTarget::VERTEX, offset, bytes, _cpubuf_and_vcs[i].first.at(offset));
+	buffers::subsend(BufferTarget::VERTEX, offset, bytes, _cpubuf_and_vcs[block_index()].first.at(offset));
 }
 
-void vg::CPUVertexBufferBlock::subsend_single(GLuint i, GLuint vertex, GLuint attrib) const
+void vg::CPUVertexBufferBlock::subsend_single(GLuint vertex, GLuint attrib) const
 {
-	GLintptr offset = buffer_offset(i, vertex, attrib);
+	GLintptr offset = buffer_offset(vertex, attrib);
 	GLuint size = _vbb.layout()->attributes()[attrib].bytes();
-	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[block_index()].first.at(offset));
 }
 
-void vg::CPUVertexBufferBlock::subsend_single(GLuint i, GLuint vertex, GLuint attrib, GLuint size) const
+void vg::CPUVertexBufferBlock::subsend_single(GLuint vertex, GLuint attrib, GLuint size) const
 {
-	GLintptr offset = buffer_offset(i, vertex, attrib);
-	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[i].first.at(offset));
+	GLintptr offset = buffer_offset(vertex, attrib);
+	buffers::subsend(BufferTarget::VERTEX, offset, size, _cpubuf_and_vcs[block_index()].first.at(offset));
 }
 
 vg::MultiCPUVertexBuffer::MultiCPUVertexBuffer(MultiVertexBuffer&& vbs, const std::vector<GLuint>& vertex_counts, const std::vector<bool>& is_mutables)

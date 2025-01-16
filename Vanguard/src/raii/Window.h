@@ -3,8 +3,8 @@
 #include <unordered_map>
 #include <functional>
 
-#include "Vanguard.h"
-#include "Vendor.h"
+#include "Macros.h"
+#include "utils/VGMath.h"
 #include "engine/Input.h"
 #include "Shader.h"
 
@@ -78,6 +78,29 @@ namespace vg
 		int opengl_profile = GLFW_OPENGL_CORE_PROFILE; // GLFW_OPENGL_ANY_PROFILE
 
 		void hint() const;
+	};
+
+	enum class BlendFactor
+	{
+		ZERO = GL_ZERO,
+		ONE = GL_ONE,
+		SRC_COLOR = GL_SRC_COLOR,
+		ONE_MINUS_SRC_COLOR = GL_ONE_MINUS_SRC_COLOR,
+		DST_COLOR = GL_DST_COLOR,
+		ONE_MINUS_DST_COLOR = GL_ONE_MINUS_DST_COLOR,
+		SRC_ALPHA = GL_SRC_ALPHA,
+		ONE_MINUS_SRC_ALPHA = GL_ONE_MINUS_SRC_ALPHA,
+		DST_ALPHA = GL_DST_ALPHA,
+		ONE_MINUS_DST_ALPHA = GL_ONE_MINUS_DST_ALPHA,
+		CONSTANT_COLOR = GL_CONSTANT_COLOR,
+		ONE_MINUS_CONSTANT_COLOR = GL_ONE_MINUS_CONSTANT_COLOR,
+		CONSTANT_ALPHA = GL_CONSTANT_ALPHA,
+		ONE_MINUS_CONSTANT_ALPHA = GL_ONE_MINUS_CONSTANT_ALPHA,
+		SRC_ALPHA_SATURATE = GL_SRC_ALPHA_SATURATE,
+		SRC1_COLOR = GL_SRC1_COLOR,
+		ONE_MINUS_SRC1_COLOR = GL_ONE_MINUS_SRC1_COLOR,
+		SRC1_ALPHA = GL_SRC1_ALPHA,
+		ONE_MINUS_SRC1_ALPHA = GL_ONE_MINUS_SRC1_ALPHA,
 	};
 
 	struct ContextConfig

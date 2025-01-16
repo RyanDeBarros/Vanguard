@@ -10,5 +10,7 @@ layout(binding = 0) uniform sampler2D TEXTURE_SLOTS[$NUM_TEXTURE_SLOTS];
 void main() {
 	if (tTexSlot >= 0) {
 		oColor = texture(TEXTURE_SLOTS[tTexSlot], tUVs);
+	} else {
+		discard;
 	}
 }

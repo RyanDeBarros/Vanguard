@@ -62,7 +62,7 @@ namespace vg
 		// Call after modifying self
 		void mark();
 		// Call before reading self
-		void sync();
+		bool sync();
 	};
 
 	struct Transformer3D
@@ -83,7 +83,7 @@ namespace vg
 		// Call after modifying self
 		void mark();
 		// Call before reading self
-		void sync();
+		bool sync();
 	};
 
 	extern void attach_transformer(Transformer2D* parent, Transformer2D* child);
