@@ -7,9 +7,7 @@
 #include "raii/Window.h"
 #include "render/ShaderRegistry.h"
 #include "render/TextureRegistry.h"
-#include "render/Renderable.h"
-#include "render/Transform.h"
-#include "render/Draw.h"
+#include "render/Actors.h"
 
 int main()
 {
@@ -79,7 +77,7 @@ int main()
 	tripair.set_attribute(1, 2, tripair_indexer.vertex(1, 1, 0), tripair_indexer.vertex_count(1, 1), glm::mat3({ 0.8f, 0.0f, 0.0f }, { 0.0f, 0.8f, 0.0f }, { 0.0f, 0.0f, 1.0f }));
 	tripair.subsend_all_blocks();
 
-	auto img_shader = shaders.load_shader("shaders/image.vert", {}, "shaders/image.frag.tmpl", { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units) } });
+	auto img_shader = shaders.load_shader("shaders/image.vert", {}, "shaders/image.frag.tmpl", vg::file_templates::num_texture_slots(window));
 	vg::bind_shader(img_shader);
 	vg::uniforms::send_3x3(*shaders.ref_shader(img_shader), "uVP", window.orthographic_projection());
 	window.vp_updates.push_back({ shaders.ref_shader(img_shader), vg::Window::ProjectionMode::ORTHOGRAPHIC_2D });
@@ -112,6 +110,10 @@ int main()
 	vg::attach_transformer(&sprite_grandparent, &sprite_parent);
 
 	float frame_index = 0;
+
+	vg::ids::Shader sprite_2d_shader = shaders.load_shader("vg/shaders/sprite2d.vert", {}, "vg/shaders/sprite2d.frag.tmpl", vg::file_templates::num_texture_slots(window));
+	vg::actors::Sprite2D flag;
+	flag.size = { 34, 27 };
 
 	window.sync_resize();
 	window.render_frame = [&]() {

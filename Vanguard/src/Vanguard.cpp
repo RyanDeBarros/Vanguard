@@ -177,3 +177,8 @@ float vg::data::elapsed_time()
 {
 	return time - _::initial_time;
 }
+
+std::unordered_map<std::string, std::string> vg::file_templates::num_texture_slots(Window& window)
+{
+	return { { "$NUM_TEXTURE_SLOTS", std::to_string(window.constants().max_texture_image_units) } };
+}

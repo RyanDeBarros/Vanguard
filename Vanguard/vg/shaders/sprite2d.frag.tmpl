@@ -4,14 +4,11 @@ layout(location = 0) out vec4 oColor;
 
 flat in int tTexSlot;
 in vec2 tUVs;
-in vec4 tColor;
 
 layout(binding = 0) uniform sampler2D TEXTURE_SLOTS[$NUM_TEXTURE_SLOTS];
 
 void main() {
-	if (tTexSlot < 0) {
-		oColor = tColor;
-	} else {
-		oColor = tColor * texture(TEXTURE_SLOTS[tTexSlot], tUVs);
+	if (tTexSlot >= 0) {
+		oColor = texture(TEXTURE_SLOTS[tTexSlot], tUVs);
 	}
 }

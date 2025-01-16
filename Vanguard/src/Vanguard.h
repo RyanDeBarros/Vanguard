@@ -30,6 +30,7 @@
 
 #include "Vendor.h"
 #include "utils/VGMath.h"
+#include "raii/Window.h"
 
 namespace vg
 {
@@ -102,5 +103,10 @@ namespace vg
 		extern float time;
 		extern float delta_time;
 		extern float elapsed_time();
+	}
+
+	namespace file_templates
+	{
+		extern std::unordered_map<std::string, std::string> num_texture_slots(Window& window);
 	}
 }
