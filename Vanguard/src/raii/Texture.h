@@ -6,11 +6,11 @@
 #include <array>
 
 #include "Vanguard.h"
+#include "GLBuffer.h"
 #include "utils/FilePath.h"
 #include "utils/VoidArray.h"
 #include "utils/Meta.h"
-#include "GLBuffer.h"
-#include "VGMath.h"
+#include "utils/VGMath.h"
 
 // LATER mipmaps
 

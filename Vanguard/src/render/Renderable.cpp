@@ -976,6 +976,6 @@ float vg::SeparatedFramesArray::increment_frame_index(float frame_index, float s
 {
 	frame_index += speed * 60.0f * vg::data::delta_time * 0.001f * delay_ms((int)frame_index);
 	if (frame_index >= size())
-		frame_index = fmod(frame_index, size());
+		frame_index = fmod(frame_index, (float)size());
 	return frame_index;
 }

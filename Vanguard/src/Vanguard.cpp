@@ -2,8 +2,8 @@
 
 #include <stb/stb_image.h>
 
-#include "Errors.h"
-#include "Input.h"
+#include "engine/Errors.h"
+#include "engine/Input.h"
 #include "raii/Shader.h"
 #include "raii/Texture.h"
 

@@ -1,8 +1,8 @@
 #include "Window.h"
 
 #include "Vanguard.h"
-#include "Errors.h"
-#include "Input.h"
+#include "engine/Errors.h"
+#include "engine/Input.h"
 #include "raii/FrameBuffer.h"
 
 // LATER use Logger instead

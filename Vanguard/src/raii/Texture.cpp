@@ -3,7 +3,7 @@
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 
-#include "Errors.h"
+#include "engine/Errors.h"
 #include "utils/IO.h"
 
 vg::raii::Texture::Texture()

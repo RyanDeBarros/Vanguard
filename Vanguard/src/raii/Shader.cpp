@@ -1,7 +1,7 @@
 #include "Shader.h"
 
 #include "utils/IO.h"
-#include "Errors.h"
+#include "engine/Errors.h"
 
 static GLenum subshader_type(vg::SubshaderType type)
 {

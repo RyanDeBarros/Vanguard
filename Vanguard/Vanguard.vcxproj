@@ -163,15 +163,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Draw.cpp" />
+    <ClCompile Include="src\render\Actors.cpp" />
+    <ClCompile Include="src\render\Draw.cpp" />
     <ClCompile Include="src\raii\FrameBuffer.cpp" />
-    <ClCompile Include="src\Renderable.cpp" />
-    <ClCompile Include="src\Errors.cpp" />
-    <ClCompile Include="src\ShaderRegistry.cpp" />
-    <ClCompile Include="src\TextureRegistry.cpp" />
-    <ClCompile Include="src\Transform.cpp" />
+    <ClCompile Include="src\render\Renderable.cpp" />
+    <ClCompile Include="src\engine\Errors.cpp" />
+    <ClCompile Include="src\render\ShaderRegistry.cpp" />
+    <ClCompile Include="src\render\TextureRegistry.cpp" />
+    <ClCompile Include="src\render\Transform.cpp" />
     <ClCompile Include="src\utils\FilePath.cpp" />
-    <ClCompile Include="src\Input.cpp" />
+    <ClCompile Include="src\engine\Input.cpp" />
     <ClCompile Include="src\utils\IO.cpp" />
     <ClCompile Include="src\raii\GLBuffer.cpp" />
     <ClCompile Include="src\raii\Shader.cpp" />
@@ -183,27 +184,28 @@
     <ClCompile Include="vendor\Vendor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ECS.h" />
-    <ClInclude Include="src\Errors.h" />
-    <ClInclude Include="src\Events.h" />
-    <ClInclude Include="src\Draw.h" />
+    <ClInclude Include="src\engine\ECS.h" />
+    <ClInclude Include="src\engine\Errors.h" />
+    <ClInclude Include="src\engine\Events.h" />
+    <ClInclude Include="src\render\Actors.h" />
+    <ClInclude Include="src\render\Draw.h" />
     <ClInclude Include="src\raii\FrameBuffer.h" />
-    <ClInclude Include="src\ShaderRegistry.h" />
-    <ClInclude Include="src\TextureRegistry.h" />
-    <ClInclude Include="src\Transform.h" />
+    <ClInclude Include="src\render\ShaderRegistry.h" />
+    <ClInclude Include="src\render\TextureRegistry.h" />
+    <ClInclude Include="src\render\Transform.h" />
     <ClInclude Include="src\utils\DynamicArray.h" />
     <ClInclude Include="src\utils\FilePath.h" />
-    <ClInclude Include="src\Input.h" />
+    <ClInclude Include="src\engine\Input.h" />
     <ClInclude Include="src\utils\IO.h" />
     <ClInclude Include="src\raii\GLBuffer.h" />
     <ClInclude Include="src\raii\Shader.h" />
     <ClInclude Include="src\raii\Texture.h" />
     <ClInclude Include="src\raii\Window.h" />
-    <ClInclude Include="src\Renderable.h" />
+    <ClInclude Include="src\render\Renderable.h" />
     <ClInclude Include="src\utils\Meta.h" />
     <ClInclude Include="src\utils\VoidArray.h" />
     <ClInclude Include="src\Vanguard.h" />
-    <ClInclude Include="src\VGMath.h" />
+    <ClInclude Include="src\utils\VGMath.h" />
     <ClInclude Include="vendor\Vendor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

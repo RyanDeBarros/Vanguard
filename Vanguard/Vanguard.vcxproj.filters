@@ -27,7 +27,7 @@
     <ClCompile Include="src\Vanguard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Input.cpp">
+    <ClCompile Include="src\engine\Input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\raii\GLBuffer.cpp">
@@ -45,28 +45,31 @@
     <ClCompile Include="src\utils\IO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Errors.cpp">
+    <ClCompile Include="src\engine\Errors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\VoidArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Renderable.cpp">
+    <ClCompile Include="src\render\Renderable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Draw.cpp">
+    <ClCompile Include="src\render\Draw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\raii\FrameBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Transform.cpp">
+    <ClCompile Include="src\render\Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ShaderRegistry.cpp">
+    <ClCompile Include="src\render\ShaderRegistry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TextureRegistry.cpp">
+    <ClCompile Include="src\render\TextureRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render\Actors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,7 +77,7 @@
     <ClInclude Include="src\raii\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Errors.h">
+    <ClInclude Include="src\engine\Errors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Vendor.h">
@@ -83,10 +86,10 @@
     <ClInclude Include="src\Vanguard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Input.h">
+    <ClInclude Include="src\engine\Input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Events.h">
+    <ClInclude Include="src\engine\Events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\raii\GLBuffer.h">
@@ -107,13 +110,13 @@
     <ClInclude Include="src\utils\VoidArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Renderable.h">
+    <ClInclude Include="src\render\Renderable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\utils\DynamicArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Draw.h">
+    <ClInclude Include="src\render\Draw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\raii\FrameBuffer.h">
@@ -122,19 +125,22 @@
     <ClInclude Include="src\utils\Meta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Transform.h">
+    <ClInclude Include="src\render\Transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\VGMath.h">
+    <ClInclude Include="src\utils\VGMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS.h">
+    <ClInclude Include="src\engine\ECS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ShaderRegistry.h">
+    <ClInclude Include="src\render\ShaderRegistry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TextureRegistry.h">
+    <ClInclude Include="src\render\TextureRegistry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\render\Actors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

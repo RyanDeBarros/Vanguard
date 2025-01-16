@@ -29,7 +29,7 @@
 #define VANGUARD_MIN_OPENGL_VERSION_IS_AT_MOST(major, minor) VANGUARD_MIN_OPENGL_VERSION_MAJOR < major || (VANGUARD_MIN_OPENGL_VERSION_MAJOR == major && VANGUARD_MIN_OPENGL_VERSION_MINOR <= minor)
 
 #include "Vendor.h"
-#include "VGMath.h"
+#include "utils/VGMath.h"
 
 namespace vg
 {

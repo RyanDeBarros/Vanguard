@@ -1,7 +1,7 @@
 #include "GLBuffer.h"
 
 #include "Vanguard.h"
-#include "Errors.h"
+#include "engine/Errors.h"
 
 vg::raii::GLBuffer::GLBuffer()
 {

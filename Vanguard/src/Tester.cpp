@@ -5,13 +5,11 @@
 #include "Vanguard.h"
 
 #include "raii/Window.h"
-#include "Renderable.h"
-#include "Draw.h"
-#include "utils/IO.h"
-#include "raii/Texture.h"
-#include "Transform.h"
-#include "ShaderRegistry.h"
-#include "TextureRegistry.h"
+#include "render/ShaderRegistry.h"
+#include "render/TextureRegistry.h"
+#include "render/Renderable.h"
+#include "render/Transform.h"
+#include "render/Draw.h"
 
 int main()
 {
